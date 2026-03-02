@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Environments
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IFM source repo (metadata is bundled in tabdistances/data/tabfm/)
+Industrial-Foundation-Models-main/
+
+# Downloaded / processed data
+data/tabfm/
+data/real/
+data/synthetic/
+
+# Generated graph outputs
+graphs/
+graphs-tabfm/
+graphs-tabicl/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

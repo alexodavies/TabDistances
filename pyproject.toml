@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "tabdistances"
+version = "0.1.0"
+description = "Measure distances between sets of tabular datasets via graph representations"
+requires-python = ">=3.9"
+dependencies = [
+    "networkx",
+    "scikit-learn>=1.2",
+    "pandas",
+    "numpy",
+    "scipy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tabdistances*"]
