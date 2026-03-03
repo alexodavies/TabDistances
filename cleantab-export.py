@@ -38,7 +38,7 @@ if processed:
 
 for i, table_id, df in dataset.iter_tables():
     try:
-        if df.shape[1] < 2 or random.random() >= 0.005:
+        if df.shape[1] < 2 or random.random() >= 0.5:
             continue
 
         safe_id = table_id.replace("/", "_")
