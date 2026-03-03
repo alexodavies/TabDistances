@@ -9,7 +9,7 @@ import json
 import random
 import networkx as nx
 
-N_TABLES = 50
+N_TABLES = 4000
 OUT_DIR  = Path("graphs")
 JSON_DIR = OUT_DIR / "json"
 JSON_DIR.mkdir(parents=True, exist_ok=True)
@@ -32,17 +32,22 @@ def graph_to_dict(G: nx.DiGraph) -> dict:
 
 
 dataset = CleanTabLibDataset(config="stage4", split="train", deduplicate=True)
-processed = 0
+processed = len(list(JSON_DIR.glob("*.json")))
+if processed:
+    print(f"Resuming: {processed} graphs already in {JSON_DIR}/")
 
 for i, table_id, df in dataset.iter_tables():
     try:
-        if df.shape[1] <= 2 or random.random() >= 0.005:
+        if df.shape[1] < 2 or random.random() >= 0.005:
+            continue
+
+        safe_id = table_id.replace("/", "_")
+        json_path = JSON_DIR / f"{safe_id}.json"
+        if json_path.exists():
             continue
 
         G = build_graph(df, threshold=0.7)
 
-        safe_id = table_id.replace("/", "_")
-        json_path = JSON_DIR / f"{safe_id}.json"
         json_path.write_text(json.dumps(graph_to_dict(G), indent=2))
         print(f"[{processed+1}/{N_TABLES}] {table_id}  ({df.shape[0]}×{df.shape[1]})  "
               f"{G.number_of_nodes()} nodes  {G.number_of_edges()} edges  -> {json_path}")

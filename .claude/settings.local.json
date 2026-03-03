@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f''nodes={len\\(d[\"\"nodes\"\"]\\)}, edges={len\\(d[\"\"edges\"\"]\\)}''\\)\")",
+      "Bash(for f in /Users/qj19962/Fellowship/TabDistances/graphs-tabicl/json/*.json)",
+      "Bash(do python3 -c \"import json; d=json.load\\(open\\(''$f''\\)\\); print\\(f''$f: nodes={len\\(d[\"\"nodes\"\"]\\)}, edges={len\\(d[\"\"edges\"\"]\\)}''\\)\")",
+      "Bash(done)",
+      "Bash(for f in /Users/qj19962/Fellowship/TabDistances/graphs-tabfm/json/*.json)",
+      "Bash(python3 -c \":*)"
+    ]
+  }
+}

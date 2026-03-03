@@ -11,9 +11,9 @@ import torch
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.graph.builder import build_graph
 
-N_TABLES     = 50
+N_TABLES     = 1000
 BATCH_SIZE   = 8
-MIN_FEATURES = 3
+MIN_FEATURES = 1
 OUT_DIR      = Path("graphs-tabicl")
 JSON_DIR     = OUT_DIR / "json"
 JSON_DIR.mkdir(parents=True, exist_ok=True)
@@ -49,7 +49,9 @@ prior = SCMPrior(
     device="cpu",
 )
 
-processed = 0
+processed = len(list(JSON_DIR.glob("*.json")))
+if processed:
+    print(f"Resuming: {processed} graphs already in {JSON_DIR}/")
 batch_idx  = 0
 
 while processed < N_TABLES:
@@ -68,12 +70,14 @@ while processed < N_TABLES:
         df = pd.DataFrame(X_i, columns=[f"feature_{j}" for j in range(n_features)])
         df["target"] = y_i
 
-        table_id = f"tabicl_batch{batch_idx:04d}_idx{i:02d}"
+        table_id  = f"tabicl_batch{batch_idx:04d}_idx{i:02d}"
+        json_path = JSON_DIR / f"{table_id}.json"
+        if json_path.exists():
+            continue
 
         try:
             G = build_graph(df, threshold=0.7, cardinality_threshold=0.2)
 
-            json_path = JSON_DIR / f"{table_id}.json"
             json_path.write_text(json.dumps(graph_to_dict(G), indent=2))
             print(f"[{processed+1}/{N_TABLES}] {table_id}  ({df.shape[0]}×{df.shape[1]})  "
                   f"{G.number_of_nodes()} nodes  {G.number_of_edges()} edges  -> {json_path}")

@@ -8,7 +8,7 @@ from tabdistances.graph.builder import build_graph
 import json
 import networkx as nx
 
-N_TABLES  = 50
+N_TABLES  = 1000
 DATA_PATH = Path("data/tabfm")
 OUT_DIR   = Path("graphs-tabfm")
 JSON_DIR  = OUT_DIR / "json"
@@ -32,17 +32,22 @@ def graph_to_dict(G: nx.DiGraph) -> dict:
 
 
 dataset   = TabFMDataset(data_path=DATA_PATH, split="both")
-processed = 0
+processed = len(list(JSON_DIR.glob("*.json")))
+if processed:
+    print(f"Resuming: {processed} graphs already in {JSON_DIR}/")
 
 for i, dataset_name, df in dataset.iter_tables():
     try:
-        if df.shape[1] <= 2:
+        if df.shape[1] < 2:
+            continue
+
+        safe_name = dataset_name.replace("/", "_")
+        json_path = JSON_DIR / f"{safe_name}.json"
+        if json_path.exists():
             continue
 
         G = build_graph(df, threshold=0.7, cardinality_threshold=0.2)
 
-        safe_name = dataset_name.replace("/", "_")
-        json_path = JSON_DIR / f"{safe_name}.json"
         json_path.write_text(json.dumps(graph_to_dict(G), indent=2))
         print(f"[{processed+1}/{N_TABLES}] {dataset_name}  ({df.shape[0]}×{df.shape[1]})  "
               f"{G.number_of_nodes()} nodes  {G.number_of_edges()} edges  -> {json_path}")
