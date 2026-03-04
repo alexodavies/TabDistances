@@ -48,13 +48,15 @@ for i, dataset_name, df in dataset.iter_tables():
         if json_path.exists():
             continue
 
-        # Encode string categorical columns as integer codes so sklearn
-        # inside edge_features can handle them numerically.
+        # High-cardinality string columns are reclassified as NUMERIC by
+        # build_graph (max_cat_classes=20) and must be numeric for sklearn.
+        # Low-cardinality string categoricals are handled fine by _onehot.
         for col in df.select_dtypes(include="object").columns:
-            codes, _ = pd.factorize(df[col])
-            s = codes.astype(float)
-            s[s == -1] = np.nan
-            df[col] = s
+            if df[col].nunique() > 20:
+                codes, _ = pd.factorize(df[col])
+                s = codes.astype(float)
+                s[s == -1] = np.nan
+                df[col] = s
 
         G = build_graph(df, threshold=0.7, cardinality_threshold=0.2)
 
