@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import log_loss
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from .typing import ColumnType
 
@@ -26,6 +26,7 @@ def _pseudo_r2(X: np.ndarray, y: pd.Series) -> float:
     ll_null = log_loss(y, null_proba, labels=classes)
     if ll_null == 0.0:
         return 0.0
+    X = StandardScaler().fit_transform(X)
     model = LogisticRegression(max_iter=1000)
     model.fit(X, y)
     ll_model = log_loss(y, model.predict_proba(X), labels=classes)
