@@ -6,6 +6,8 @@ from tabdistances.data.tabfm.dataset import TabFMDataset
 from tabdistances.graph.builder import build_graph
 
 import json
+import numpy as np
+import pandas as pd
 import networkx as nx
 
 N_TABLES  = 1000
@@ -45,6 +47,14 @@ for i, dataset_name, df in dataset.iter_tables():
         json_path = JSON_DIR / f"{safe_name}.json"
         if json_path.exists():
             continue
+
+        # Encode string categorical columns as integer codes so sklearn
+        # inside edge_features can handle them numerically.
+        for col in df.select_dtypes(include="object").columns:
+            codes, _ = pd.factorize(df[col])
+            s = codes.astype(float)
+            s[s == -1] = np.nan
+            df[col] = s
 
         G = build_graph(df, threshold=0.7, cardinality_threshold=0.2)
 
