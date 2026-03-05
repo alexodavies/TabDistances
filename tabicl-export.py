@@ -8,9 +8,9 @@ import torch
 
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 
-N_TABLES     = 500000
+N_TABLES     = 100000
 BATCH_SIZE   = 8
-MIN_FEATURES = 1
+MIN_FEATURES = 2
 OUT_DIR      = Path("tables-tabicl")
 PARQUET_DIR  = OUT_DIR / "parquet"
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)
@@ -26,8 +26,8 @@ prior = SCMPrior(
     min_train_size=0.1,
     max_train_size=0.9,
     prior_type="mix_scm",
-    n_jobs=1,
-    device="cpu",
+    n_jobs=6,
+    device="gpu",
 )
 
 processed = len(list(PARQUET_DIR.glob("*.parquet")))

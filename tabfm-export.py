@@ -7,7 +7,7 @@ import pandas as pd
 
 from tabdistances.data.tabfm.dataset import TabFMDataset
 
-N_TABLES    = 500000
+N_TABLES    = 100000
 DATA_PATH   = Path("data/tabfm")
 OUT_DIR     = Path("tables-tabfm")
 PARQUET_DIR = OUT_DIR / "parquet"

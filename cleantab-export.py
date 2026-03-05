@@ -6,7 +6,7 @@ import random
 
 from tabdistances.data.cleantablib.dataset import CleanTabLibDataset
 
-N_TABLES    = 500000
+N_TABLES    = 100000
 OUT_DIR     = Path("tables")
 PARQUET_DIR = OUT_DIR / "parquet"
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)
