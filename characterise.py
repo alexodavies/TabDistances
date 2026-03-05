@@ -221,7 +221,7 @@ def print_summary(all_metrics: pd.DataFrame) -> None:
             va = all_metrics.loc[all_metrics["source"] == a, metric].values
             vb = all_metrics.loc[all_metrics["source"] == b, metric].values
             if scale == "log":
-                va, vb = np.log1p(va), np.log1p(vb)
+                va, vb = np.log10(va), np.log10(vb)
             row[f"{a} vs {b}"] = f"{_wasserstein(va, vb):.4f}"
         rows.append(row)
     print(pd.DataFrame(rows).set_index("Metric").to_string())
@@ -255,11 +255,11 @@ def plot_distributions(
             vals = all_metrics.loc[all_metrics["source"] == src, metric].dropna().values
             if len(vals) == 0:
                 continue
-            plot_vals = np.log1p(vals) if scale == "log" else vals
+            plot_vals = np.log10(vals) if scale == "log" else vals
             ax.hist(plot_vals, bins=40, alpha=0.5, label=src,
                     color=COLORS[src], density=True)
 
-        ax.set_title(label + (" [log1p scale]" if scale == "log" else ""), fontsize=8.5)
+        ax.set_title(label + (" [log10 scale]" if scale == "log" else ""), fontsize=8.5)
         ax.set_xlabel("Value")
         ax.set_ylabel("Density")
         ax.legend(fontsize=7)
@@ -303,9 +303,9 @@ def plot_pairwise(
             mask = ~np.isnan(xv) & ~np.isnan(yv)
             xv, yv = xv[mask], yv[mask]
             if xscale == "log":
-                xv = np.log1p(xv)
+                xv = np.log10(xv)
             if yscale == "log":
-                yv = np.log1p(yv)
+                yv = np.log10(yv)
             ax.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
             if len(xv) > 10:
                 try:
@@ -318,8 +318,8 @@ def plot_pairwise(
                 except Exception:
                     pass
 
-        ax.set_xlabel(xlabel + (" [log1p]" if xscale == "log" else ""), fontsize=8.5)
-        ax.set_ylabel(ylabel + (" [log1p]" if yscale == "log" else ""), fontsize=8.5)
+        ax.set_xlabel(xlabel + (" [log10]" if xscale == "log" else ""), fontsize=8.5)
+        ax.set_ylabel(ylabel + (" [log10]" if yscale == "log" else ""), fontsize=8.5)
         ax.set_title(f"{xlabel} vs {ylabel}", fontsize=9)
         ax.legend(fontsize=7, markerscale=2)
 
