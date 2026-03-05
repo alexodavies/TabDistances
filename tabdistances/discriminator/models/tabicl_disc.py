@@ -160,6 +160,9 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         if self.max_rows and len(df) > self.max_rows:
             df = df.sample(self.max_rows, random_state=42)
 
+        # Replace inf before TransformToNumerical so SimpleImputer can handle them
+        df = df.replace([np.inf, -np.inf], np.nan)
+
         tfm = TransformToNumerical()
         X_np = tfm.fit_transform(df).astype(np.float32)
 
@@ -189,14 +192,18 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         y_t = torch.tensor(y, dtype=torch.long, device=self.device)
         indices = np.arange(n)
 
-        pbar = tqdm(range(self.epochs), desc="Training", unit="epoch")
-        for epoch in pbar:
+        n_batches = int(np.ceil(n / self.batch_size))
+        epoch_bar = tqdm(range(self.epochs), desc="Epochs", unit="epoch")
+        for epoch in epoch_bar:
             np.random.shuffle(indices)
             optimiser.zero_grad()
             epoch_loss = 0.0
             steps_since_zero = 0
+            batch_num = 0
 
-            for pos, i in enumerate(indices):
+            batch_bar = tqdm(indices, desc=f"  Epoch {epoch+1}", unit="table",
+                             leave=False, total=n)
+            for pos, i in enumerate(batch_bar):
                 emb   = self._encode_table(X[i])          # (1, out_dim)
                 logit = self._head(emb)                    # (1, num_classes)
                 loss  = F.cross_entropy(logit, y_t[i].unsqueeze(0))
@@ -207,9 +214,14 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
                 if steps_since_zero == self.batch_size or pos == n - 1:
                     optimiser.step()
                     optimiser.zero_grad()
+                    batch_num += 1
+                    batch_loss = epoch_loss / ((pos + 1))
+                    batch_bar.set_postfix(batch=f"{batch_num}/{n_batches}",
+                                         loss=f"{batch_loss:.4f}")
                     steps_since_zero = 0
 
-            pbar.set_postfix(loss=f"{epoch_loss / n:.4f}")
+            batch_bar.close()
+            epoch_bar.set_postfix(loss=f"{epoch_loss / n:.4f}")
 
         self._encoder.eval()
         self._head.eval()
