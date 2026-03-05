@@ -1,0 +1,37 @@
+{
+  "os": "macOS-26.3-arm64-arm-64bit",
+  "python": "CPython 3.12.12",
+  "startedAt": "2026-03-05T15:31:22.519229Z",
+  "program": "/Users/qj19962/Fellowship/TabDistances/characterise.py",
+  "codePath": "characterise.py",
+  "codePathLocal": "characterise.py",
+  "git": {
+    "remote": "https://github.com/alexodavies/TabDistances.git",
+    "commit": "bad5c6ba0d29ba3b854e49b2dddd1181b369a414"
+  },
+  "email": "alexander.davies@bristol.ac.uk",
+  "root": "/Users/qj19962/Fellowship/TabDistances",
+  "host": "FVFG54B3Q05N",
+  "executable": "/opt/anaconda3/envs/tab-distance/bin/python",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "494384795648",
+      "used": "482783031296"
+    }
+  },
+  "memory": {
+    "total": "17179869184"
+  },
+  "apple": {
+    "name": "Apple M1",
+    "ecpuCores": 4,
+    "pcpuCores": 4,
+    "gpuCores": 8,
+    "memoryGb": 16,
+    "swapTotalBytes": "3221225472",
+    "ramTotalBytes": "17179869184"
+  },
+  "writerId": "q96xlybwjp4jaaaxm2xz8obdnjr4avmy"
+}

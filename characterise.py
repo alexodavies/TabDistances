@@ -28,7 +28,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import wasserstein_distance
+import wandb
+from scipy.stats import gaussian_kde, wasserstein_distance
 from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
@@ -46,7 +47,7 @@ COLORS = {
     "TabFM":       "#55A868",
 }
 
-MAX_TABLES = 500   # cap per source for speed; set to None to use all
+MAX_TABLES = 4000   # cap per source for speed; set to None to use all
 MAX_ROWS   = 1000  # max rows sampled per table
 
 # Common target-column names (case-sensitive first match)
@@ -60,16 +61,6 @@ def _find_target(df: pd.DataFrame) -> str | None:
             return name
     return None
 
-
-def _missingness_structure(df: pd.DataFrame) -> float:
-    """Mean absolute pairwise correlation of per-column missingness indicators."""
-    miss = df.isnull()
-    cols = miss.columns[miss.any()]
-    if len(cols) < 2:
-        return 0.0
-    arr = miss[cols].corr().abs().to_numpy(dtype=float, copy=True)
-    np.fill_diagonal(arr, np.nan)
-    return float(np.nanmean(arr))
 
 
 def _normalised_entropy(series: pd.Series) -> float:
@@ -87,13 +78,14 @@ def compute_table_metrics(df: pd.DataFrame) -> dict:
     target_col     = _find_target(df)
 
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
-    cat_cols     = df.select_dtypes(exclude="number").columns.tolist()
-    feat_cols    = [c for c in numeric_cols if c != target_col]
+    cat_cols = [
+        c for c in df.columns
+        if (df[c].nunique() / max(len(df), 1)) < 0.2
+    ]
+    feat_cols    = [c for c in numeric_cols if c != target_col and c not in cat_cols]
 
     # ── Structural ──────────────────────────────────────────────────────────
-    missingness_rate = float(df.isnull().mean().mean())
-    miss_structure   = _missingness_structure(df)
-    numeric_fraction = len(numeric_cols) / n_cols if n_cols else 0.0
+    cat_fraction = len(cat_cols) / n_cols if n_cols else 0.0
 
     if cat_cols:
         cardinalities        = [df[c].nunique() for c in cat_cols]
@@ -117,43 +109,27 @@ def compute_table_metrics(df: pd.DataFrame) -> dict:
 
     # Mean absolute pairwise Pearson correlation (inter-feature dependence)
     if len(feat_cols) >= 2:
-        corr_matrix = df[feat_cols].corr(method="pearson").abs()
-        np.fill_diagonal(corr_matrix.values, np.nan)
-        mean_pairwise_corr = float(np.nanmean(corr_matrix.values))
+        corr_matrix = df[feat_cols].corr(method="pearson").abs().to_numpy().copy()
+        n = corr_matrix.shape[0]
+        corr_matrix[range(n), range(n)] = 1
+        # np.fill_diagonal(corr_matrix, 0)
+        mean_pairwise_corr = float(np.nanmean(corr_matrix))
     else:
         mean_pairwise_corr = float("nan")
 
-    # Class balance (normalised entropy of target)
+    # Class balance: normalised entropy over target class distribution (1 = uniform, 0 = single class)
     class_balance = _normalised_entropy(df[target_col]) if target_col else float("nan")
-
-    # Target leakage: max |Pearson r| between any numeric feature and target
-    if target_col and feat_cols:
-        try:
-            t = pd.to_numeric(df[target_col], errors="coerce")
-            corrs = [
-                abs(df[c].corr(t))
-                for c in feat_cols
-                if df[c].notna().sum() > 10
-            ]
-            max_target_corr = float(max(corrs)) if corrs else float("nan")
-        except Exception:
-            max_target_corr = float("nan")
-    else:
-        max_target_corr = float("nan")
 
     return {
         "n_rows":               n_rows,
         "n_cols":               n_cols,
-        "missingness_rate":     missingness_rate,
-        "miss_structure":       miss_structure,
-        "numeric_fraction":     numeric_fraction,
+        "cat_fraction":         cat_fraction,
         "mean_cat_cardinality": mean_cat_cardinality,
         "max_cat_cardinality":  max_cat_cardinality,
         "mean_skewness":        mean_skewness,
         "mean_kurtosis":        mean_kurtosis,
         "mean_pairwise_corr":   mean_pairwise_corr,
         "class_balance":        class_balance,
-        "max_target_corr":      max_target_corr,
     }
 
 
@@ -172,15 +148,16 @@ def load_source_metrics(
 
     records = []
     for f in tqdm(files, desc=f"  {source_name}", unit="tbl"):
-        try:
-            df = pd.read_parquet(f)
-            if len(df) > max_rows:
-                df = df.sample(n=max_rows, random_state=42)
-            m = compute_table_metrics(df)
-            m["source"] = source_name
-            records.append(m)
-        except Exception:
-            pass
+        # try:
+        df = pd.read_parquet(f)
+        if len(df) > max_rows:
+            df = df.sample(n=max_rows, random_state=42)
+        m = compute_table_metrics(df)
+        m["source"] = source_name
+        records.append(m)
+        # except Exception as e:
+            # print(e)
+            # pass
 
     return pd.DataFrame(records)
 
@@ -190,16 +167,13 @@ def load_source_metrics(
 METRIC_META: dict[str, tuple[str, str]] = {
     "n_rows":               ("Row count",                      "log"),
     "n_cols":               ("Column count",                   "linear"),
-    "missingness_rate":     ("Missingness rate",               "linear"),
-    "miss_structure":       ("Missingness structure",          "linear"),
-    "numeric_fraction":     ("Numeric column fraction",        "linear"),
+    "cat_fraction":         ("Categorical column fraction",    "linear"),
     "mean_cat_cardinality": ("Mean categorical cardinality",   "log"),
     "max_cat_cardinality":  ("Max categorical cardinality",    "log"),
     "mean_skewness":        ("Mean |skewness|",                "log"),
     "mean_kurtosis":        ("Mean |excess kurtosis|",         "log"),
     "mean_pairwise_corr":   ("Mean |pairwise Pearson corr|",  "linear"),
     "class_balance":        ("Class balance (norm. entropy)",  "linear"),
-    "max_target_corr":      ("Max feature–target |corr|",     "linear"),
 }
 
 
@@ -296,9 +270,73 @@ def plot_distributions(
     print(f"  Saved plot      → {output_path}")
 
 
+# ── Pairwise scatter / density plots ───────────────────────────────────────────
+
+SCATTER_PAIRS = [
+    ("n_cols",        "cat_fraction",          "log",    "linear"),
+    ("mean_skewness", "mean_kurtosis",         "log",    "log"),
+    ("cat_fraction",  "mean_cat_cardinality", "linear", "log"),
+]
+
+
+def plot_pairwise(
+    all_metrics: pd.DataFrame,
+    output_path: str = "characterisation_pairwise.png",
+) -> None:
+    sources = list(SOURCES.keys())
+    fig, axes = plt.subplots(1, 3, figsize=(5 * 3, 4.5))
+    fig.suptitle(
+        "Table Characterisation: Pairwise Density",
+        fontsize=14, fontweight="bold", y=1.02,
+    )
+
+    for ax, (xk, yk, xscale, yscale) in zip(axes, SCATTER_PAIRS):
+        xlabel, _ = METRIC_META[xk]
+        ylabel, _ = METRIC_META[yk]
+
+        for src in sources:
+            sub = all_metrics[all_metrics["source"] == src]
+            xv = sub[xk].dropna().values
+            yv = sub[yk].reindex(sub[xk].dropna().index).values
+            mask = ~np.isnan(xv) & ~np.isnan(yv)
+            xv, yv = xv[mask], yv[mask]
+            if xscale == "log":
+                xv = np.log1p(xv)
+            if yscale == "log":
+                yv = np.log1p(yv)
+            ax.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
+            if len(xv) > 10:
+                try:
+                    kde = gaussian_kde(np.vstack([xv, yv]))
+                    xg = np.linspace(xv.min(), xv.max(), 80)
+                    yg = np.linspace(yv.min(), yv.max(), 80)
+                    Xg, Yg = np.meshgrid(xg, yg)
+                    Zg = kde(np.vstack([Xg.ravel(), Yg.ravel()])).reshape(Xg.shape)
+                    ax.contour(Xg, Yg, Zg, levels=4, colors=[COLORS[src]], linewidths=0.8, alpha=0.8)
+                except Exception:
+                    pass
+
+        ax.set_xlabel(xlabel + (" [log1p]" if xscale == "log" else ""), fontsize=8.5)
+        ax.set_ylabel(ylabel + (" [log1p]" if yscale == "log" else ""), fontsize=8.5)
+        ax.set_title(f"{xlabel} vs {ylabel}", fontsize=9)
+        ax.legend(fontsize=7, markerscale=2)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    print(f"  Saved pairwise  → {output_path}")
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    run = wandb.init(
+        entity  = "hierarchical-diffusion",
+        project = "TabFMs-Characterise",
+        name    = "-vs-".join(SOURCES.keys()),
+        config  = {"max_tables": MAX_TABLES, "max_rows": MAX_ROWS,
+                   "sources": list(SOURCES.keys())},
+    )
+
     dfs = []
     for source_name, parquet_dir in SOURCES.items():
         if not parquet_dir.exists():
@@ -311,16 +349,39 @@ def main() -> None:
 
     if not dfs:
         print("No data loaded. Exiting.")
+        run.finish()
         return
 
     all_metrics = pd.concat(dfs, ignore_index=True)
 
     print_summary(all_metrics)
-    plot_distributions(all_metrics)
+
+    dist_path    = "characterisation.png"
+    pairwise_path = "characterisation_pairwise.png"
+    plot_distributions(all_metrics, output_path=dist_path)
+    plot_pairwise(all_metrics, output_path=pairwise_path)
 
     csv_path = "characterisation_metrics.csv"
     all_metrics.to_csv(csv_path, index=False)
     print(f"  Saved raw data  → {csv_path}")
+
+    # ── wandb logging ────────────────────────────────────────────────────────
+    sources      = list(SOURCES.keys())
+    metric_cols  = [m for m in METRIC_META if m in all_metrics.columns]
+    log_dict: dict = {}
+    for metric in metric_cols:
+        label, _ = METRIC_META[metric]
+        for src in sources:
+            vals = all_metrics.loc[all_metrics["source"] == src, metric].dropna()
+            if len(vals):
+                log_dict[f"{src}/{label}/mean"] = float(vals.mean())
+                log_dict[f"{src}/{label}/std"]  = float(vals.std())
+
+    log_dict["distributions"] = wandb.Image(dist_path)
+    log_dict["pairwise"]      = wandb.Image(pairwise_path)
+    log_dict["metrics_table"] = wandb.Table(dataframe=all_metrics)
+    run.log(log_dict)
+    run.finish()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,55 @@
+_wandb:
+    value:
+        cli_version: 0.25.0
+        e:
+            q96xlybwjp4jaaaxm2xz8obdnjr4avmy:
+                apple:
+                    ecpuCores: 4
+                    gpuCores: 8
+                    memoryGb: 16
+                    name: Apple M1
+                    pcpuCores: 4
+                    ramTotalBytes: "17179869184"
+                    swapTotalBytes: "3221225472"
+                codePath: characterise.py
+                codePathLocal: characterise.py
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "494384795648"
+                        used: "482783031296"
+                email: alexander.davies@bristol.ac.uk
+                executable: /opt/anaconda3/envs/tab-distance/bin/python
+                git:
+                    commit: bad5c6ba0d29ba3b854e49b2dddd1181b369a414
+                    remote: https://github.com/alexodavies/TabDistances.git
+                host: FVFG54B3Q05N
+                memory:
+                    total: "17179869184"
+                os: macOS-26.3-arm64-arm-64bit
+                program: /Users/qj19962/Fellowship/TabDistances/characterise.py
+                python: CPython 3.12.12
+                root: /Users/qj19962/Fellowship/TabDistances
+                startedAt: "2026-03-05T15:31:22.519229Z"
+                writerId: q96xlybwjp4jaaaxm2xz8obdnjr4avmy
+        m: []
+        python_version: 3.12.12
+        t:
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.12.12
+            "5": 0.25.0
+            "12": 0.25.0
+            "13": darwin-arm64
+max_rows:
+    value: 1000
+max_tables:
+    value: 4000
+sources:
+    value:
+        - CleanTabLib
+        - TabICL
+        - TabFM
