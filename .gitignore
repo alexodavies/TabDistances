@@ -29,6 +29,10 @@ graphs/
 graphs-tabfm/
 graphs-tabicl/
 
+tables/
+tables-tabfm/
+tables-tabicl/
+
 # macOS
 .DS_Store
 

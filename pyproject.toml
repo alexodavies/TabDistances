@@ -5,14 +5,17 @@ build-backend = "setuptools.backends.legacy:build"
 [project]
 name = "tabdistances"
 version = "0.1.0"
-description = "Measure distances between sets of tabular datasets via graph representations"
+description = "Measure distances between sets of tabular datasets"
 requires-python = ">=3.9"
 dependencies = [
-    "networkx",
     "scikit-learn>=1.2",
     "pandas",
     "numpy",
     "scipy",
+    "pyarrow",
+    "torch>=2.2",
+    "einops",
+    "tqdm",
 ]
 
 [project.optional-dependencies]

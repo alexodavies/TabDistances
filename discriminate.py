@@ -1,12 +1,12 @@
-"""Evaluate a discriminator model on the three graph sources (1-vs-1).
+"""Evaluate a discriminator model on the three table sources (1-vs-1).
 
-Loads graphs from the JSON export directories and runs one binary
+Loads DataFrames from the Parquet export directories and runs one binary
 discriminator per pair of sources, reporting accuracy and per-class metrics
 for each comparison.
 
 Usage
 -----
-Run from the repository root after populating the JSON directories with the
+Run from the repository root after populating the Parquet directories with the
 export scripts::
 
     python cleantab-export.py
@@ -25,18 +25,18 @@ sys.path.insert(0, str(Path(".").resolve()))
 
 from sklearn.metrics import classification_report
 
-from tabdistances.discriminator.dataset import GraphDataset
-from tabdistances.discriminator.models.rf import RFDiscriminator
+from tabdistances.discriminator.dataset import DataFrameDataset
+from tabdistances.discriminator.models.tabicl_disc import SmallTabICLDiscriminator
 
 # ------------------------------------------------------------------
 # Swap in any BaseDiscriminator subclass here.
 # ------------------------------------------------------------------
-MODEL = RFDiscriminator
+MODEL = SmallTabICLDiscriminator
 
 SOURCES = {
-    "cleantablib": Path("graphs/json"),
-    "tabicl":      Path("graphs-tabicl/json"),
-    "tabfm":       Path("graphs-tabfm/json"),
+    "cleantablib": Path("tables/parquet"),
+    "tabicl":      Path("tables-tabicl/parquet"),
+    "tabfm":       Path("tables-tabfm/parquet"),
 }
 TEST_SIZE    = 0.2
 RANDOM_STATE = 42
@@ -44,9 +44,9 @@ RANDOM_STATE = 42
 # ------------------------------------------------------------------
 # Check all sources are populated
 # ------------------------------------------------------------------
-missing = [name for name, path in SOURCES.items() if not any(path.glob("*.json"))]
+missing = [name for name, path in SOURCES.items() if not any(path.glob("*.parquet"))]
 if missing:
-    print("No graphs found for:", ", ".join(missing))
+    print("No tables found for:", ", ".join(missing))
     print("Run the export scripts first:")
     print("  python cleantab-export.py")
     print("  python tabicl-export.py")
@@ -61,11 +61,11 @@ for name_a, name_b in combinations(SOURCES, 2):
     print(f"  {name_a}  vs  {name_b}")
     print(f"{'='*60}")
 
-    dataset = GraphDataset({
+    dataset = DataFrameDataset({
         name_a: (SOURCES[name_a], 0),
         name_b: (SOURCES[name_b], 1),
     })
-    print(f"Total: {len(dataset)} graphs")
+    print(f"Total: {len(dataset)} tables")
 
     X_train, X_test, y_train, y_test = dataset.train_test_split(
         test_size=TEST_SIZE, random_state=RANDOM_STATE

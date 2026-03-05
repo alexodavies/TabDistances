@@ -2,55 +2,33 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(".").resolve()))
 
-from tabdistances.data.cleantablib.dataset import CleanTabLibDataset
-from tabdistances.graph.builder import build_graph
-
-import json
 import random
-import networkx as nx
 
-N_TABLES = 4000
-OUT_DIR  = Path("graphs")
-JSON_DIR = OUT_DIR / "json"
-JSON_DIR.mkdir(parents=True, exist_ok=True)
+from tabdistances.data.cleantablib.dataset import CleanTabLibDataset
 
-
-def graph_to_dict(G: nx.DiGraph) -> dict:
-    nodes = []
-    for n, data in G.nodes(data=True):
-        nodes.append({
-            "id": n,
-            "col_type": data["col_type"].value,
-            "type_int": data["type_int"].tolist(),
-            "histogram": data["histogram"].tolist(),
-        })
-    edges = [
-        {"source": u, "target": v, "weight": float(d["weight"])}
-        for u, v, d in G.edges(data=True)
-    ]
-    return {"nodes": nodes, "edges": edges}
+N_TABLES    = 4000
+OUT_DIR     = Path("tables")
+PARQUET_DIR = OUT_DIR / "parquet"
+PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
 
-dataset = CleanTabLibDataset(config="stage4", split="train", deduplicate=True)
-processed = len(list(JSON_DIR.glob("*.json")))
+dataset   = CleanTabLibDataset(config="stage4", split="train", deduplicate=True)
+processed = len(list(PARQUET_DIR.glob("*.parquet")))
 if processed:
-    print(f"Resuming: {processed} graphs already in {JSON_DIR}/")
+    print(f"Resuming: {processed} tables already in {PARQUET_DIR}/")
 
 for i, table_id, df in dataset.iter_tables():
     try:
         if df.shape[1] < 2 or random.random() >= 0.5:
             continue
 
-        safe_id = table_id.replace("/", "_")
-        json_path = JSON_DIR / f"{safe_id}.json"
-        if json_path.exists():
+        safe_id      = table_id.replace("/", "_")
+        parquet_path = PARQUET_DIR / f"{safe_id}.parquet"
+        if parquet_path.exists():
             continue
 
-        G = build_graph(df, threshold=0.7)
-
-        json_path.write_text(json.dumps(graph_to_dict(G), indent=2))
-        print(f"[{processed+1}/{N_TABLES}] {table_id}  ({df.shape[0]}×{df.shape[1]})  "
-              f"{G.number_of_nodes()} nodes  {G.number_of_edges()} edges  -> {json_path}")
+        df.to_parquet(parquet_path, index=False)
+        print(f"[{processed+1}/{N_TABLES}] {table_id}  ({df.shape[0]}×{df.shape[1]})  -> {parquet_path}")
 
         processed += 1
         if processed >= N_TABLES:
@@ -58,4 +36,4 @@ for i, table_id, df in dataset.iter_tables():
     except Exception as e:
         print(f"Table {i} failed: {e}")
 
-print(f"\nDone. {processed} tables written to {JSON_DIR.resolve()}/")
+print(f"\nDone. {processed} tables written to {PARQUET_DIR.resolve()}/")
