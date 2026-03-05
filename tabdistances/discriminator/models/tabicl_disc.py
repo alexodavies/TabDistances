@@ -103,7 +103,8 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         Number of tables per gradient update (gradient accumulation).
     max_rows : int, default=512
         Cap on rows per table (random sample if exceeded).
-    device : str, default="cpu"
+    device : str or None, default=None
+        Torch device string. If None, auto-selects CUDA if available, else CPU.
     """
 
     def __init__(
@@ -120,7 +121,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         epochs: int = 30,
         batch_size: int = 8,
         max_rows: int = _MAX_ROWS,
-        device: str = "cpu",
+        device: str | None = None,
     ) -> None:
         self.num_classes   = num_classes
         self.embed_dim     = embed_dim
@@ -134,6 +135,8 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         self.epochs        = epochs
         self.batch_size    = batch_size
         self.max_rows      = max_rows
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device        = torch.device(device)
 
         self._encoder: _Encoder | None = None
@@ -192,33 +195,32 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         y_t = torch.tensor(y, dtype=torch.long, device=self.device)
         indices = np.arange(n)
 
-        n_batches = int(np.ceil(n / self.batch_size))
+        # Pre-split indices into batches so the inner bar steps per optimizer update
+        batches = [indices[s:s + self.batch_size]
+                   for s in range(0, n, self.batch_size)]
+        n_batches = len(batches)
+
         epoch_bar = tqdm(range(self.epochs), desc="Epochs", unit="epoch")
         for epoch in epoch_bar:
             np.random.shuffle(indices)
-            optimiser.zero_grad()
+            batches = [indices[s:s + self.batch_size]
+                       for s in range(0, n, self.batch_size)]
             epoch_loss = 0.0
-            steps_since_zero = 0
-            batch_num = 0
 
-            batch_bar = tqdm(indices, desc=f"  Epoch {epoch+1}", unit="table",
-                             leave=False, total=n)
-            for pos, i in enumerate(batch_bar):
-                emb   = self._encode_table(X[i])          # (1, out_dim)
-                logit = self._head(emb)                    # (1, num_classes)
-                loss  = F.cross_entropy(logit, y_t[i].unsqueeze(0))
-                (loss / self.batch_size).backward()
-                epoch_loss += loss.item()
-                steps_since_zero += 1
-
-                if steps_since_zero == self.batch_size or pos == n - 1:
-                    optimiser.step()
-                    optimiser.zero_grad()
-                    batch_num += 1
-                    batch_loss = epoch_loss / ((pos + 1))
-                    batch_bar.set_postfix(batch=f"{batch_num}/{n_batches}",
-                                         loss=f"{batch_loss:.4f}")
-                    steps_since_zero = 0
+            batch_bar = tqdm(batches, desc=f"  Epoch {epoch+1}", unit="batch",
+                             leave=False)
+            for batch_idx in batch_bar:
+                optimiser.zero_grad()
+                batch_loss = 0.0
+                for i in batch_idx:
+                    emb   = self._encode_table(X[i])          # (1, out_dim)
+                    logit = self._head(emb)                    # (1, num_classes)
+                    loss  = F.cross_entropy(logit, y_t[i].unsqueeze(0))
+                    (loss / len(batch_idx)).backward()
+                    batch_loss += loss.item()
+                optimiser.step()
+                epoch_loss += batch_loss
+                batch_bar.set_postfix(loss=f"{batch_loss / len(batch_idx):.4f}")
 
             batch_bar.close()
             epoch_bar.set_postfix(loss=f"{epoch_loss / n:.4f}")
