@@ -6,7 +6,7 @@ import random
 
 from tabdistances.data.cleantablib.dataset import CleanTabLibDataset
 
-N_TABLES    = 4000
+N_TABLES    = 10000
 OUT_DIR     = Path("tables")
 PARQUET_DIR = OUT_DIR / "parquet"
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)
@@ -19,7 +19,7 @@ if processed:
 
 for i, table_id, df in dataset.iter_tables():
     try:
-        if df.shape[1] < 2 or random.random() >= 0.5:
+        if df.shape[1] < 2 or random.random() >= 0.05:
             continue
 
         safe_id      = table_id.replace("/", "_")
