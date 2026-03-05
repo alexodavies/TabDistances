@@ -172,6 +172,11 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         # Replace any remaining NaN/inf with 0
         X_np = np.nan_to_num(X_np, nan=0.0, posinf=0.0, neginf=0.0)
 
+        # Per-column standardization: transformer attention is sensitive to large values
+        col_mean = X_np.mean(axis=0, keepdims=True)
+        col_std  = X_np.std(axis=0, keepdims=True).clip(min=1e-6)
+        X_np = ((X_np - col_mean) / col_std).clip(-5.0, 5.0)
+
         return torch.tensor(X_np, dtype=torch.float32, device=self.device).unsqueeze(0)
 
     def _encode_table(self, df: pd.DataFrame) -> Tensor:
@@ -218,6 +223,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
                     loss  = F.cross_entropy(logit, y_t[i].unsqueeze(0))
                     (loss / len(batch_idx)).backward()
                     batch_loss += loss.item()
+                torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
                 optimiser.step()
                 epoch_loss += batch_loss
                 batch_bar.set_postfix(loss=f"{batch_loss / len(batch_idx):.4f}")
