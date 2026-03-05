@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(".").resolve()))
 import numpy as np
 import pandas as pd
 import optuna
+import wandb
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
@@ -180,10 +181,26 @@ def run_study(source_name: str, real_graphs: list) -> tuple[dict, float]:
     print(f"  Fitted from data: min_features={fixed_params['min_features']}  "
           f"max_features={fixed_params['max_features']}")
 
+    wandb.init(
+        project="tabdistances",
+        name=f"bayesian-{source_name}",
+        config={
+            "optimizer": "bayesian",
+            "source":    source_name,
+            "n_eval":    N_EVAL,
+            "n_real":    N_REAL,
+            "n_trials":  N_TRIALS,
+            **fixed_params,
+        },
+    )
+
     def objective(trial: optuna.Trial) -> float:
         params = {**make_params(trial), **fixed_params}
         auc = evaluate(params, real_graphs)
         print(f"  Trial {trial.number:3d}: AUC={auc:.4f}  {params}")
+        wandb.log({"trial/auc": auc,
+                   **{f"param/{k}": v for k, v in trial.params.items()}},
+                  step=trial.number)
         return auc
 
     study = optuna.create_study(
@@ -197,6 +214,11 @@ def run_study(source_name: str, real_graphs: list) -> tuple[dict, float]:
     best_auc    = best_trial.value
 
     print(f"\n  Best trial: {best_trial.number}  AUC={best_auc:.4f}")
+
+    wandb.run.summary["best_auc"] = best_auc
+    wandb.run.summary.update({f"best/{k}": v for k, v in best_params.items()})
+    wandb.finish()
+
     return best_params, best_auc
 
 

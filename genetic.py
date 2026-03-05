@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(".").resolve()))
 
 import numpy as np
 import pandas as pd
+import wandb
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
@@ -228,9 +229,27 @@ def run_ga(source_name: str, real_graphs: list) -> tuple[dict, float]:
     print(f"  Fitted from data: min_features={fixed_params['min_features']}  "
           f"max_features={fixed_params['max_features']}")
 
+    wandb.init(
+        project="tabdistances",
+        name=f"ga-{source_name}",
+        config={
+            "optimizer":    "genetic",
+            "source":       source_name,
+            "n_eval":       N_EVAL,
+            "n_real":       N_REAL,
+            "pop_size":     POP_SIZE,
+            "n_generations": N_GENERATIONS,
+            "n_elite":      N_ELITE,
+            "tournament_k": TOURNAMENT_K,
+            "mutation_prob": MUTATION_PROB,
+            **fixed_params,
+        },
+    )
+
     population = [sample_individual() for _ in range(POP_SIZE)]
     fitnesses  = [None] * POP_SIZE
     best_params, best_fit = None, float("inf")
+    eval_step = 0
 
     for gen in range(N_GENERATIONS):
         print(f"\n{'='*60}")
@@ -244,6 +263,11 @@ def run_ga(source_name: str, real_graphs: list) -> tuple[dict, float]:
             fitnesses[idx] = evaluate({**ind, **fixed_params}, real_graphs)
             print(f"  → AUC = {fitnesses[idx]:.4f}")
 
+            wandb.log({"eval/auc": fitnesses[idx], "eval/generation": gen + 1,
+                       **{f"param/{k}": v for k, v in ind.items()}},
+                      step=eval_step)
+            eval_step += 1
+
             if fitnesses[idx] < best_fit:
                 best_fit    = fitnesses[idx]
                 best_params = dict(ind)
@@ -252,6 +276,13 @@ def run_ga(source_name: str, real_graphs: list) -> tuple[dict, float]:
         print(f"\n  Generation {gen + 1} summary  [{source_name}]:")
         for rank, idx in enumerate(ranked):
             print(f"    [{rank+1}] AUC={fitnesses[idx]:.4f}  {population[idx]}")
+
+        wandb.log({
+            "gen/best_auc":  fitnesses[ranked[0]],
+            "gen/mean_auc":  float(np.mean(fitnesses)),
+            "gen/worst_auc": fitnesses[ranked[-1]],
+            "generation":    gen + 1,
+        }, step=eval_step - 1)
 
         if gen == N_GENERATIONS - 1:
             break
@@ -269,6 +300,10 @@ def run_ga(source_name: str, real_graphs: list) -> tuple[dict, float]:
             next_fit.append(None)
 
         population, fitnesses = next_pop, next_fit
+
+    wandb.run.summary["best_auc"] = best_fit
+    wandb.run.summary.update({f"best/{k}": v for k, v in best_params.items()})
+    wandb.finish()
 
     return best_params, best_fit
 
