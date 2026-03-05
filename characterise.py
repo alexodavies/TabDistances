@@ -37,14 +37,16 @@ warnings.filterwarnings("ignore")
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 SOURCES = {
-    "CleanTabLib": Path("tables/parquet"),
+    # "CleanTabLib": Path("tables/parquet"),
     "TabICL":      Path("tables-tabicl/parquet"),
     "TabFM":       Path("tables-tabfm/parquet"),
+    "T4":          Path("tables-t4/parquet"),
 }
 COLORS = {
     "CleanTabLib": "#4C72B0",
     "TabICL":      "#DD8452",
     "TabFM":       "#55A868",
+    "T4":          "#C44E52",
 }
 
 MAX_TABLES = 4000   # cap per source for speed; set to None to use all

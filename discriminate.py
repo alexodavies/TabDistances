@@ -12,6 +12,7 @@ export scripts::
     python cleantab-export.py
     python tabicl-export.py
     python tabfm-export.py
+    python t4-export.py
     python discriminate.py
 
 The MODEL variable below is the only thing to change when swapping in a
@@ -37,9 +38,10 @@ import wandb
 MODEL = SmallTabICLDiscriminator
 
 SOURCES = {
-    "cleantablib": Path("tables/parquet"),
+    # "cleantablib": Path("tables/parquet"),
     "tabicl":      Path("tables-tabicl/parquet"),
     "tabfm":       Path("tables-tabfm/parquet"),
+    "t4":          Path("tables-t4/parquet"),
 }
 TEST_SIZE    = 0.2
 RANDOM_STATE = 42
@@ -57,6 +59,7 @@ if missing:
     print("  python cleantab-export.py")
     print("  python tabicl-export.py")
     print("  python tabfm-export.py")
+    print("  python t4-export.py")
     sys.exit(1)
 
 # ------------------------------------------------------------------
