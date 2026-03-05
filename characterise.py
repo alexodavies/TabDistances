@@ -221,7 +221,7 @@ def print_summary(all_metrics: pd.DataFrame) -> None:
             va = all_metrics.loc[all_metrics["source"] == a, metric].values
             vb = all_metrics.loc[all_metrics["source"] == b, metric].values
             if scale == "log":
-                va, vb = np.log10(va), np.log10(vb)
+                va, vb = np.log10(va + 1), np.log10(vb + 1)
             row[f"{a} vs {b}"] = f"{_wasserstein(va, vb):.4f}"
         rows.append(row)
     print(pd.DataFrame(rows).set_index("Metric").to_string())
@@ -255,7 +255,7 @@ def plot_distributions(
             vals = all_metrics.loc[all_metrics["source"] == src, metric].dropna().values
             if len(vals) == 0:
                 continue
-            plot_vals = np.log10(vals) if scale == "log" else vals
+            plot_vals = np.log10(vals + 1) if scale == "log" else vals
             ax.hist(plot_vals, bins=40, alpha=0.5, label=src,
                     color=COLORS[src], density=True)
 
@@ -303,9 +303,9 @@ def plot_pairwise(
             mask = ~np.isnan(xv) & ~np.isnan(yv)
             xv, yv = xv[mask], yv[mask]
             if xscale == "log":
-                xv = np.log10(xv)
+                xv = np.log10(xv + 1)
             if yscale == "log":
-                yv = np.log10(yv)
+                yv = np.log10(yv + 1)
             ax.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
             if len(xv) > 10:
                 try:
