@@ -8,7 +8,7 @@ import torch
 
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 
-N_TABLES     = 10000
+N_TABLES     = 500000
 BATCH_SIZE   = 8
 MIN_FEATURES = 1
 OUT_DIR      = Path("tables-tabicl")
