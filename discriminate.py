@@ -28,6 +28,9 @@ from sklearn.metrics import classification_report
 from tabdistances.discriminator.dataset import DataFrameDataset
 from tabdistances.discriminator.models.tabicl_disc import SmallTabICLDiscriminator
 
+
+import wandb
+
 # ------------------------------------------------------------------
 # Swap in any BaseDiscriminator subclass here.
 # ------------------------------------------------------------------
@@ -40,6 +43,9 @@ SOURCES = {
 }
 TEST_SIZE    = 0.2
 RANDOM_STATE = 42
+
+
+
 
 # ------------------------------------------------------------------
 # Check all sources are populated
@@ -61,6 +67,10 @@ for name_a, name_b in combinations(SOURCES, 2):
     print(f"  {name_a}  vs  {name_b}")
     print(f"{'='*60}")
 
+    wandb.init(entity = "hierarchical-diffusion",
+           project = "tables-discriminator-tabicl",
+           name = f"{name_a}-vs-{name_b}")
+
     dataset = DataFrameDataset({
         name_a: (SOURCES[name_a], 0),
         name_b: (SOURCES[name_b], 1),
@@ -76,6 +86,8 @@ for name_a, name_b in combinations(SOURCES, 2):
     model.fit(X_train, y_train)
 
     accuracy = model.score(X_test, y_test)
+
+    wandb.log({"Final Accuracy": accuracy})
     print(f"Accuracy: {accuracy:.3f}\n")
     print(classification_report(y_test, model.predict(X_test),
                                 target_names=[name_a, name_b]))

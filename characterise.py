@@ -67,9 +67,9 @@ def _missingness_structure(df: pd.DataFrame) -> float:
     cols = miss.columns[miss.any()]
     if len(cols) < 2:
         return 0.0
-    corr = miss[cols].corr().abs()
-    np.fill_diagonal(corr.values, np.nan)
-    return float(np.nanmean(corr.values))
+    arr = miss[cols].corr().abs().to_numpy(dtype=float, copy=True)
+    np.fill_diagonal(arr, np.nan)
+    return float(np.nanmean(arr))
 
 
 def _normalised_entropy(series: pd.Series) -> float:

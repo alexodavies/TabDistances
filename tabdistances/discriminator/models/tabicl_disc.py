@@ -20,6 +20,8 @@ from tabdistances.model.embedding import ColEmbedding
 from tabdistances.model.interaction import RowInteraction
 from tabdistances.model.preprocessing import TransformToNumerical
 
+import wandb
+
 _MAX_ROWS = 512   # cap per table to keep encoding fast
 
 
@@ -230,7 +232,10 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
 
             batch_bar.close()
             epoch_bar.set_postfix(loss=f"{epoch_loss / n:.4f}")
-
+            try:
+                wandb.log({"Epoch Loss": epoch_loss})
+            except:
+                pass
         self._encoder.eval()
         self._head.eval()
         return self
