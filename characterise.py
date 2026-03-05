@@ -50,7 +50,7 @@ COLORS = {
     "T4":          "#C44E52",
 }
 
-MAX_TABLES = 4000   # cap per source for speed; set to None to use all
+MAX_TABLES = 100_000   # cap per source for speed; set to None to use all
 MAX_ROWS   = 100000000  # max rows sampled per table
 
 # Common target-column names (case-sensitive first match)
@@ -256,11 +256,18 @@ def plot_distributions(
             vals = all_metrics.loc[all_metrics["source"] == src, metric].dropna().values
             if len(vals) == 0:
                 continue
-            plot_vals = np.log10(vals + 1) if scale == "log" else vals
-            ax.hist(plot_vals, bins=40, alpha=0.5, label=src,
-                    color=COLORS[src], density=True)
+            if scale == "log":
+                vals = vals[vals > 0]
+                if len(vals) == 0:
+                    continue
+                bins = np.logspace(np.log10(vals.min()), np.log10(vals.max()), 41)
+            else:
+                bins = 40
+            ax.hist(vals, bins=bins, alpha=0.5, label=src, color=COLORS[src], density=True)
 
-        ax.set_title(label + (" [log10 scale]" if scale == "log" else ""), fontsize=8.5)
+        if scale == "log":
+            ax.set_xscale("log")
+        ax.set_title(label, fontsize=8.5)
         ax.set_xlabel("Value")
         ax.set_ylabel("Density")
         ax.legend(fontsize=7)
@@ -297,7 +304,7 @@ def plot_pairwise(
     )
     outer_gs = gridspec.GridSpec(2, ncols, figure=fig, hspace=0.45, wspace=0.35)
 
-    # Pre-compute transformed data for each pair × source
+    # Pre-compute raw data for each pair × source (no log transform — axes handle scale)
     data = {}  # (col, src) -> (xv, yv)
     for col, (xk, yk, xscale, yscale) in enumerate(SCATTER_PAIRS):
         for src in sources:
@@ -307,16 +314,16 @@ def plot_pairwise(
             mask = ~np.isnan(xv) & ~np.isnan(yv)
             xv, yv = xv[mask], yv[mask]
             if xscale == "log":
-                xv = np.log10(xv + 1)
+                keep = xv > 0; xv, yv = xv[keep], yv[keep]
             if yscale == "log":
-                yv = np.log10(yv + 1)
+                keep = yv > 0; xv, yv = xv[keep], yv[keep]
             data[(col, src)] = (xv, yv)
 
     for col, (xk, yk, xscale, yscale) in enumerate(SCATTER_PAIRS):
         xlabel, _ = METRIC_META[xk]
         ylabel, _ = METRIC_META[yk]
-        xlab = xlabel + (" [log10]" if xscale == "log" else "")
-        ylab = ylabel + (" [log10]" if yscale == "log" else "")
+        xlab = xlabel
+        ylab = ylabel
 
         all_x = np.concatenate([data[(col, s)][0] for s in sources if len(data[(col, s)][0])])
         all_y = np.concatenate([data[(col, s)][1] for s in sources if len(data[(col, s)][1])])
@@ -334,15 +341,21 @@ def plot_pairwise(
         ax_yh = fig.add_subplot(inner[1, 1])           # right y-marginal
         fig.add_subplot(inner[0, 1]).set_visible(False) # corner (blank)
 
+        xbins = np.logspace(np.log10(xlim[0]), np.log10(xlim[1]), 31) if xscale == "log" else 30
+        ybins = np.logspace(np.log10(ylim[0]), np.log10(ylim[1]), 31) if yscale == "log" else 30
         for src in sources:
             xv, yv = data[(col, src)]
             if len(xv) == 0:
                 continue
             ax_sc.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
-            ax_xh.hist(xv, bins=30, alpha=0.5, color=COLORS[src], density=True)
-            ax_yh.hist(yv, bins=30, alpha=0.5, color=COLORS[src], density=True,
+            ax_xh.hist(xv, bins=xbins, alpha=0.5, color=COLORS[src], density=True)
+            ax_yh.hist(yv, bins=ybins, alpha=0.5, color=COLORS[src], density=True,
                        orientation="horizontal")
 
+        if xscale == "log":
+            ax_sc.set_xscale("log"); ax_xh.set_xscale("log")
+        if yscale == "log":
+            ax_sc.set_yscale("log"); ax_yh.set_yscale("log")
         ax_sc.set_xlim(xlim); ax_sc.set_ylim(ylim)
         ax_xh.set_xlim(xlim); ax_yh.set_ylim(ylim)
         ax_xh.set_xticklabels([]); ax_xh.set_yticklabels([])
@@ -354,20 +367,28 @@ def plot_pairwise(
 
         # ── Row 1: KDE contours ──────────────────────────────────────────────
         ax_kde = fig.add_subplot(outer_gs[1, col])
+        # KDE is computed in log space for numerical quality; grid is projected
+        # back to original values so the log-scale axes display correctly.
+        xg_log = np.linspace(np.log10(xlim[0]), np.log10(xlim[1]), 80) if xscale == "log" else np.linspace(xlim[0], xlim[1], 80)
+        yg_log = np.linspace(np.log10(ylim[0]), np.log10(ylim[1]), 80) if yscale == "log" else np.linspace(ylim[0], ylim[1], 80)
+        Xg_log, Yg_log = np.meshgrid(xg_log, yg_log)
+        Xg_plot = 10 ** Xg_log if xscale == "log" else Xg_log
+        Yg_plot = 10 ** Yg_log if yscale == "log" else Yg_log
         for src in sources:
             xv, yv = data[(col, src)]
             if len(xv) > 10:
                 try:
-                    kde = gaussian_kde(np.vstack([xv, yv]))
-                    xg  = np.linspace(xlim[0], xlim[1], 80)
-                    yg  = np.linspace(ylim[0], ylim[1], 80)
-                    Xg, Yg = np.meshgrid(xg, yg)
-                    Zg = kde(np.vstack([Xg.ravel(), Yg.ravel()])).reshape(Xg.shape)
-                    ax_kde.contour(Xg, Yg, Zg, levels=5, colors=[COLORS[src]],
+                    xv_k = np.log10(xv) if xscale == "log" else xv
+                    yv_k = np.log10(yv) if yscale == "log" else yv
+                    kde  = gaussian_kde(np.vstack([xv_k, yv_k]))
+                    Zg   = kde(np.vstack([Xg_log.ravel(), Yg_log.ravel()])).reshape(Xg_log.shape)
+                    ax_kde.contour(Xg_plot, Yg_plot, Zg, levels=5, colors=[COLORS[src]],
                                    linewidths=1.0, alpha=0.85)
                 except Exception:
                     pass
 
+        if xscale == "log": ax_kde.set_xscale("log")
+        if yscale == "log": ax_kde.set_yscale("log")
         ax_kde.set_xlim(xlim); ax_kde.set_ylim(ylim)
         ax_kde.set_xlabel(xlab, fontsize=8.5)
         ax_kde.set_ylabel(ylab, fontsize=8.5)

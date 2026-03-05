@@ -16,3 +16,4 @@ tqdm
 kaggle
 optuna
 wandb
+umap-learn

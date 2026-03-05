@@ -26,6 +26,7 @@ from matplotlib.patches import Ellipse
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import wasserstein_distance
 from sklearn.decomposition import PCA
+from umap import UMAP
 from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
@@ -46,7 +47,7 @@ COLORS = {
 }
 
 N_BINS            = 50       # histogram bins over [-1, 1]
-MAX_TABLES        = 4000     # cap per source; None = use all
+MAX_TABLES        = 100_000     # cap per source; None = use all
 MAX_ROWS          = 100_000  # rows sampled per table
 MIN_NUMERIC_COLS  = 2        # skip tables with fewer numeric columns
 
@@ -150,36 +151,24 @@ def mean_js_divergence(hists_a: np.ndarray, hists_b: np.ndarray, n_sample: int =
 
 # ── Plots ──────────────────────────────────────────────────────────────────────
 
-def plot_pca(
-    all_hists: np.ndarray,
-    all_labels: list[str],
-    output_path: str = "correlations_pca.png",
+def _render_embedding(
+    proj: np.ndarray,
+    labels_arr: np.ndarray,
+    sources: list[str],
+    ax_sc: plt.Axes,
+    ax_el: plt.Axes,
+    xlabel: str,
+    ylabel: str,
 ) -> None:
-    """Project per-table PMFs to 2-D with PCA; left = scatter, right = 1σ/2σ ellipses."""
-    sources    = list(dict.fromkeys(all_labels))
-    pca        = PCA(n_components=2, random_state=42)
-    proj       = pca.fit_transform(all_hists)
-    labels_arr = np.array(all_labels)
-
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-    fig.suptitle(
-        "Correlation Histogram PCA — Per-table Projection",
-        fontsize=13, fontweight="bold",
-    )
-
-    # Scatter
-    ax = axes[0]
+    """Shared renderer: scatter on ax_sc, covariance ellipses on ax_el."""
     for src in sources:
         mask = labels_arr == src
-        ax.scatter(proj[mask, 0], proj[mask, 1],
-                   s=8, alpha=0.30, color=COLORS[src], label=src, linewidths=0)
-    ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%})")
-    ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%})")
-    ax.set_title("Scatter")
-    ax.legend(fontsize=8, markerscale=2)
+        ax_sc.scatter(proj[mask, 0], proj[mask, 1],
+                      s=8, alpha=0.30, color=COLORS[src], label=src, linewidths=0)
+    ax_sc.set_xlabel(xlabel); ax_sc.set_ylabel(ylabel)
+    ax_sc.set_title("Scatter")
+    ax_sc.legend(fontsize=8, markerscale=2)
 
-    # Covariance ellipses
-    ax2 = axes[1]
     for src in sources:
         mask = labels_arr == src
         pts  = proj[mask]
@@ -201,20 +190,66 @@ def plot_pca(
                 linewidth=lw, alpha=alpha,
                 label=src if n_std == 1 else None,
             )
-            ax2.add_patch(ell)
-        ax2.scatter(*mu, s=40, color=COLORS[src], zorder=5)
+            ax_el.add_patch(ell)
+        ax_el.scatter(*mu, s=40, color=COLORS[src], zorder=5)
 
     pad = max(abs(proj).max() * 0.15, 0.05)
-    ax2.set_xlim(proj[:, 0].min() - pad, proj[:, 0].max() + pad)
-    ax2.set_ylim(proj[:, 1].min() - pad, proj[:, 1].max() + pad)
-    ax2.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%})")
-    ax2.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%})")
-    ax2.set_title("Covariance Ellipses (1σ, 2σ)")
-    ax2.legend(fontsize=8)
+    ax_el.set_xlim(proj[:, 0].min() - pad, proj[:, 0].max() + pad)
+    ax_el.set_ylim(proj[:, 1].min() - pad, proj[:, 1].max() + pad)
+    ax_el.set_xlabel(xlabel); ax_el.set_ylabel(ylabel)
+    ax_el.set_title("Covariance Ellipses (1σ, 2σ)")
+    ax_el.legend(fontsize=8)
 
+
+def plot_pca(
+    all_hists: np.ndarray,
+    all_labels: list[str],
+    output_path: str = "correlations_pca.png",
+) -> None:
+    sources    = list(dict.fromkeys(all_labels))
+    pca        = PCA(n_components=2, random_state=42)
+    proj       = pca.fit_transform(all_hists)
+    labels_arr = np.array(all_labels)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    fig.suptitle("Correlation Histogram PCA — Per-table Projection",
+                 fontsize=13, fontweight="bold")
+    _render_embedding(
+        proj, labels_arr, sources, axes[0], axes[1],
+        xlabel=f"PC1 ({pca.explained_variance_ratio_[0]:.1%})",
+        ylabel=f"PC2 ({pca.explained_variance_ratio_[1]:.1%})",
+    )
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     print(f"  Saved PCA       → {output_path}")
+
+
+def plot_umap(
+    all_hists: np.ndarray,
+    all_labels: list[str],
+    output_path: str = "correlations_umap.png",
+    n_neighbors: int = 15,
+    min_dist: float = 0.1,
+) -> None:
+    sources    = list(dict.fromkeys(all_labels))
+    reducer    = UMAP(n_components=2, n_neighbors=n_neighbors, min_dist=min_dist,
+                      random_state=42)
+    proj       = reducer.fit_transform(all_hists)
+    labels_arr = np.array(all_labels)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    fig.suptitle(
+        f"Correlation Histogram UMAP — Per-table Projection "
+        f"(n_neighbors={n_neighbors}, min_dist={min_dist})",
+        fontsize=13, fontweight="bold",
+    )
+    _render_embedding(
+        proj, labels_arr, sources, axes[0], axes[1],
+        xlabel="UMAP-1", ylabel="UMAP-2",
+    )
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    print(f"  Saved UMAP      → {output_path}")
 
 
 def plot_mean_histograms(
@@ -331,6 +366,7 @@ def main() -> None:
 
     # ── Plots ─────────────────────────────────────────────────────────────────
     pca_path  = "correlations_pca.png"
+    umap_path = "correlations_umap.png"
     mean_path = "correlations_mean.png"
     dist_path = "correlations_distances.png"
 
@@ -338,12 +374,14 @@ def main() -> None:
     all_labels = [s for s in sources for _ in range(len(source_hists[s]))]
 
     plot_pca(all_hists, all_labels, output_path=pca_path)
+    plot_umap(all_hists, all_labels, output_path=umap_path)
     plot_mean_histograms(source_hists, output_path=mean_path)
     plot_distance_matrix(sources, w_mat, js_mat, output_path=dist_path)
 
     # ── wandb logging ─────────────────────────────────────────────────────────
     run.log({
         "correlations/pca":       wandb.Image(pca_path),
+        "correlations/umap":      wandb.Image(umap_path),
         "correlations/mean_hist": wandb.Image(mean_path),
         "correlations/distances": wandb.Image(dist_path),
         "correlations/wasserstein_table": wandb.Table(
