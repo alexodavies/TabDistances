@@ -121,7 +121,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         row_num_cls: int = 2,
         lr: float = 1e-3,
         epochs: int = 30,
-        batch_size: int = 8,
+        batch_size: int = 128,
         max_rows: int = _MAX_ROWS,
         device: str | None = None,
     ) -> None:
@@ -233,7 +233,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
             batch_bar.close()
             epoch_bar.set_postfix(loss=f"{epoch_loss / n:.4f}")
             try:
-                wandb.log({"Epoch Loss": epoch_loss})
+                wandb.log({"Epoch Loss": epoch_loss/n})
             except:
                 pass
         self._encoder.eval()
