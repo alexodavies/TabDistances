@@ -25,6 +25,7 @@ Statistical
 import warnings
 from pathlib import Path
 
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -286,44 +287,96 @@ def plot_pairwise(
     output_path: str = "characterisation_pairwise.png",
 ) -> None:
     sources = list(SOURCES.keys())
-    fig, axes = plt.subplots(1, 3, figsize=(5 * 3, 4.5))
+    ncols   = len(SCATTER_PAIRS)
+
+    # Outer grid: row 0 = scatter+marginals, row 1 = KDE
+    fig = plt.figure(figsize=(5 * ncols, 11))
     fig.suptitle(
-        "Table Characterisation: Pairwise Density",
-        fontsize=14, fontweight="bold", y=1.02,
+        "Table Characterisation: Pairwise Scatter & KDE",
+        fontsize=14, fontweight="bold", y=1.01,
     )
+    outer_gs = gridspec.GridSpec(2, ncols, figure=fig, hspace=0.45, wspace=0.35)
 
-    for ax, (xk, yk, xscale, yscale) in zip(axes, SCATTER_PAIRS):
-        xlabel, _ = METRIC_META[xk]
-        ylabel, _ = METRIC_META[yk]
-
+    # Pre-compute transformed data for each pair × source
+    data = {}  # (col, src) -> (xv, yv)
+    for col, (xk, yk, xscale, yscale) in enumerate(SCATTER_PAIRS):
         for src in sources:
             sub = all_metrics[all_metrics["source"] == src]
-            xv = sub[xk].dropna().values
-            yv = sub[yk].reindex(sub[xk].dropna().index).values
+            xv  = sub[xk].dropna().values
+            yv  = sub[yk].reindex(sub[xk].dropna().index).values
             mask = ~np.isnan(xv) & ~np.isnan(yv)
             xv, yv = xv[mask], yv[mask]
             if xscale == "log":
                 xv = np.log10(xv + 1)
             if yscale == "log":
                 yv = np.log10(yv + 1)
-            ax.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
+            data[(col, src)] = (xv, yv)
+
+    for col, (xk, yk, xscale, yscale) in enumerate(SCATTER_PAIRS):
+        xlabel, _ = METRIC_META[xk]
+        ylabel, _ = METRIC_META[yk]
+        xlab = xlabel + (" [log10]" if xscale == "log" else "")
+        ylab = ylabel + (" [log10]" if yscale == "log" else "")
+
+        all_x = np.concatenate([data[(col, s)][0] for s in sources if len(data[(col, s)][0])])
+        all_y = np.concatenate([data[(col, s)][1] for s in sources if len(data[(col, s)][1])])
+        xlim  = (all_x.min(), all_x.max()) if len(all_x) else (0, 1)
+        ylim  = (all_y.min(), all_y.max()) if len(all_y) else (0, 1)
+
+        # ── Row 0: scatter with marginal histograms ──────────────────────────
+        inner = gridspec.GridSpecFromSubplotSpec(
+            2, 2, subplot_spec=outer_gs[0, col],
+            width_ratios=[4, 1], height_ratios=[1, 4],
+            hspace=0.05, wspace=0.05,
+        )
+        ax_xh = fig.add_subplot(inner[0, 0])          # top x-marginal
+        ax_sc = fig.add_subplot(inner[1, 0])           # scatter
+        ax_yh = fig.add_subplot(inner[1, 1])           # right y-marginal
+        fig.add_subplot(inner[0, 1]).set_visible(False) # corner (blank)
+
+        for src in sources:
+            xv, yv = data[(col, src)]
+            if len(xv) == 0:
+                continue
+            ax_sc.scatter(xv, yv, s=6, alpha=0.25, color=COLORS[src], label=src, linewidths=0)
+            ax_xh.hist(xv, bins=30, alpha=0.5, color=COLORS[src], density=True)
+            ax_yh.hist(yv, bins=30, alpha=0.5, color=COLORS[src], density=True,
+                       orientation="horizontal")
+
+        ax_sc.set_xlim(xlim); ax_sc.set_ylim(ylim)
+        ax_xh.set_xlim(xlim); ax_yh.set_ylim(ylim)
+        ax_xh.set_xticklabels([]); ax_xh.set_yticklabels([])
+        ax_yh.set_yticklabels([]); ax_yh.set_xticklabels([])
+        ax_sc.set_xlabel(xlab, fontsize=8.5)
+        ax_sc.set_ylabel(ylab, fontsize=8.5)
+        ax_xh.set_title(f"{xlabel} vs {ylabel}", fontsize=9)
+        ax_sc.legend(fontsize=7, markerscale=2)
+
+        # ── Row 1: KDE contours ──────────────────────────────────────────────
+        ax_kde = fig.add_subplot(outer_gs[1, col])
+        for src in sources:
+            xv, yv = data[(col, src)]
             if len(xv) > 10:
                 try:
                     kde = gaussian_kde(np.vstack([xv, yv]))
-                    xg = np.linspace(xv.min(), xv.max(), 80)
-                    yg = np.linspace(yv.min(), yv.max(), 80)
+                    xg  = np.linspace(xlim[0], xlim[1], 80)
+                    yg  = np.linspace(ylim[0], ylim[1], 80)
                     Xg, Yg = np.meshgrid(xg, yg)
                     Zg = kde(np.vstack([Xg.ravel(), Yg.ravel()])).reshape(Xg.shape)
-                    ax.contour(Xg, Yg, Zg, levels=4, colors=[COLORS[src]], linewidths=0.8, alpha=0.8)
+                    ax_kde.contour(Xg, Yg, Zg, levels=5, colors=[COLORS[src]],
+                                   linewidths=1.0, alpha=0.85)
                 except Exception:
                     pass
 
-        ax.set_xlabel(xlabel + (" [log10]" if xscale == "log" else ""), fontsize=8.5)
-        ax.set_ylabel(ylabel + (" [log10]" if yscale == "log" else ""), fontsize=8.5)
-        ax.set_title(f"{xlabel} vs {ylabel}", fontsize=9)
-        ax.legend(fontsize=7, markerscale=2)
+        ax_kde.set_xlim(xlim); ax_kde.set_ylim(ylim)
+        ax_kde.set_xlabel(xlab, fontsize=8.5)
+        ax_kde.set_ylabel(ylab, fontsize=8.5)
+        ax_kde.set_title(f"{xlabel} vs {ylabel} (KDE)", fontsize=9)
+        ax_kde.legend(
+            handles=[plt.Line2D([0], [0], color=COLORS[s], lw=1.5, label=s) for s in sources],
+            fontsize=7,
+        )
 
-    plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     print(f"  Saved pairwise  → {output_path}")
 
