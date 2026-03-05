@@ -12,6 +12,8 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split
 from torch import Tensor
 from tqdm import tqdm
 
@@ -105,6 +107,8 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         Number of tables per gradient update (gradient accumulation).
     max_rows : int, default=512
         Cap on rows per table (random sample if exceeded).
+    val_frac : float, default=0.15
+        Fraction of training data held out for validation loss / ROC-AUC.
     device : str or None, default=None
         Torch device string. If None, auto-selects CUDA if available, else CPU.
     """
@@ -123,6 +127,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         epochs: int = 30,
         batch_size: int = 128,
         max_rows: int = _MAX_ROWS,
+        val_frac: float = 0.15,
         device: str | None = None,
     ) -> None:
         self.num_classes   = num_classes
@@ -137,6 +142,7 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         self.epochs        = epochs
         self.batch_size    = batch_size
         self.max_rows      = max_rows
+        self.val_frac      = val_frac
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device        = torch.device(device)
@@ -186,6 +192,24 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         X = self._df_to_tensor(df)
         return self._encoder(X)  # (1, out_dim)
 
+    def _evaluate(self, X_val: list[pd.DataFrame], y_val_t: Tensor) -> tuple[float, float]:
+        """Return (val_loss, roc_auc) on a held-out set."""
+        self._encoder.eval()
+        self._head.eval()
+        with torch.no_grad():
+            logits = torch.cat([self._head(self._encode_table(df)) for df in X_val], dim=0)
+        val_loss = F.cross_entropy(logits, y_val_t).item()
+        proba    = torch.softmax(logits, dim=1).cpu().numpy()
+        y_np     = y_val_t.cpu().numpy()
+        try:
+            auc = roc_auc_score(y_np, proba[:, 1] if self.num_classes == 2 else proba,
+                                multi_class="ovr")
+        except ValueError:
+            auc = float("nan")
+        self._encoder.train()
+        self._head.train()
+        return val_loss, auc
+
     # ------------------------------------------------------------------
     # BaseDiscriminator interface
     # ------------------------------------------------------------------
@@ -198,14 +222,18 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
         params = list(self._encoder.parameters()) + list(self._head.parameters())
         optimiser = torch.optim.Adam(params, lr=self.lr)
 
-        n = len(X)
-        y_t = torch.tensor(y, dtype=torch.long, device=self.device)
-        indices = np.arange(n)
+        # Train / val split
+        tr_idx, val_idx = train_test_split(
+            np.arange(len(X)), test_size=self.val_frac, stratify=y, random_state=42
+        )
+        X_train  = [X[i] for i in tr_idx]
+        y_train  = y[tr_idx]
+        X_val    = [X[i] for i in val_idx]
+        y_val_t  = torch.tensor(y[val_idx], dtype=torch.long, device=self.device)
 
-        # Pre-split indices into batches so the inner bar steps per optimizer update
-        batches = [indices[s:s + self.batch_size]
-                   for s in range(0, n, self.batch_size)]
-        n_batches = len(batches)
+        n      = len(X_train)
+        y_t    = torch.tensor(y_train, dtype=torch.long, device=self.device)
+        indices = np.arange(n)
 
         epoch_bar = tqdm(range(self.epochs), desc="Epochs", unit="epoch")
         for epoch in epoch_bar:
@@ -220,8 +248,8 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
                 optimiser.zero_grad()
                 batch_loss = 0.0
                 for i in batch_idx:
-                    emb   = self._encode_table(X[i])          # (1, out_dim)
-                    logit = self._head(emb)                    # (1, num_classes)
+                    emb   = self._encode_table(X_train[i])
+                    logit = self._head(emb)
                     loss  = F.cross_entropy(logit, y_t[i].unsqueeze(0))
                     (loss / len(batch_idx)).backward()
                     batch_loss += loss.item()
@@ -231,11 +259,20 @@ class SmallTabICLDiscriminator(BaseDiscriminator):
                 batch_bar.set_postfix(loss=f"{batch_loss / len(batch_idx):.4f}")
 
             batch_bar.close()
-            epoch_bar.set_postfix(loss=f"{epoch_loss / n:.4f}")
+            train_loss = epoch_loss / n
+            val_loss, val_auc = self._evaluate(X_val, y_val_t)
+            epoch_bar.set_postfix(
+                train=f"{train_loss:.4f}",
+                val=f"{val_loss:.4f}",
+                auc=f"{val_auc:.3f}",
+            )
             try:
-                wandb.log({"Epoch Loss": epoch_loss/n})
-            except:
+                wandb.log({"train/loss": train_loss,
+                           "val/loss":   val_loss,
+                           "val/roc_auc": val_auc})
+            except Exception:
                 pass
+
         self._encoder.eval()
         self._head.eval()
         return self
