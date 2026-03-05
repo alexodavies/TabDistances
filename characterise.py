@@ -50,7 +50,7 @@ COLORS = {
 }
 
 MAX_TABLES = 4000   # cap per source for speed; set to None to use all
-MAX_ROWS   = 1000  # max rows sampled per table
+MAX_ROWS   = 100000000  # max rows sampled per table
 
 # Common target-column names (case-sensitive first match)
 TARGET_NAMES = {"target", "label", "class", "y", "Target", "Label", "Class"}
@@ -275,7 +275,7 @@ def plot_distributions(
 # ── Pairwise scatter / density plots ───────────────────────────────────────────
 
 SCATTER_PAIRS = [
-    ("n_cols",        "cat_fraction",          "log",    "linear"),
+    ("n_rows",        "n_cols",                "log",    "log"),
     ("mean_skewness", "mean_kurtosis",         "log",    "log"),
     ("cat_fraction",  "mean_cat_cardinality", "linear", "log"),
 ]
