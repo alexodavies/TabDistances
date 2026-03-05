@@ -27,7 +27,7 @@ prior = SCMPrior(
     max_train_size=0.9,
     prior_type="mix_scm",
     n_jobs=6,
-    device="cuda",
+    device="cpu",
 )
 
 processed = len(list(PARQUET_DIR.glob("*.parquet")))
