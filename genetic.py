@@ -43,6 +43,7 @@ REAL_SOURCES = {
 
 N_EVAL        = 50    # synthetic tables generated per fitness evaluation
 N_REAL        = 200   # real tables sampled per source (cap for speed)
+MAX_ROWS      = 4096  # max rows sampled per table (large tables trimmed)
 BATCH_SIZE    = 8     # SCMPrior batch size (fixed; not optimised)
 TEST_FRAC     = 0.3   # fraction held out for AUC estimation
 RANDOM_STATE  = 42
@@ -288,6 +289,8 @@ if __name__ == "__main__":
         if len(dfs) > N_REAL:
             idxs = rng.choice(len(dfs), N_REAL, replace=False)
             dfs = [dfs[i] for i in idxs]
+        dfs = [df.sample(n=MAX_ROWS, random_state=RANDOM_STATE) if len(df) > MAX_ROWS else df
+               for df in dfs]
         real_dfs_by_source[name] = dfs
         print(f"  {name}: {len(dfs)} tables")
 

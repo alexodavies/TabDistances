@@ -44,6 +44,7 @@ REAL_SOURCES = {
 
 N_EVAL       = 50    # synthetic tables generated per fitness evaluation
 N_REAL       = 200   # real tables sampled per source (cap for speed)
+MAX_ROWS     = 4096  # max rows sampled per table (large tables trimmed)
 BATCH_SIZE   = 8     # SCMPrior batch size (fixed; not optimised)
 TEST_FRAC    = 0.3   # fraction held out for AUC estimation
 RANDOM_STATE = 42
@@ -69,7 +70,7 @@ def make_params(trial: optuna.Trial) -> dict:
                                        "tree_model", ["decision_tree", "extra_trees",
                                                       "random_forest", "xgboost"]),
         "mix_prob_mlp":            trial.suggest_float("mix_prob_mlp", 0.0, 1.0),
-        "cat_prob":                trial.suggest_float("cat_prob", 0.0, 0.6),
+        "cat_prob":                trial.suggest_float("cat_prob", 0.0, 1.0),
         "multiclass_ordered_prob": trial.suggest_float("multiclass_ordered_prob", 0.0, 1.0),
         "balanced":                trial.suggest_categorical("balanced", [False, True]),
         "replay_small":            trial.suggest_categorical("replay_small", [False, True]),
@@ -216,6 +217,8 @@ if __name__ == "__main__":
         if len(dfs) > N_REAL:
             idxs = rng.choice(len(dfs), N_REAL, replace=False)
             dfs = [dfs[i] for i in idxs]
+        dfs = [df.sample(n=MAX_ROWS, random_state=RANDOM_STATE) if len(df) > MAX_ROWS else df
+               for df in dfs]
         real_dfs_by_source[name] = dfs
         print(f"  {name}: {len(dfs)} tables")
 
