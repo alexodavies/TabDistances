@@ -35,19 +35,19 @@ REAL_SOURCES = {
     "tabfm": Path("tables-tabfm/parquet"),
 }
 
-N_EVAL        = 50    # synthetic tables generated per fitness evaluation
+N_EVAL        = 100    # synthetic tables generated per fitness evaluation
 N_REAL        = 100   # real tables sampled per source (cap for speed)
-MAX_ROWS      = 1024  # max rows sampled per table
+MAX_ROWS      = 512  # max rows sampled per table
 BATCH_SIZE    = 8     # SCMPrior batch size (fixed; not optimised)
 TEST_FRAC     = 0.3   # fraction held out for AUC estimation
 RANDOM_STATE  = 42
 
 # Genetic algorithm
-POP_SIZE      = 8
-N_GENERATIONS = 6
-N_ELITE       = 2     # individuals carried over unchanged each generation
+POP_SIZE      = 16
+N_GENERATIONS = 100
+N_ELITE       = 4     # individuals carried over unchanged each generation
 TOURNAMENT_K  = 3     # contestants per tournament selection
-MUTATION_PROB = 0.25  # per-parameter mutation probability
+MUTATION_PROB = 0.5  # per-parameter mutation probability
 
 # ------------------------------------------------------------------
 # Parameter space
@@ -131,7 +131,7 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
         min_features=params["min_features"],
         max_features=params["max_features"],
         max_classes=params["max_classes"],
-        max_seq_len=1024,
+        max_seq_len=512,
         log_seq_len=True,
         min_train_size=0.1,
         max_train_size=0.9,
@@ -145,7 +145,7 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
             "multiclass_ordered_prob": params["multiclass_ordered_prob"],
             "balanced":                params["balanced"],
         },
-        n_jobs=1,
+        n_jobs=12,
         device="cpu",
     )
 
