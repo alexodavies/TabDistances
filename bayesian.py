@@ -43,12 +43,13 @@ REAL_SOURCES = {
 }
 
 N_EVAL       = 50    # synthetic tables generated per fitness evaluation
-N_REAL       = 200   # real tables sampled per source (cap for speed)
-MAX_ROWS     = 4096  # max rows sampled per table (large tables trimmed)
+N_REAL       = 100   # real tables sampled per source (cap for speed)
+MAX_ROWS     = 1024  # max rows sampled per table (discriminator caps at 512 anyway)
 BATCH_SIZE   = 8     # SCMPrior batch size (fixed; not optimised)
 TEST_FRAC    = 0.3   # fraction held out for AUC estimation
 RANDOM_STATE = 42
-N_TRIALS     = 50    # Optuna trials per source
+N_TRIALS     = 25    # Optuna trials per source
+DISC_EPOCHS  = 10    # discriminator training epochs per evaluation
 
 
 # ------------------------------------------------------------------
@@ -149,7 +150,7 @@ def evaluate(params: dict, real_dfs: list) -> float:
         stratify=y_all,
     )
 
-    clf = SmallTabICLDiscriminator(num_classes=2)
+    clf = SmallTabICLDiscriminator(num_classes=2, epochs=DISC_EPOCHS)
     clf.fit(X_tr, np.array(y_tr))
     proba = clf.predict_proba(X_te)[:, 1]
     return float(roc_auc_score(y_te, proba))
