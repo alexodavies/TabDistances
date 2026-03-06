@@ -49,7 +49,7 @@ REAL_SOURCES = {
     "tabfm": Path("tables-tabfm/parquet"),
 }
 
-N_EVAL       = 50     # synthetic (and real) tables per discriminator evaluation
+N_EVAL       = 200    # synthetic (and real) tables per discriminator evaluation
 N_REAL       = 5000   # real tables to pre-featurize and cache
 MAX_ROWS     = 512    # max rows sampled per table
 BATCH_SIZE   = 8      # SCMPrior batch size
