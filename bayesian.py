@@ -38,8 +38,8 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 # ------------------------------------------------------------------
 REAL_SOURCES = {
     # "cleantablib": Path("tables/parquet"),
+    "t4":          Path("tables-t4/parquet"),
     "tabfm":       Path("tables-tabfm/parquet"),
-    "t4":          Path("tables-t4/parquet")
 }
 
 N_EVAL       = 50    # synthetic tables generated per fitness evaluation
