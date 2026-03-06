@@ -56,7 +56,7 @@ BATCH_SIZE   = 8      # SCMPrior batch size
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
 GRANULARITY  = 3      # grid points for int/float parameters (cat params use all values)
-N_WORKERS    = 12     # parallel grid evaluations (set to 1 to disable)
+N_WORKERS    = 4      # parallel grid evaluations (set to 1 to disable)
 CACHE_DIR    = Path("cache")
 WANDB_PROJECT = "tabicl-grid-search"  # set to None to disable wandb
 
