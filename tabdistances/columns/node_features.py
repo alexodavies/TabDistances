@@ -27,6 +27,8 @@ def get_histogram(col: pd.Series) -> np.ndarray:
     except (ValueError, TypeError):
         values = pd.factorize(raw)[0].astype(float)
     values = values[np.isfinite(values)]
+    if len(values) == 0 or values.min() == values.max():
+        return np.zeros(_HISTOGRAM_BINS)
     counts, _ = np.histogram(values, bins=_HISTOGRAM_BINS)
     total = counts.sum()
     if total == 0:
