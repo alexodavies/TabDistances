@@ -27,6 +27,8 @@ def load_dataframes(
     parquet_dir: Union[str, Path],
     label: int,
     max_rows: int = 1000,
+    max_tables: int | None = None,
+    random_state: int = 42,
     max_workers: int = 8,
 ) -> list[tuple[pd.DataFrame, int]]:
     """Load DataFrames from a Parquet export directory and assign a class label.
@@ -40,6 +42,11 @@ def load_dataframes(
         Class label to assign to every table loaded from this directory.
     max_rows : int, default=1000
         Cap the number of rows per table (random sample without replacement).
+    max_tables : int or None, default=None
+        If set, subsample this many files before loading (avoids reading the
+        full directory when only a fraction is needed).
+    random_state : int, default=42
+        Seed for path subsampling.
     max_workers : int, default=8
         Number of threads for parallel file loading.
 
@@ -50,6 +57,9 @@ def load_dataframes(
     """
     parquet_dir = Path(parquet_dir)
     paths = sorted(parquet_dir.glob("*.parquet"))
+    if max_tables is not None and len(paths) > max_tables:
+        rng = np.random.default_rng(random_state)
+        paths = [paths[i] for i in rng.choice(len(paths), max_tables, replace=False)]
 
     results: dict[Path, tuple[pd.DataFrame, int] | None] = {}
     with ThreadPoolExecutor(max_workers=max_workers) as pool:

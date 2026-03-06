@@ -194,15 +194,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("Loading real tables...")
-    rng = np.random.default_rng(RANDOM_STATE)
     real_dfs_by_source = {}
     for name, path in REAL_SOURCES.items():
-        dfs = [df for df, _ in load_dataframes(path, label=0)]
-        if len(dfs) > N_REAL:
-            idxs = rng.choice(len(dfs), N_REAL, replace=False)
-            dfs = [dfs[i] for i in idxs]
-        dfs = [df.sample(n=MAX_ROWS, random_state=RANDOM_STATE) if len(df) > MAX_ROWS else df
-               for df in dfs]
+        dfs = [df for df, _ in load_dataframes(
+            path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL, random_state=RANDOM_STATE,
+        )]
         real_dfs_by_source[name] = dfs
         print(f"  {name}: {len(dfs)} tables")
 
