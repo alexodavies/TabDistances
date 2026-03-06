@@ -2,18 +2,32 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split as _sklearn_split
+from tqdm import tqdm
+
+
+def _load_one(path: Path, label: int, max_rows: int) -> tuple[pd.DataFrame, int] | None:
+    try:
+        df = pd.read_parquet(path)
+        if max_rows and len(df) > max_rows:
+            df = df.sample(max_rows, random_state=42)
+        return df, label
+    except Exception as exc:
+        print(f"[LOAD ERROR] {path.name}: {exc}")
+        return None
 
 
 def load_dataframes(
     parquet_dir: Union[str, Path],
     label: int,
     max_rows: int = 1000,
+    max_workers: int = 8,
 ) -> list[tuple[pd.DataFrame, int]]:
     """Load DataFrames from a Parquet export directory and assign a class label.
 
@@ -26,6 +40,8 @@ def load_dataframes(
         Class label to assign to every table loaded from this directory.
     max_rows : int, default=1000
         Cap the number of rows per table (random sample without replacement).
+    max_workers : int, default=8
+        Number of threads for parallel file loading.
 
     Returns
     -------
@@ -33,18 +49,18 @@ def load_dataframes(
         One pair per Parquet file successfully loaded.
     """
     parquet_dir = Path(parquet_dir)
-    pairs: list[tuple[pd.DataFrame, int]] = []
+    paths = sorted(parquet_dir.glob("*.parquet"))
 
-    for path in sorted(parquet_dir.glob("*.parquet")):
-        try:
-            df = pd.read_parquet(path)
-            if max_rows and len(df) > max_rows:
-                df = df.sample(max_rows, random_state=42)
-            pairs.append((df, label))
-        except Exception as exc:
-            print(f"[LOAD ERROR] {path.name}: {exc}")
+    results: dict[Path, tuple[pd.DataFrame, int] | None] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_load_one, p, label, max_rows): p for p in paths}
+        with tqdm(total=len(futures), desc=f"Loading {parquet_dir.parent.name}", unit="table") as bar:
+            for future in as_completed(futures):
+                results[futures[future]] = future.result()
+                bar.update(1)
 
-    return pairs
+    # Preserve sorted order
+    return [results[p] for p in paths if results.get(p) is not None]
 
 
 class DataFrameDataset:
