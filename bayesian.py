@@ -37,8 +37,9 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 # CONFIG
 # ------------------------------------------------------------------
 REAL_SOURCES = {
-    "cleantablib": Path("tables/parquet"),
+    # "cleantablib": Path("tables/parquet"),
     "tabfm":       Path("tables-tabfm/parquet"),
+    "t4":          Path("tables-t4/parquet")
 }
 
 N_EVAL       = 50    # synthetic tables generated per fitness evaluation
@@ -132,7 +133,7 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 def evaluate(params: dict, real_dfs: list) -> float:
     """ROC-AUC for tabicl vs one real source.  Lower is better."""
     try:
-        synth = generate_synthetic_dataframes(params, N_EVAL)
+        synth = generate_synthetic_dataframes(params, len(real_dfs))
     except Exception as exc:
         print(f"    [generate error] {exc}")
         return 1.0
