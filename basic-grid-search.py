@@ -35,6 +35,8 @@ try:
 except ImportError:
     _WANDB_AVAILABLE = False
 
+from tqdm import tqdm
+
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.dataset import load_dataframes
 from tabdistances.discriminator.features import df_to_vec
@@ -126,7 +128,7 @@ def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
         path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL, random_state=RANDOM_STATE,
     )]
     print(f"  Featurizing {len(dfs)} tables ...")
-    feats = np.array([df_to_vec(df) for df in dfs])
+    feats = np.array([df_to_vec(df) for df in tqdm(dfs, desc="  featurizing", unit="table")])
     np.savez(cache_path, feats=feats)
     print(f"  Cached -> {cache_path}  shape={feats.shape}")
     return feats
@@ -162,20 +164,22 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
     )
 
     dataframes = []
-    while len(dataframes) < n:
-        X, y, d, seq_lens, _ = prior.get_batch()
-        for i in range(X.shape[0]):
-            n_feat  = int(d[i].item())
-            seq_len = int(seq_lens[i].item())
-            if n_feat < params["min_features"] or seq_len == 0:
-                continue
-            X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
-            y_i = y[i, :seq_len].numpy().astype(int)
-            df  = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
-            df["target"] = y_i
-            dataframes.append(df)
-            if len(dataframes) >= n:
-                break
+    with tqdm(total=n, desc="  generating tables", unit="table", leave=False) as pbar:
+        while len(dataframes) < n:
+            X, y, d, seq_lens, _ = prior.get_batch()
+            for i in range(X.shape[0]):
+                n_feat  = int(d[i].item())
+                seq_len = int(seq_lens[i].item())
+                if n_feat < params["min_features"] or seq_len == 0:
+                    continue
+                X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
+                y_i = y[i, :seq_len].numpy().astype(int)
+                df  = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
+                df["target"] = y_i
+                dataframes.append(df)
+                pbar.update(1)
+                if len(dataframes) >= n:
+                    break
 
     return dataframes
 
@@ -217,7 +221,9 @@ def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
         verbosity=0,
         random_state=RANDOM_STATE,
     )
+    print(f"    Fitting discriminator ({len(X_tr)} train / {len(X_te)} test) ...", flush=True)
     clf.fit(X_tr, y_tr)
+    print(f"    Discriminator fit done.", flush=True)
     proba = clf.predict_proba(X_te)[:, 1]
     return float(roc_auc_score(y_te, proba))
 
