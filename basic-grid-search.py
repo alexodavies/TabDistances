@@ -264,6 +264,7 @@ def _fig_cat_param_means(df: pd.DataFrame) -> plt.Figure:
     return fig
 
 
+
 def _fig_float_param_scatter(df: pd.DataFrame) -> plt.Figure:
     n = len(_FLOAT_PARAMS)
     fig, axes = plt.subplots(1, n, figsize=(4 * n, 4), sharey=True)
