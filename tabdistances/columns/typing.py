@@ -10,7 +10,7 @@ class ColumnType(Enum):
 
 def infer_col_type(
     col: pd.Series,
-    cardinality_threshold: float | None = None,
+    cardinality_threshold: float | None = 0.2,
     max_cat_classes: int | None = 20,
 ) -> ColumnType:
     """Infer column type from dtype, with optional cardinality fallbacks.
@@ -44,7 +44,7 @@ def infer_col_type(
 
 def infer_col_types(
     df: pd.DataFrame,
-    cardinality_threshold: float | None = None,
+    cardinality_threshold: float | None = 0.2,
     max_cat_classes: int | None = 20,
 ) -> dict[str, ColumnType]:
     return {
