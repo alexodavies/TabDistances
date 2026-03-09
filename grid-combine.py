@@ -30,8 +30,7 @@ WANDB_PROJECT = "tabicl-grid-search"
 
 # Must match PARAM_SPACE in grid-isambard.py
 PARAM_SPACE = {
-    "max_classes":             ("int",   2,    20),
-    "batch_size_per_gp":       ("int",   1,    32),
+    "max_classes":             ("int",   2,    50),
     "prior_type":              ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
     "tree_model":              ("cat",   ["decision_tree", "extra_trees",
                                           "random_forest", "xgboost"]),

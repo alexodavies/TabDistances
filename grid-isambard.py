@@ -108,7 +108,7 @@ MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled pe
 BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky startup overhead
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
-GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 5))   # grid points for int/float parameters (cat params use all values)
+GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 6))   # grid points for int/float parameters (cat params use all values)
 # Shard runs land in tabicl-grid-shards (grouped by array job).
 # The combine step logs the final merged run to tabicl-grid-search.
 WANDB_PROJECT = "tabicl-grid-shards"  # set to None to disable wandb
@@ -121,8 +121,7 @@ XGB_DEVICE = "cpu"
 
 # --- Parameter space ----------------------------------------------
 PARAM_SPACE = {
-    "max_classes":             ("int",   2,    20),
-    "batch_size_per_gp":       ("int",   1,    BATCH_SIZE),
+    "max_classes":             ("int",   2,    50),
     "prior_type":              ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
     "tree_model":              ("cat",   ["decision_tree", "extra_trees",
                                           "random_forest", "xgboost"]),
@@ -184,7 +183,7 @@ def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
 def generate_synthetic_dataframes(params: dict, n: int) -> list:
     prior = SCMPrior(
         batch_size=BATCH_SIZE,
-        batch_size_per_gp=params["batch_size_per_gp"],
+        batch_size_per_gp=1,
         min_features=params["min_features"],
         max_features=params["max_features"],
         max_classes=params["max_classes"],
