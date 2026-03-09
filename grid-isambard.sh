@@ -21,8 +21,8 @@
 # -----------------------------------------------------------------------
 # Edit these two variables to match your Isambard setup:
 # -----------------------------------------------------------------------
-CONDA_ENV="tabdistances"
-WORK_DIR="$HOME/TabDistances"
+CONDA_ENV="tabdistance"
+WORK_DIR="$PROJECTDIR/TabDistances"
 
 # -----------------------------------------------------------------------
 # Environment setup
