@@ -10,6 +10,7 @@
 #SBATCH --output=slurm-test-%j.out
 #SBATCH --error=slurm-test-%j.err
 #SBATCH --partition=milan
+#SBATCH --array=0-2
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=128

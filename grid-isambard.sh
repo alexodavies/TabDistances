@@ -2,11 +2,12 @@
 # =============================================================================
 # Isambard HPC batch script for grid-isambard.py
 #
-# Single-node (default):
+# Single-node:
 #   sbatch grid-isambard.sh
 #
-# Multi-node array (splits grid across 4 nodes):
-#   sbatch --array=0-3 grid-isambard.sh
+# Multi-node array — recommended for G=5 (150k combos, 7 idle Milan nodes):
+#   sbatch --array=0-6 grid-isambard.sh   →  7 nodes, ~1.5 hrs wall-clock
+#   sbatch --array=0-3 grid-isambard.sh   →  4 nodes, ~2.5 hrs wall-clock
 #
 # Adjust CONDA_ENV and WORK_DIR before submitting.
 # =============================================================================
@@ -15,6 +16,7 @@
 #SBATCH --output=slurm-%j.out
 #SBATCH --error=slurm-%j.err
 #SBATCH --partition=milan
+#SBATCH --array=0-2
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=128

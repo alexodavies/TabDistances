@@ -48,7 +48,7 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import itertools
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 sys.path.insert(0, str(Path(".").resolve()))
 
@@ -104,7 +104,7 @@ REAL_SOURCES = {
 N_EVAL       = int(os.environ.get("TAB_N_EVAL",    200))   # synthetic (and real) tables per discriminator evaluation
 N_REAL       = int(os.environ.get("TAB_N_REAL",   5000))  # real tables to pre-featurize and cache
 MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled per table
-BATCH_SIZE   = 8      # SCMPrior batch size
+BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky startup overhead
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
 GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 5))   # grid points for int/float parameters (cat params use all values)
@@ -236,7 +236,8 @@ def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
         print(f"    [generate error] {exc}", flush=True)
         return 1.0
 
-    synth_feats = np.array([df_to_vec(df) for df in synth_dfs])
+    with ThreadPoolExecutor(max_workers=4) as tp:
+        synth_feats = np.array(list(tp.map(df_to_vec, synth_dfs)))
 
     # Subsample N_EVAL real features to match synthetic count (no re-featurization)
     n_real_sample = min(N_EVAL, len(real_feats))
@@ -255,7 +256,7 @@ def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
     )
 
     clf = XGBClassifier(
-        n_estimators=300,
+        n_estimators=100,
         device=XGB_DEVICE,
         eval_metric="logloss",
         verbosity=0,
@@ -470,7 +471,7 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
             done += 1
             if auc < best_auc:
                 best_auc = auc
-            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) AUC={auc:.4f}  best={best_auc:.4f}  {params}", flush=True)
+            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) AUC={auc:.4f}  best={best_auc:.4f}", flush=True)
             if run is not None:
                 run.log({"trial": i, "auc": auc, "best_auc": best_auc, **params})
 
