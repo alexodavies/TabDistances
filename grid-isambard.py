@@ -86,13 +86,14 @@ SHARD_ID      = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 _TOTAL_CPUS   = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 1))
 
 # Outer parallelism: one worker per grid point evaluated concurrently.
-# C // 8 workers leaves each worker ~8 CPUs for SCMPrior's loky pool.
-# Capped at 32 to keep wall-clock predictable on very large allocations.
-N_WORKERS      = max(1, min(32, _TOTAL_CPUS // 8))
+# Capped conservatively: each outer worker loads a full SCMPrior + PyTorch
+# model, so total RSS scales with N_WORKERS.
+N_WORKERS      = max(1, min(16, _TOTAL_CPUS // 16))
 
-# Inner parallelism: SCMPrior uses loky with this many subprocesses to
-# parallelise generate_dataset() calls within a single get_batch() call.
-_SCMPRIOR_JOBS = max(1, _TOTAL_CPUS // N_WORKERS)
+# Inner parallelism: loky subprocesses within each SCMPrior get_batch call.
+# Capped at 4 so total processes = N_WORKERS * (1 + _SCMPRIOR_JOBS) ≤ ~40
+# rather than the 128 that caused OOM.
+_SCMPRIOR_JOBS = max(1, min(4, _TOTAL_CPUS // N_WORKERS // 4))
 
 # --- Paths ---------------------------------------------------------
 DATA_ROOT = Path(os.environ.get("TAB_DATA_ROOT", "."))
@@ -270,8 +271,8 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
             "cat_prob":                params["cat_prob"],
             "multiclass_ordered_prob": params["multiclass_ordered_prob"],
             "balanced":                params["balanced"],
-            "tree_depth_lambda":       params["tree_depth_lambda"],
-            "tree_n_estimators_lambda": params["tree_n_estimators_lambda"],
+            "max_depth_lambda":        params["tree_depth_lambda"],
+            "n_estimators_lambda":     params["tree_n_estimators_lambda"],
         },
         n_jobs=_SCMPRIOR_JOBS,
         device="cpu",
