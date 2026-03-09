@@ -341,7 +341,7 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
         if col not in top.columns:
             continue
         vals = top[col]
-        if vals.dtype == object or vals.dtype == bool:
+        if not pd.api.types.is_numeric_dtype(vals):
             uniq = sorted(vals.unique(), key=str)
             plot_df[col] = vals.map({v: i for i, v in enumerate(uniq)})
         else:
