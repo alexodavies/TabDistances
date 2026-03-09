@@ -142,8 +142,8 @@ PARAM_SPACE = {
     # Conditional: mix_prob_mlp active for mix_scm only
     "mix_prob_mlp":            ("float", 0.0,  1.0),
     # Conditional: tree_depth_lambda and tree_n_estimators_lambda active for tree_scm and mix_scm only
-    "tree_depth_lambda":       ("float", 0.1,  2.0),
-    "tree_n_estimators_lambda":("float", 0.1,  2.0),
+    "tree_depth_lambda":       ("float", 0.1,  1.0),
+    "tree_n_estimators_lambda":("float", 0.1,  1.0),
 }
 
 
@@ -182,8 +182,8 @@ def build_grid(granularity: int) -> list[dict]:
     }
     tree_models       = ["decision_tree", "extra_trees", "random_forest", "xgboost"]
     mix_prob_vals     = _float_vals(0.0, 1.0)
-    tree_depth_vals   = _float_vals(0.1, 2.0)
-    tree_n_est_vals   = _float_vals(0.1, 2.0)
+    tree_depth_vals   = _float_vals(0.1, 1.0)
+    tree_n_est_vals   = _float_vals(0.1, 1.0)
 
     shared_combos = [
         dict(zip(shared_axes, vals))
