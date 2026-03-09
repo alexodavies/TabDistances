@@ -36,18 +36,18 @@ export MKL_NUM_THREADS=1
 export WANDB_MODE=offline
 
 # -----------------------------------------------------------------------
-# Low-resolution overrides — keeps the run short
-#   GRANULARITY=2 → 2^3 * 3 * 4 * 2 * 2 = 384 combos (vs ~11k at 3)
-#   N_EVAL=10     → 10 synthetic tables per evaluation (vs 200)
-#   N_REAL=50     → 50 real tables cached (vs 5000)
+# Smoke-test overrides
+#   GRANULARITY=2 → 1,536 combos (vs 150k at 5)
+#   N_EVAL=400    → synthetic tables per evaluation
+#   N_REAL=400    → real tables cached
 # -----------------------------------------------------------------------
 export TAB_GRANULARITY=2
-export TAB_N_EVAL=10
-export TAB_N_REAL=50
+export TAB_N_EVAL=400
+export TAB_N_REAL=400
 
 echo "======================================================================"
 echo "TEST job ${SLURM_JOB_ID} starting on $(hostname) at $(date)"
-echo "CPUs: ${SLURM_CPUS_PER_TASK}  GRANULARITY=2  N_EVAL=10  N_REAL=50"
+echo "CPUs: ${SLURM_CPUS_PER_TASK}  GRANULARITY=2  N_EVAL=400  N_REAL=400"
 echo "======================================================================"
 
 python grid-isambard.py
