@@ -30,7 +30,7 @@ WANDB_PROJECT = "tabicl-grid-search"
 
 # Must match PARAM_SPACE in grid-isambard.py
 PARAM_SPACE = {
-    "max_classes":              ("int",   2,    50),
+    "max_classes":              ("int",   2,    20),
     "cat_prob":                 ("float", 0.0,  0.6),
     "multiclass_ordered_prob":  ("float", 0.0,  1.0),
     "balanced":                 ("cat",   [False, True]),
@@ -39,8 +39,8 @@ PARAM_SPACE = {
     "tree_model":               ("cat",   ["decision_tree", "extra_trees",
                                            "random_forest", "xgboost"]),
     "mix_prob_mlp":             ("float", 0.0,  1.0),
-    "tree_depth_lambda":        ("float", 0.1,  1.0),
-    "tree_n_estimators_lambda": ("float", 0.1,  1.0),
+    "tree_depth_lambda":        ("float", 0.3,  1.0),
+    "tree_n_estimators_lambda": ("float", 0.3,  1.0),
 }
 
 _CAT_PARAMS   = [k for k, s in PARAM_SPACE.items() if s[0] == "cat"]

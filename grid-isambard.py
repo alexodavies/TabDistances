@@ -129,7 +129,7 @@ XGB_DEVICE = "cpu"
 # --- Parameter space ----------------------------------------------
 PARAM_SPACE = {
     # Shared: active for all prior types
-    "max_classes":             ("int",   2,    50),
+    "max_classes":             ("int",   2,    20),
     "cat_prob":                ("float", 0.0,  0.6),
     "multiclass_ordered_prob": ("float", 0.0,  1.0),
     "balanced":                ("cat",   [False, True]),
@@ -142,8 +142,8 @@ PARAM_SPACE = {
     # Conditional: mix_prob_mlp active for mix_scm only
     "mix_prob_mlp":            ("float", 0.0,  1.0),
     # Conditional: tree_depth_lambda and tree_n_estimators_lambda active for tree_scm and mix_scm only
-    "tree_depth_lambda":       ("float", 0.1,  1.0),
-    "tree_n_estimators_lambda":("float", 0.1,  1.0),
+    "tree_depth_lambda":       ("float", 0.3,  1.0),
+    "tree_n_estimators_lambda":("float", 0.3,  1.0),
 }
 
 
@@ -174,7 +174,7 @@ def build_grid(granularity: int) -> list[dict]:
 
     # Params active for every prior type
     shared_axes = {
-        "max_classes":             _int_vals(2, 50),
+        "max_classes":             _int_vals(2, 20),
         "cat_prob":                _float_vals(0.0, 0.6),
         "multiclass_ordered_prob": _float_vals(0.0, 1.0),
         "balanced":                [False, True],
@@ -182,8 +182,8 @@ def build_grid(granularity: int) -> list[dict]:
     }
     tree_models       = ["decision_tree", "extra_trees", "random_forest", "xgboost"]
     mix_prob_vals     = _float_vals(0.0, 1.0)
-    tree_depth_vals   = _float_vals(0.1, 1.0)
-    tree_n_est_vals   = _float_vals(0.1, 1.0)
+    tree_depth_vals   = _float_vals(0.3, 1.0)
+    tree_n_est_vals   = _float_vals(0.3, 1.0)
 
     shared_combos = [
         dict(zip(shared_axes, vals))
