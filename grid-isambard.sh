@@ -48,7 +48,7 @@ export MKL_NUM_THREADS=1
 
 # Wandb offline mode — remove this line if compute nodes have internet access.
 # After the job, sync with: wandb sync grid-results-<JOB_ID>/wandb/offline-run-*
-export WANDB_MODE=offline
+# export WANDB_MODE=offline  # uncomment if nodes lose internet access
 
 # -----------------------------------------------------------------------
 # Diagnostics

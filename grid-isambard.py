@@ -26,6 +26,15 @@ and SLURM_ARRAY_TASK_COUNT automatically — no other changes needed.
 
 import sys
 import os
+import warnings
+
+# Suppress noisy sklearn warning produced by TabICL's internal joblib usage
+warnings.filterwarnings(
+    "ignore",
+    message=".*sklearn.utils.parallel.delayed.*",
+    category=UserWarning,
+    module="sklearn",
+)
 
 # ------------------------------------------------------------------
 # Thread-explosion guard — must come before numpy / torch imports so

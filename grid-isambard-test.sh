@@ -33,7 +33,7 @@ export TAB_OUT_DIR="${WORK_DIR}/grid-results-test-${SLURM_JOB_ID}"
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
-export WANDB_MODE=offline
+# export WANDB_MODE=offline  # nodes have internet; comment out to log online
 
 # -----------------------------------------------------------------------
 # Smoke-test overrides
