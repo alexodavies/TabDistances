@@ -38,16 +38,16 @@ export MKL_NUM_THREADS=1
 # -----------------------------------------------------------------------
 # Smoke-test overrides
 #   GRANULARITY=2 → 1,536 combos (vs 150k at 5)
-#   N_EVAL=400    → synthetic tables per evaluation
-#   N_REAL=400    → real tables cached
+#   N_EVAL=200    → synthetic tables per evaluation (production default)
+#   N_REAL=200    → real tables cached
 # -----------------------------------------------------------------------
 export TAB_GRANULARITY=2
-export TAB_N_EVAL=400
-export TAB_N_REAL=400
+export TAB_N_EVAL=200
+export TAB_N_REAL=200
 
 echo "======================================================================"
 echo "TEST job ${SLURM_JOB_ID} starting on $(hostname) at $(date)"
-echo "CPUs: ${SLURM_CPUS_PER_TASK}  GRANULARITY=2  N_EVAL=400  N_REAL=400"
+echo "CPUs: ${SLURM_CPUS_PER_TASK}  GRANULARITY=2  N_EVAL=200  N_REAL=200"
 echo "======================================================================"
 
 python grid-isambard.py
