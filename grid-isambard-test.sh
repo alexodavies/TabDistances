@@ -9,8 +9,11 @@
 #SBATCH --job-name=tabicl-grid-test
 #SBATCH --output=slurm-test-%j.out
 #SBATCH --error=slurm-test-%j.err
+#SBATCH --partition=milan
+#SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=128
+#SBATCH --mem=128G
 #SBATCH --time=00:30:00
 
 # -----------------------------------------------------------------------

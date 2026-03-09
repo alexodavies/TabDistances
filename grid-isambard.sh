@@ -14,9 +14,12 @@
 #SBATCH --job-name=tabicl-grid
 #SBATCH --output=slurm-%j.out
 #SBATCH --error=slurm-%j.err
+#SBATCH --partition=milan
+#SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
-#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=128
+#SBATCH --mem=128G
+#SBATCH --time=1-00:00:00
 
 # -----------------------------------------------------------------------
 # Edit these two variables to match your Isambard setup:
