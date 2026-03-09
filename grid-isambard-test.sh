@@ -7,8 +7,8 @@
 # =============================================================================
 
 #SBATCH --job-name=tabicl-grid-test
-#SBATCH --output=slurm-test-%j.out
-#SBATCH --error=slurm-test-%j.err
+#SBATCH --output=slurm-test-%A_%a.out
+#SBATCH --error=slurm-test-%A_%a.err
 #SBATCH --partition=milan
 #SBATCH --array=0-5
 #SBATCH --nodes=1
@@ -30,7 +30,7 @@ source ~/miniforge3/bin/activate "$CONDA_ENV"
 cd "$WORK_DIR"
 
 export TAB_DATA_ROOT="."
-export TAB_OUT_DIR="${WORK_DIR}/grid-results-test-${SLURM_JOB_ID}"
+export TAB_OUT_DIR="${WORK_DIR}/grid-results-test-${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID}}/shard_${SLURM_ARRAY_TASK_ID:-0}"
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1

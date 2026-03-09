@@ -13,8 +13,8 @@
 # =============================================================================
 
 #SBATCH --job-name=tabicl-grid
-#SBATCH --output=slurm-%j.out
-#SBATCH --error=slurm-%j.err
+#SBATCH --output=slurm-%A_%a.out
+#SBATCH --error=slurm-%A_%a.err
 #SBATCH --partition=milan
 #SBATCH --array=0-5
 #SBATCH --nodes=1
@@ -40,7 +40,7 @@ cd "$WORK_DIR"
 export TAB_DATA_ROOT="."
 
 # Output directory — one subfolder per job to avoid collisions.
-export TAB_OUT_DIR="${WORK_DIR}/grid-results-${SLURM_JOB_ID}"
+export TAB_OUT_DIR="${WORK_DIR}/grid-results-${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID}}/shard_${SLURM_ARRAY_TASK_ID:-0}"
 
 # Prevent NumPy / PyTorch / OpenBLAS / MKL from spawning their own thread
 # pools inside ProcessPoolExecutor workers and loky subprocesses.
