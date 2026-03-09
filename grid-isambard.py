@@ -78,8 +78,10 @@ from tabdistances.discriminator.features import df_to_vec
 # ------------------------------------------------------------------
 
 # --- Slurm / CPU auto-detection -----------------------------------
-JOB_ID      = os.environ.get("SLURM_JOB_ID", "local")
-_TOTAL_CPUS = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 1))
+JOB_ID        = os.environ.get("SLURM_JOB_ID", "local")
+ARRAY_JOB_ID  = os.environ.get("SLURM_ARRAY_JOB_ID", JOB_ID)   # shared across all tasks in an array
+SHARD_ID      = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+_TOTAL_CPUS   = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 1))
 
 # Outer parallelism: one worker per grid point evaluated concurrently.
 # C // 8 workers leaves each worker ~8 CPUs for SCMPrior's loky pool.
@@ -96,8 +98,7 @@ OUT_DIR   = Path(os.environ.get("TAB_OUT_DIR", f"grid-results-{JOB_ID}"))
 CACHE_DIR = OUT_DIR / "cache"
 
 REAL_SOURCES = {
-    "t4":    DATA_ROOT / "tables-t4/parquet",
-    "tabfm": DATA_ROOT / "tables-tabfm/parquet",
+    "t4": DATA_ROOT / "tables-t4/parquet",
 }
 
 # --- Evaluation settings ------------------------------------------
@@ -108,7 +109,9 @@ BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky sta
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
 GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 5))   # grid points for int/float parameters (cat params use all values)
-WANDB_PROJECT = "tabicl-grid-search"  # set to None to disable wandb
+# Shard runs land in tabicl-grid-shards (grouped by array job).
+# The combine step logs the final merged run to tabicl-grid-search.
+WANDB_PROJECT = "tabicl-grid-shards"  # set to None to disable wandb
 
 # --- XGBoost device -----------------------------------------------
 # Forced to CPU: each worker would otherwise contend for the single
@@ -436,7 +439,8 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     if _WANDB_AVAILABLE and WANDB_PROJECT:
         run = wandb.init(
             project=WANDB_PROJECT,
-            name=f"grid_{source_name}_{JOB_ID}",
+            group=ARRAY_JOB_ID,
+            name=f"shard{SHARD_ID}_{source_name}",
             config={
                 "source":          source_name,
                 "n_eval":          N_EVAL,

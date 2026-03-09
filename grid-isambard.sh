@@ -13,8 +13,8 @@
 # =============================================================================
 
 #SBATCH --job-name=tabicl-grid
-#SBATCH --output=slurm-%A_%a.out
-#SBATCH --error=slurm-%A_%a.err
+#SBATCH --output=logs/slurm-%A_%a.out
+#SBATCH --error=logs/slurm-%A_%a.err
 #SBATCH --partition=milan
 #SBATCH --array=0-5
 #SBATCH --nodes=1

@@ -5,8 +5,8 @@
 # =============================================================================
 
 #SBATCH --job-name=tabicl-combine
-#SBATCH --output=slurm-combine-%j.out
-#SBATCH --error=slurm-combine-%j.err
+#SBATCH --output=logs/slurm-combine-%j.out
+#SBATCH --error=logs/slurm-combine-%j.err
 #SBATCH --partition=milan
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

@@ -15,6 +15,9 @@ else
     RESULTS_PREFIX="grid-results"
 fi
 
+# Slurm writes logs before the job body runs, so the directory must exist first
+mkdir -p logs
+
 # Submit the array job and capture the job ID
 ARRAY_JOB_ID=$(sbatch --parsable "$GRID_SCRIPT")
 if [[ -z "$ARRAY_JOB_ID" ]]; then
@@ -35,5 +38,5 @@ fi
 echo "Combine job queued       : ${COMBINE_JOB_ID}  (runs after ${ARRAY_JOB_ID})"
 echo
 echo "Monitor with:  squeue --me"
-echo "Grid logs   :  tail -f slurm-${ARRAY_JOB_ID}_0.out"
-echo "Combine log :  tail -f slurm-combine-${COMBINE_JOB_ID}.out"
+echo "Grid logs   :  tail -f logs/slurm-${ARRAY_JOB_ID}_0.out"
+echo "Combine log :  tail -f logs/slurm-combine-${COMBINE_JOB_ID}.out"
