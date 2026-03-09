@@ -30,8 +30,10 @@ graphs-tabfm/
 graphs-tabicl/
 
 tables/
+tables-t4/
 tables-tabfm/
 tables-tabicl/
+t4.zip
 
 # macOS
 .DS_Store

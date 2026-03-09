@@ -92,13 +92,13 @@ REAL_SOURCES = {
 }
 
 # --- Evaluation settings ------------------------------------------
-N_EVAL       = 200    # synthetic (and real) tables per discriminator evaluation
-N_REAL       = 5000   # real tables to pre-featurize and cache
-MAX_ROWS     = 512    # max rows sampled per table
+N_EVAL       = int(os.environ.get("TAB_N_EVAL",    200))   # synthetic (and real) tables per discriminator evaluation
+N_REAL       = int(os.environ.get("TAB_N_REAL",   5000))  # real tables to pre-featurize and cache
+MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled per table
 BATCH_SIZE   = 8      # SCMPrior batch size
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
-GRANULARITY  = 3      # grid points for int/float parameters (cat params use all values)
+GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 5))   # grid points for int/float parameters (cat params use all values)
 WANDB_PROJECT = "tabicl-grid-search"  # set to None to disable wandb
 
 # --- XGBoost device -----------------------------------------------
