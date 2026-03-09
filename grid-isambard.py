@@ -48,7 +48,9 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import itertools
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pebble import ProcessPool
+from concurrent.futures import TimeoutError as FutTimeoutError
 from pathlib import Path
 sys.path.insert(0, str(Path(".").resolve()))
 
@@ -112,6 +114,11 @@ GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 4))   # grid points for int
 # Shard runs land in tabicl-grid-shards (grouped by array job).
 # The combine step logs the final merged run to tabicl-grid-search.
 WANDB_PROJECT = "tabicl-grid-shards"  # set to None to disable wandb
+
+# --- Per-trial timeout --------------------------------------------
+# If a worker deadlocks (e.g. inside SCMPrior's loky pool), pebble will
+# kill the subprocess after this many seconds and record AUC=1.0.
+TRIAL_TIMEOUT = 300   # seconds
 
 # --- XGBoost device -----------------------------------------------
 # Forced to CPU: each worker would otherwise contend for the single
@@ -528,14 +535,22 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     records  = [None] * n_total
     best_auc = float("inf")
     done     = 0
-    with ProcessPoolExecutor(max_workers=N_WORKERS) as pool:
+    with ProcessPool(max_workers=N_WORKERS) as pool:
         futures = {
-            pool.submit(evaluate, {**params, **fixed_params}, real_feats, RANDOM_STATE + i): (i, params)
+            pool.schedule(evaluate, args=[{**params, **fixed_params}, real_feats, RANDOM_STATE + i],
+                          timeout=TRIAL_TIMEOUT): (i, params)
             for i, params in enumerate(grid, 1)
         }
         for fut in as_completed(futures):
             i, params = futures[fut]
-            auc = fut.result()
+            try:
+                auc = fut.result()
+            except FutTimeoutError:
+                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped (AUC=1.0)", flush=True)
+                auc = 1.0
+            except Exception as exc:
+                print(f"  (trial {i:5d}) ERROR: {exc} — skipped (AUC=1.0)", flush=True)
+                auc = 1.0
             records[i - 1] = {**params, "auc": auc}
             done += 1
             if auc < best_auc:

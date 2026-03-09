@@ -17,3 +17,4 @@ kaggle
 optuna
 wandb
 umap-learn
+pebble
