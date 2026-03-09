@@ -108,7 +108,7 @@ MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled pe
 BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky startup overhead
 TEST_FRAC    = 0.3
 RANDOM_STATE = 42
-GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 6))   # grid points for int/float parameters (cat params use all values)
+GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 4))   # grid points for int/float parameters (cat params use all values)
 # Shard runs land in tabicl-grid-shards (grouped by array job).
 # The combine step logs the final merged run to tabicl-grid-search.
 WANDB_PROJECT = "tabicl-grid-shards"  # set to None to disable wandb
@@ -121,15 +121,22 @@ XGB_DEVICE = "cpu"
 
 # --- Parameter space ----------------------------------------------
 PARAM_SPACE = {
+    # Shared: active for all prior types
     "max_classes":             ("int",   2,    50),
-    "prior_type":              ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
-    "tree_model":              ("cat",   ["decision_tree", "extra_trees",
-                                          "random_forest", "xgboost"]),
-    "mix_prob_mlp":            ("float", 0.0,  1.0),
     "cat_prob":                ("float", 0.0,  0.6),
     "multiclass_ordered_prob": ("float", 0.0,  1.0),
     "balanced":                ("cat",   [False, True]),
     "replay_small":            ("cat",   [False, True]),
+    # Conditional: prior_type always varies
+    "prior_type":              ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
+    # Conditional: tree_model active for tree_scm and mix_scm only
+    "tree_model":              ("cat",   ["decision_tree", "extra_trees",
+                                          "random_forest", "xgboost"]),
+    # Conditional: mix_prob_mlp active for mix_scm only
+    "mix_prob_mlp":            ("float", 0.0,  1.0),
+    # Conditional: tree_depth_lambda and tree_n_estimators_lambda active for tree_scm and mix_scm only
+    "tree_depth_lambda":       ("float", 0.1,  2.0),
+    "tree_n_estimators_lambda":("float", 0.1,  2.0),
 }
 
 
@@ -138,19 +145,75 @@ PARAM_SPACE = {
 # ------------------------------------------------------------------
 
 def build_grid(granularity: int) -> list[dict]:
-    axes = {}
-    for k, spec in PARAM_SPACE.items():
-        if spec[0] == "cat":
-            axes[k] = list(spec[1])
-        elif spec[0] == "int":
-            vals = np.linspace(spec[1], spec[2], granularity).round().astype(int)
-            axes[k] = list(dict.fromkeys(vals.tolist()))  # dedup, preserve order
-        else:  # float
-            axes[k] = np.linspace(spec[1], spec[2], granularity).tolist()
+    """Build the parameter grid, respecting conditional relevance:
 
-    keys = list(axes.keys())
-    combos = list(itertools.product(*[axes[k] for k in keys]))
-    return [dict(zip(keys, c)) for c in combos]
+    - tree_model   : irrelevant for mlp_scm  → fixed to "xgboost"
+    - mix_prob_mlp : irrelevant for mlp_scm and tree_scm → fixed to 0.5
+
+    This avoids ~60% redundant evaluations vs a full Cartesian product.
+
+    Grid sizes at G=6:
+      mlp_scm  : G^3 x 2^2          =   864
+      tree_scm : G^3 x 4 x 2^2      = 3,456
+      mix_scm  : G^4 x 4 x 2^2      = 20,736
+      total                          = 25,056  (vs 62,208 full grid)
+    """
+    def _int_vals(lo, hi):
+        v = np.linspace(lo, hi, granularity).round().astype(int)
+        return list(dict.fromkeys(v.tolist()))
+
+    def _float_vals(lo, hi):
+        return np.linspace(lo, hi, granularity).tolist()
+
+    # Params active for every prior type
+    shared_axes = {
+        "max_classes":             _int_vals(2, 50),
+        "cat_prob":                _float_vals(0.0, 0.6),
+        "multiclass_ordered_prob": _float_vals(0.0, 1.0),
+        "balanced":                [False, True],
+        "replay_small":            [False, True],
+    }
+    tree_models       = ["decision_tree", "extra_trees", "random_forest", "xgboost"]
+    mix_prob_vals     = _float_vals(0.0, 1.0)
+    tree_depth_vals   = _float_vals(0.1, 2.0)
+    tree_n_est_vals   = _float_vals(0.1, 2.0)
+
+    shared_combos = [
+        dict(zip(shared_axes, vals))
+        for vals in itertools.product(*shared_axes.values())
+    ]
+
+    grid = []
+
+    # mlp_scm — tree_model, mix_prob_mlp, tree_depth_lambda, tree_n_estimators_lambda
+    #           are all irrelevant; fix to neutral defaults
+    for base in shared_combos:
+        grid.append({**base, "prior_type": "mlp_scm",
+                     "tree_model": "xgboost", "mix_prob_mlp": 0.5,
+                     "tree_depth_lambda": 0.5, "tree_n_estimators_lambda": 0.5})
+
+    # tree_scm — mix_prob_mlp irrelevant; vary tree_model + tree params
+    for base in shared_combos:
+        for tm in tree_models:
+            for tdl in tree_depth_vals:
+                for tnel in tree_n_est_vals:
+                    grid.append({**base, "prior_type": "tree_scm",
+                                 "tree_model": tm, "mix_prob_mlp": 0.5,
+                                 "tree_depth_lambda": tdl,
+                                 "tree_n_estimators_lambda": tnel})
+
+    # mix_scm — all conditional params active
+    for base in shared_combos:
+        for tm in tree_models:
+            for mp in mix_prob_vals:
+                for tdl in tree_depth_vals:
+                    for tnel in tree_n_est_vals:
+                        grid.append({**base, "prior_type": "mix_scm",
+                                     "tree_model": tm, "mix_prob_mlp": mp,
+                                     "tree_depth_lambda": tdl,
+                                     "tree_n_estimators_lambda": tnel})
+
+    return grid
 
 
 # ------------------------------------------------------------------
@@ -200,6 +263,8 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
             "cat_prob":                params["cat_prob"],
             "multiclass_ordered_prob": params["multiclass_ordered_prob"],
             "balanced":                params["balanced"],
+            "tree_depth_lambda":       params["tree_depth_lambda"],
+            "tree_n_estimators_lambda": params["tree_n_estimators_lambda"],
         },
         n_jobs=_SCMPRIOR_JOBS,
         device="cpu",
@@ -417,7 +482,8 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
         flush=True,
     )
 
-    grid    = build_grid(GRANULARITY)
+    grid       = build_grid(GRANULARITY)
+    full_size  = len(grid)
 
     # ------------------------------------------------------------------
     # Slurm array sharding: if this is one task in a job array, slice
@@ -427,7 +493,7 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     _shard_id = int(os.environ.get("SLURM_ARRAY_TASK_ID",    0))
     if _n_shards > 1:
         grid = grid[_shard_id::_n_shards]
-        print(f"  Array shard {_shard_id}/{_n_shards}: {len(grid)} of {len(build_grid(GRANULARITY))} combos", flush=True)
+        print(f"  Array shard {_shard_id}/{_n_shards}: {len(grid)} of {full_size} combos", flush=True)
 
     n_total = len(grid)
     print(f"  Grid size: {n_total} combinations  (GRANULARITY={GRANULARITY})", flush=True)
