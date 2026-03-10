@@ -83,6 +83,21 @@ FEATURE_NAMES = (
     + [f"hist_std[{i}]"  for i in range(30)]
 )
 
+# Feature modes: indices to keep per mode.
+# "scalar_only" drops n_cols (idx 0) and all histogram features (idx 10-69),
+# leaving the 9 distributional scalars that are independent of table size/shape.
+_SCALAR_ONLY_IDX = list(range(1, 10))
+FEATURE_MODES = {
+    "full":        list(range(len(FEATURE_NAMES))),
+    "scalar_only": _SCALAR_ONLY_IDX,
+}
+
+
+def _select_features(feats: np.ndarray, mode: str) -> tuple[np.ndarray, list[str]]:
+    """Return (filtered_feats, filtered_names) for the given mode."""
+    idx = FEATURE_MODES[mode]
+    return feats[:, idx], [FEATURE_NAMES[i] for i in idx]
+
 
 # ------------------------------------------------------------------
 # GPU detection (mirrors basic-grid-search.py)
@@ -149,10 +164,11 @@ def generate_synthetic_features(params: dict, n: int) -> np.ndarray:
 # ------------------------------------------------------------------
 # Analysis 1: per-feature KS tests
 # ------------------------------------------------------------------
-def analyse_per_feature(real: np.ndarray, synth: np.ndarray, run, tag: str = "") -> pd.DataFrame:
+def analyse_per_feature(real: np.ndarray, synth: np.ndarray, run, tag: str = "",
+                        feature_names: list[str] = FEATURE_NAMES) -> pd.DataFrame:
     print("\n── Per-feature KS tests ──")
     rows = []
-    for i, name in enumerate(FEATURE_NAMES):
+    for i, name in enumerate(feature_names):
         ks_stat, p_val = stats.ks_2samp(real[:, i], synth[:, i])
         # rank-biserial effect size via Mann-Whitney
         u_stat, _ = stats.mannwhitneyu(real[:, i], synth[:, i], alternative="two-sided")
@@ -307,7 +323,8 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run, tag: str = "") ->
 # ------------------------------------------------------------------
 # Analysis 4: feature importance
 # ------------------------------------------------------------------
-def analyse_feature_importance(real: np.ndarray, synth: np.ndarray, run, tag: str = "") -> pd.DataFrame:
+def analyse_feature_importance(real: np.ndarray, synth: np.ndarray, run, tag: str = "",
+                               feature_names: list[str] = FEATURE_NAMES) -> pd.DataFrame:
     print("\n── Feature importance (discriminator gain) ──")
     X_all = np.vstack([synth, real])
     y_all = np.array([0] * len(synth) + [1] * len(real))
@@ -324,9 +341,9 @@ def analyse_feature_importance(real: np.ndarray, synth: np.ndarray, run, tag: st
 
     # Gain importance — proportional contribution to loss reduction
     scores = clf.get_booster().get_score(importance_type="gain")
-    # XGBoost names features f0..f69; map back to FEATURE_NAMES
+    # XGBoost names features f0..fN; map back to feature_names for this mode
     imp = pd.DataFrame([
-        {"feature": FEATURE_NAMES[int(k[1:])], "gain": v}
+        {"feature": feature_names[int(k[1:])], "gain": v}
         for k, v in scores.items()
     ]).sort_values("gain", ascending=False)
     imp["gain_norm"] = imp["gain"] / imp["gain"].sum()
@@ -420,46 +437,55 @@ def main(results_csv: str) -> None:
     col_counts = all_real[:, 0].astype(int)
     fixed = {"min_features": int(col_counts.min()), "max_features": int(col_counts.max())}
 
-    # ── Loop over configs ─────────────────────────────────────────
+    # ── Loop over configs × feature modes ────────────────────────
     for rank, row in top_configs.iterrows():
         cfg = row.to_dict()
         cfg.update(fixed)
-        tag = f"rank{rank + 1}"
+
         print(f"\n{'#'*60}")
-        print(f"  Config rank {rank + 1}/{TOP_K}  (AUC={cfg['auc']:.4f})  [{tag}]")
+        print(f"  Config rank {rank + 1}/{TOP_K}  (AUC={cfg['auc']:.4f})")
         print(f"{'#'*60}")
 
         print(f"\nGenerating {N_SYNTH} synthetic tables ...")
-        synth_feats = generate_synthetic_features(cfg, N_SYNTH)
-        print(f"Synthetic features: {synth_feats.shape}")
+        synth_feats_full = generate_synthetic_features(cfg, N_SYNTH)
+        print(f"Synthetic features: {synth_feats_full.shape}")
 
-        run = None
-        if _WANDB_AVAILABLE and WANDB_PROJECT:
-            run = wandb.init(
-                project=WANDB_PROJECT,
-                name=f"coverage_{SOURCE_NAME}_{tag}",
-                config={
-                    "source":         SOURCE_NAME,
-                    "rank":           rank + 1,
-                    "n_synth":        N_SYNTH,
-                    "n_real_sample":  N_REAL_SAMPLE,
-                    "n_boot":         N_BOOT,
-                    "boot_alpha":     BOOT_ALPHA,
-                    "knn_k":          KNN_K,
-                    "coverage_threshold_quantile": COVERAGE_THRESHOLD_QUANTILE,
-                    **{k: v for k, v in cfg.items() if k not in ("min_features", "max_features")},
-                },
-                reinit=True,
-            )
+        for mode in FEATURE_MODES:
+            tag = f"rank{rank + 1}_{mode}"
+            real_m,  fnames = _select_features(real_feats,       mode)
+            synth_m, _      = _select_features(synth_feats_full, mode)
 
-        analyse_per_feature(real_feats, synth_feats, run, tag)
-        analyse_feature_importance(real_feats, synth_feats, run, tag)
-        analyse_bootstrap_auc(real_feats, synth_feats, run, tag)
-        analyse_coverage(real_feats, synth_feats, run, tag)
-        analyse_pca(real_feats, synth_feats, run, tag)
+            print(f"\n  ── mode={mode}  features={real_m.shape[1]}  [{tag}] ──")
 
-        if run is not None:
-            run.finish()
+            run = None
+            if _WANDB_AVAILABLE and WANDB_PROJECT:
+                run = wandb.init(
+                    project=WANDB_PROJECT,
+                    name=f"coverage_{SOURCE_NAME}_{tag}",
+                    config={
+                        "source":         SOURCE_NAME,
+                        "rank":           rank + 1,
+                        "feature_mode":   mode,
+                        "n_features":     real_m.shape[1],
+                        "n_synth":        N_SYNTH,
+                        "n_real_sample":  N_REAL_SAMPLE,
+                        "n_boot":         N_BOOT,
+                        "boot_alpha":     BOOT_ALPHA,
+                        "knn_k":          KNN_K,
+                        "coverage_threshold_quantile": COVERAGE_THRESHOLD_QUANTILE,
+                        **{k: v for k, v in cfg.items() if k not in ("min_features", "max_features")},
+                    },
+                    reinit=True,
+                )
+
+            analyse_per_feature(real_m, synth_m, run, tag, fnames)
+            analyse_feature_importance(real_m, synth_m, run, tag, fnames)
+            analyse_bootstrap_auc(real_m, synth_m, run, tag)
+            analyse_coverage(real_m, synth_m, run, tag)
+            analyse_pca(real_m, synth_m, run, tag)
+
+            if run is not None:
+                run.finish()
 
     print("\nDone.")
 
