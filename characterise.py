@@ -197,6 +197,9 @@ def column_shape_pmf(series: pd.Series) -> np.ndarray | None:
     return hist
 
 
+SHAPE_SUBSAMPLE_THRESHOLD = 5_000   # subsample 1-in-5 only above this many tables
+SHAPE_SUBSAMPLE_RATE      = 5       # keep 1 in every N tables
+
 def load_source_shape_histograms(
     parquet_dir: Path,
     source_name: str,
@@ -207,11 +210,22 @@ def load_source_shape_histograms(
     For each table in parquet_dir, compute a column-shape PMF for every numeric
     column.  Returns a (N_total_columns, SHAPE_N_BINS) float32 array — one row
     per numeric column across all tables.
+
+    When the source has more than SHAPE_SUBSAMPLE_THRESHOLD tables, a random
+    1-in-SHAPE_SUBSAMPLE_RATE subset is drawn before processing.
     """
     files = sorted(parquet_dir.glob("*.parquet"))
     if max_tables and len(files) > max_tables:
         rng   = np.random.default_rng(42)
         files = rng.choice(files, size=max_tables, replace=False).tolist()
+
+    if len(files) > SHAPE_SUBSAMPLE_THRESHOLD:
+        n_total = len(files)
+        n_keep  = max(1, n_total // SHAPE_SUBSAMPLE_RATE)
+        rng     = np.random.default_rng(42)
+        files   = rng.choice(files, size=n_keep, replace=False).tolist()
+        print(f"  [{source_name}] large source ({n_total} tables) "
+              f"— using {n_keep} randomly sampled tables for shape histograms")
 
     pmfs = []
     for f in tqdm(files, desc=f"  {source_name} (shapes)", unit="tbl"):
