@@ -18,3 +18,4 @@ optuna
 wandb
 umap-learn
 pebble
+seaborn
