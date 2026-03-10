@@ -86,10 +86,13 @@ FEATURE_NAMES = (
 # Feature modes: indices to keep per mode.
 # "scalar_only" drops n_cols (idx 0) and all histogram features (idx 10-69),
 # leaving the 9 distributional scalars that are independent of table size/shape.
+# "hist_only" keeps only the 60 histogram features (idx 10-69).
 _SCALAR_ONLY_IDX = list(range(1, 10))
+_HIST_ONLY_IDX   = list(range(10, 70))
 FEATURE_MODES = {
     "full":        list(range(len(FEATURE_NAMES))),
     "scalar_only": _SCALAR_ONLY_IDX,
+    "hist_only":   _HIST_ONLY_IDX,
 }
 
 
@@ -415,7 +418,7 @@ def _save_and_log(fig: plt.Figure, name: str, run, tag: str = "") -> None:
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
-def main(results_csv: str) -> None:
+def main(results_csv: str, modes: list[str]) -> None:
     # ── Load top-k configs ────────────────────────────────────────
     df_results = pd.read_csv(results_csv)
     top_configs = df_results.nsmallest(TOP_K, "auc").reset_index(drop=True)
@@ -450,7 +453,7 @@ def main(results_csv: str) -> None:
         synth_feats_full = generate_synthetic_features(cfg, N_SYNTH)
         print(f"Synthetic features: {synth_feats_full.shape}")
 
-        for mode in FEATURE_MODES:
+        for mode in modes:
             tag = f"rank{rank + 1}_{mode}"
             real_m,  fnames = _select_features(real_feats,       mode)
             synth_m, _      = _select_features(synth_feats_full, mode)
@@ -494,5 +497,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=RESULTS_CSV,
                         help="Path to grid results CSV (default: %(default)s)")
+    parser.add_argument("--mode", nargs="+", choices=list(FEATURE_MODES.keys()),
+                        default=list(FEATURE_MODES.keys()),
+                        help="Feature mode(s) to run (default: all)")
     args = parser.parse_args()
-    main(args.config)
+    main(args.config, args.mode)
