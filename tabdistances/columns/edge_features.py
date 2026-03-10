@@ -19,6 +19,9 @@ def _pseudo_r2(X: np.ndarray, y: pd.Series) -> float:
     if X.ndim == 1:
         X = X.reshape(-1, 1)
     y = np.asarray(y)
+    # Force labels to strings so sklearn strictly treats them as discrete classes, 
+    # even if they are float32 numbers.
+    y = y.astype(str)
     classes, counts = np.unique(y, return_counts=True)
     if len(classes) < 2:
         return 0.0
@@ -67,7 +70,7 @@ def _directed_weight(
     else:  # CATEGORICAL -> CATEGORICAL
         r2 = _pseudo_r2(_onehot(ci), cj)
 
-    return math.sqrt(r2)
+    return math.sqrt(max(0.0, r2))
 
 
 def get_edge_weights(
