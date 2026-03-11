@@ -181,6 +181,11 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", None, tag)
 
+        d0 = mode_data[modes_ordered[0]]["cov"]
+        fwd_title = f"{d0['label_ref']} covered by {d0['label_cand']}"
+        d0r = mode_data[modes_ordered[0]]["cov_rev"]
+        rev_title = f"{d0r['label_ref']} covered by {d0r['label_cand']}"
+
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
             d = mode_data[mode]["cov"]
@@ -189,22 +194,48 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], mode, label_ref=d["label_ref"])
-        fig.suptitle(f"Coverage — {pair_key}", fontsize=9)
+        fig.suptitle(f"Coverage ({fwd_title}) — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_coverage", None, tag)
 
-        fig, ax = plt.subplots(figsize=(3.2, 2.4))
+        fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
+        for col_i, mode in enumerate(modes_ordered):
+            d = mode_data[mode]["cov_rev"]
+            _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
+                                 d["threshold"], mode,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
+            _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
+                                 d["uncovered"], mode, label_ref=d["label_ref"])
+        fig.suptitle(f"Coverage ({rev_title}) — {pair_key}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_coverage_rev", None, tag)
+
+        fig, (ax_fwd, ax_rev) = plt.subplots(1, 2, figsize=(6.5, 2.4))
         for mode in modes_ordered:
             d = mode_data[mode]["cov"]
             sorted_d = np.sort(d["real_to_synth"])
-            ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                    color=_MODE_COLORS[mode], label=mode, linewidth=0.9)
-            ax.axvline(d["threshold"], color=_MODE_COLORS[mode],
-                       linestyle="--", linewidth=0.6, alpha=0.7)
-        ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax.set_ylabel("Cumulative fraction")
-        ax.set_title(f"Coverage curves — {pair_key}")
-        ax.legend()
+            ax_fwd.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                        color=_MODE_COLORS[mode], label=mode, linewidth=0.9)
+            ax_fwd.axvline(d["threshold"], color=_MODE_COLORS[mode],
+                           linestyle="--", linewidth=0.6, alpha=0.7)
+        ax_fwd.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+        ax_fwd.set_ylabel(f"CDF of {d0['label_ref']} samples")
+        ax_fwd.set_title(fwd_title)
+        ax_fwd.legend()
+
+        for mode in modes_ordered:
+            d = mode_data[mode]["cov_rev"]
+            sorted_d = np.sort(d["real_to_synth"])
+            ax_rev.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                        color=_MODE_COLORS[mode], label=mode, linewidth=0.9)
+            ax_rev.axvline(d["threshold"], color=_MODE_COLORS[mode],
+                           linestyle="--", linewidth=0.6, alpha=0.7)
+        ax_rev.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+        ax_rev.set_ylabel(f"CDF of {d0r['label_ref']} samples")
+        ax_rev.set_title(rev_title)
+        ax_rev.legend()
+
+        fig.suptitle(f"Coverage curves — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_coverage_curves", None, tag)
 
@@ -261,25 +292,50 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], pk, label_ref=d["label_ref"])
-        fig.suptitle("Coverage — all pairs (full features)", fontsize=9)
+        fig.suptitle("Coverage (A covered by B) — all pairs (full features)", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "xpair_coverage", summary_run, tag)
 
-        # Overlaid coverage curves — 1×3, one panel per feature mode
+        fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
+        for col_i, pk in enumerate(pairs_ordered):
+            d = all_pair_data[pk][mode]["cov_rev"]
+            _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
+                                 d["threshold"], pk,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
+            _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
+                                 d["uncovered"], pk, label_ref=d["label_ref"])
+        fig.suptitle("Coverage (B covered by A) — all pairs (full features)", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "xpair_coverage_rev", summary_run, tag)
+
+        # Overlaid coverage curves — 2×3: row 0 = forward, row 1 = reverse; cols = feature modes
         all_modes_ordered = list(FEATURE_MODES.keys())
-        fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
-        for ax, feat_mode in zip(axes, all_modes_ordered):
+        fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
+        for col_i, feat_mode in enumerate(all_modes_ordered):
             for pk in pairs_ordered:
-                d = all_pair_data[pk][feat_mode]["cov"]
-                sorted_d = np.sort(d["real_to_synth"])
-                ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                        color=_PAIR_COLORS[pk], label=pairs_display[pk], linewidth=0.9)
-                ax.axvline(d["threshold"], color=_PAIR_COLORS[pk],
-                           linestyle="--", linewidth=0.6, alpha=0.7)
-            ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-            ax.set_ylabel("Cumulative fraction")
-            ax.set_title(feat_mode)
-            ax.legend()
+                d_fwd = all_pair_data[pk][feat_mode]["cov"]
+                sorted_fwd = np.sort(d_fwd["real_to_synth"])
+                axes[0, col_i].plot(sorted_fwd, np.linspace(0, 1, len(sorted_fwd)),
+                                    color=_PAIR_COLORS[pk], label=pairs_display[pk],
+                                    linewidth=0.9)
+                axes[0, col_i].axvline(d_fwd["threshold"], color=_PAIR_COLORS[pk],
+                                       linestyle="--", linewidth=0.6, alpha=0.7)
+
+                d_rev = all_pair_data[pk][feat_mode]["cov_rev"]
+                sorted_rev = np.sort(d_rev["real_to_synth"])
+                axes[1, col_i].plot(sorted_rev, np.linspace(0, 1, len(sorted_rev)),
+                                    color=_PAIR_COLORS[pk], label=pairs_display[pk],
+                                    linewidth=0.9)
+                axes[1, col_i].axvline(d_rev["threshold"], color=_PAIR_COLORS[pk],
+                                       linestyle="--", linewidth=0.6, alpha=0.7)
+
+            axes[0, col_i].set_title(feat_mode)
+            axes[0, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+            axes[0, col_i].set_ylabel("CDF (A covered by B)")
+            axes[0, col_i].legend()
+            axes[1, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+            axes[1, col_i].set_ylabel("CDF (B covered by A)")
+            axes[1, col_i].legend()
         fig.suptitle("Coverage curves — all pairs", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "xpair_coverage_curves", summary_run, tag)
@@ -355,16 +411,19 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
             _, ks_data   = analyse_per_feature(b_m, a_m, run, tag, fn)
             _, imp_data  = analyse_feature_importance(b_m, a_m, run, tag, fn)
             _, boot_data = analyse_bootstrap_auc(b_m, a_m, run, tag)
-            _, cov_data  = analyse_coverage(b_m, a_m, run, tag,
-                                            label_ref=_DATASET_LABELS[b_name],
-                                            label_cand=_DATASET_LABELS[a_name])
-            _, pca_data  = analyse_pca(b_m, a_m, run, tag,
-                                       label_ref=_DATASET_LABELS[b_name],
-                                       label_cand=_DATASET_LABELS[a_name])
+            _, cov_data     = analyse_coverage(b_m, a_m, run, tag,
+                                               label_ref=_DATASET_LABELS[b_name],
+                                               label_cand=_DATASET_LABELS[a_name])
+            _, cov_rev_data = analyse_coverage(a_m, b_m, run, tag + "_rev",
+                                               label_ref=_DATASET_LABELS[a_name],
+                                               label_cand=_DATASET_LABELS[b_name])
+            _, pca_data     = analyse_pca(b_m, a_m, run, tag,
+                                          label_ref=_DATASET_LABELS[b_name],
+                                          label_cand=_DATASET_LABELS[a_name])
 
             pair_mode_data[mode] = {
                 "ks": ks_data, "imp": imp_data, "boot": boot_data,
-                "cov": cov_data, "pca": pca_data,
+                "cov": cov_data, "cov_rev": cov_rev_data, "pca": pca_data,
             }
             if run is not None:
                 run.finish()
