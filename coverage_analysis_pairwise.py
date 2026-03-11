@@ -55,7 +55,8 @@ OUTPUT_DIR = Path("coverage-results-pairwise")
 _ca.OUTPUT_DIR = OUTPUT_DIR
 
 from coverage_analysis import (
-    FEATURE_NAMES, FEATURE_MODES, _select_features,
+    FEATURE_NAMES, FEATURE_MODES,
+    _select_features as _ca_select_features,
     _PAPER_RC, KNN_K, COVERAGE_THRESHOLD_QUANTILE,
     N_BOOT, BOOT_ALPHA, TEST_FRAC, RANDOM_STATE, XGB_DEVICE,
     analyse_per_feature, analyse_bootstrap_auc, analyse_coverage,
@@ -66,6 +67,17 @@ from coverage_analysis import (
     _save_and_log,
 )
 from tabdistances.discriminator.features import df_to_vec
+
+
+def _select_features(feats: np.ndarray, mode: str) -> tuple[np.ndarray, list[str]]:
+    """Wrapper around coverage_analysis._select_features that drops missing_rate."""
+    arr, names = _ca_select_features(feats, mode)
+    if "missing_rate" in names:
+        i = names.index("missing_rate")
+        arr = np.delete(arr, i, axis=1)
+        names = [n for n in names if n != "missing_rate"]
+    return arr, names
+
 
 # ------------------------------------------------------------------
 # CONFIG
