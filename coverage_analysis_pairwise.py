@@ -362,12 +362,9 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
             axes[0, col_i].set_title(_MODE_LABELS[feat_mode])
             axes[0, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
             axes[0, col_i].set_ylabel("CDF (A covered by B)")
-            axes[0, col_i].legend()
             axes[1, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
             axes[1, col_i].set_ylabel("CDF (B covered by A)")
-            axes[1, col_i].legend()
-        fig.suptitle("Coverage curves — all pairs", fontsize=9)
-        plt.tight_layout()
+        _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage_curves", summary_run, tag)
 
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
