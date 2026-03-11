@@ -70,6 +70,7 @@ COVERAGE_THRESHOLD_QUANTILE = 0.95
 TOP_K         = 5       # number of top configs to analyse
 
 WANDB_PROJECT = "tabicl-coverage-analysis"
+OUTPUT_DIR    = Path("coverage-results")
 
 # ------------------------------------------------------------------
 # Feature names (matches tabdistances/discriminator/features.py layout)
@@ -457,9 +458,21 @@ def analyse_pca(real: np.ndarray, synth: np.ndarray, run,
 # ------------------------------------------------------------------
 # Combined 3-row plots (one row per feature mode)
 # ------------------------------------------------------------------
-def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
-    """Produce a 3-row combined figure for each measure (one row per feature mode)."""
+def plot_combined_all(rank: int, mode_data: dict, tag_base: str, cfg: dict) -> None:
+    """Produce a 3-row combined figure for each measure (one row per feature mode)
+    and log all five images in a single summary wandb run."""
     modes_ordered = list(FEATURE_MODES.keys())  # full, scalar_only, hist_only
+
+    # Open one summary run for all combined figures for this config rank
+    summary_run = None
+    if _WANDB_AVAILABLE and WANDB_PROJECT:
+        summary_run = wandb.init(
+            project=WANDB_PROJECT,
+            name=f"combined_{SOURCE_NAME}_{tag_base}",
+            config={"source": SOURCE_NAME, "rank": rank + 1, "summary": True,
+                    **{k: v for k, v in cfg.items() if k not in ("min_features", "max_features")}},
+            reinit=True,
+        )
 
     # ── per_feature_ks ──────────────────────────────────────────────
     fig, axes = plt.subplots(3, 1, figsize=(10, 15))
@@ -467,7 +480,7 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
         _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], mode)
     fig.suptitle(f"Per-feature KS — rank {rank+1} (all feature modes)", fontsize=13)
     plt.tight_layout()
-    _save_and_log(fig, "combined_per_feature_ks", None, tag_base)
+    _save_and_log(fig, "combined_per_feature_ks", summary_run, tag_base)
 
     # ── bootstrap_auc ───────────────────────────────────────────────
     fig, axes = plt.subplots(3, 1, figsize=(7, 10.5))
@@ -476,7 +489,7 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
         _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"], mode)
     fig.suptitle(f"Bootstrap AUC — rank {rank+1} (all feature modes)", fontsize=13)
     plt.tight_layout()
-    _save_and_log(fig, "combined_bootstrap_auc", None, tag_base)
+    _save_and_log(fig, "combined_bootstrap_auc", summary_run, tag_base)
 
     # ── coverage (3 rows × 2 cols) ──────────────────────────────────
     fig, axes = plt.subplots(3, 2, figsize=(12, 12))
@@ -488,7 +501,7 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
                              d["uncovered"], mode)
     fig.suptitle(f"Coverage — rank {rank+1} (all feature modes)", fontsize=13)
     plt.tight_layout()
-    _save_and_log(fig, "combined_coverage", None, tag_base)
+    _save_and_log(fig, "combined_coverage", summary_run, tag_base)
 
     # ── feature_importance ──────────────────────────────────────────
     fig, axes = plt.subplots(3, 1, figsize=(10, 15))
@@ -497,7 +510,7 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
         _draw_feature_importance(ax, d["imp"], d["auc_val"], mode)
     fig.suptitle(f"Feature importance — rank {rank+1} (all feature modes)", fontsize=13)
     plt.tight_layout()
-    _save_and_log(fig, "combined_feature_importance", None, tag_base)
+    _save_and_log(fig, "combined_feature_importance", summary_run, tag_base)
 
     # ── pca ─────────────────────────────────────────────────────────
     fig, axes = plt.subplots(3, 1, figsize=(7, 18))
@@ -506,15 +519,19 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str) -> None:
         _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode)
     fig.suptitle(f"PCA — rank {rank+1} (all feature modes)", fontsize=13)
     plt.tight_layout()
-    _save_and_log(fig, "combined_pca", None, tag_base)
+    _save_and_log(fig, "combined_pca", summary_run, tag_base)
+
+    if summary_run is not None:
+        summary_run.finish()
 
 
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
 def _save_and_log(fig: plt.Figure, name: str, run, tag: str = "") -> None:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     suffix = f"_{tag}" if tag else ""
-    path = Path(f"coverage_{name}{suffix}.png")
+    path = OUTPUT_DIR / f"coverage_{name}{suffix}.png"
     fig.savefig(path, dpi=120, bbox_inches="tight")
     print(f"  Plot saved -> {path}")
     if run is not None:
@@ -615,7 +632,7 @@ def main(results_csv: str, modes: list[str]) -> None:
         # ── Combined figures (only when all three modes were run) ──
         if all_modes_run:
             print(f"\n  ── Producing combined 3-mode figures for rank {rank+1} ──")
-            plot_combined_all(rank, mode_data, f"rank{rank + 1}")
+            plot_combined_all(rank, mode_data, f"rank{rank + 1}", cfg)
 
     print("\nDone.")
 
