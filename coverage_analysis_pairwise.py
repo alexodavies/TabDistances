@@ -254,19 +254,22 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
         plt.tight_layout()
         _save_and_log(fig, "xpair_coverage", summary_run, tag)
 
-        # Overlaid coverage curves for all pairs on one axes
-        fig, ax = plt.subplots(figsize=(3.2, 2.4))
-        for pk in pairs_ordered:
-            d = all_pair_data[pk][mode]["cov"]
-            sorted_d = np.sort(d["real_to_synth"])
-            ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                    color=_PAIR_COLORS[pk], label=pk, linewidth=0.9)
-            ax.axvline(d["threshold"], color=_PAIR_COLORS[pk],
-                       linestyle="--", linewidth=0.6, alpha=0.7)
-        ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax.set_ylabel("Cumulative fraction")
-        ax.set_title("Coverage curves — all pairs")
-        ax.legend()
+        # Overlaid coverage curves — 1×3, one panel per feature mode
+        all_modes_ordered = list(FEATURE_MODES.keys())
+        fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
+        for ax, feat_mode in zip(axes, all_modes_ordered):
+            for pk in pairs_ordered:
+                d = all_pair_data[pk][feat_mode]["cov"]
+                sorted_d = np.sort(d["real_to_synth"])
+                ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                        color=_PAIR_COLORS[pk], label=pk, linewidth=0.9)
+                ax.axvline(d["threshold"], color=_PAIR_COLORS[pk],
+                           linestyle="--", linewidth=0.6, alpha=0.7)
+            ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+            ax.set_ylabel("Cumulative fraction")
+            ax.set_title(feat_mode)
+            ax.legend()
+        fig.suptitle("Coverage curves — all pairs", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "xpair_coverage_curves", summary_run, tag)
 
@@ -357,8 +360,8 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
             print(f"\n  ── Combined mode figures for {pair_key} ──")
             _plot_combined_per_pair(pair_key, pair_mode_data, modes_ordered)
 
-    # ── Cross-pair combined figures (columns = pairs, full mode) ────
-    if "full" in modes:
+    # ── Cross-pair combined figures (columns = pairs) ────────────────
+    if all_modes_run:
         print("\n── Cross-pair combined figures (full mode) ──")
         summary_run = None
         if _WANDB_AVAILABLE and WANDB_PROJECT:
