@@ -9,8 +9,9 @@ and runs five analyses per config, each logged as a separate wandb run:
   4. Coverage (k-NN)        — fraction of real samples with no nearby synthetic neighbour
   5. PCA projection         — 2-D visualisation of the real / synthetic separation
 
-When all three feature modes are run (the default), a combined 3-row figure is
+When all three feature modes are run (the default), a combined 3-column figure is
 also produced for each measure so the modes can be compared side-by-side.
+Combined figures are sized for inclusion in a US letter-paper academic paper.
 
 Usage
 -----
@@ -26,6 +27,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.decomposition import PCA
@@ -71,6 +73,20 @@ TOP_K         = 5       # number of top configs to analyse
 
 WANDB_PROJECT = "tabicl-coverage-analysis"
 OUTPUT_DIR    = Path("coverage-results")
+
+# rcParams for combined figures intended for US letter-paper inclusion
+# (full text width ≈ 6.5 in, 1-in margins)
+_PAPER_RC = {
+    "font.size":       7,
+    "axes.titlesize":  8,
+    "axes.labelsize":  7,
+    "xtick.labelsize": 6,
+    "ytick.labelsize": 6,
+    "legend.fontsize": 6,
+    "lines.linewidth": 0.8,
+    "patch.linewidth": 0.5,
+    "figure.dpi":      300,
+}
 
 # ------------------------------------------------------------------
 # Feature names (matches tabdistances/discriminator/features.py layout)
@@ -173,19 +189,21 @@ def generate_synthetic_features(params: dict, n: int) -> np.ndarray:
 # Drawing helpers — each renders onto caller-supplied axes
 # ------------------------------------------------------------------
 
-def _draw_per_feature_ks(ax, df_ks: pd.DataFrame, title_suffix: str = "") -> None:
-    top20 = df_ks.head(20)
-    colors = ["#e74c3c" if r > 0 else "#2ecc71" for r in top20["rank_biserial_r"]]
-    bars = ax.barh(top20["feature"][::-1], top20["ks_stat"][::-1],
+def _draw_per_feature_ks(ax, df_ks: pd.DataFrame, title_suffix: str = "",
+                         top_n: int = 20) -> None:
+    top = df_ks.head(top_n)
+    colors = ["#e74c3c" if r > 0 else "#2ecc71" for r in top["rank_biserial_r"]]
+    bars = ax.barh(top["feature"][::-1], top["ks_stat"][::-1],
                    color=colors[::-1], alpha=0.85)
     ax.set_xlabel("KS statistic  (higher = larger distributional gap)")
-    title = "Top-20 KS: real vs synthetic (red = real > synth)"
+    title = f"Top-{top_n} KS: real vs synthetic (red = real > synth)"
     if title_suffix:
         title += f"  [{title_suffix}]"
     ax.set_title(title)
-    for bar, row in zip(bars, top20.iloc[::-1].itertuples()):
+    for bar, row in zip(bars, top.iloc[::-1].itertuples()):
         ax.text(bar.get_width() + 0.003, bar.get_y() + bar.get_height() / 2,
-                f"r={row.rank_biserial_r:.2f}", va="center", fontsize=7)
+                f"r={row.rank_biserial_r:.2f}", va="center",
+                fontsize=mpl.rcParams["legend.fontsize"])
 
 
 def _draw_bootstrap_auc(ax, boot_aucs: np.ndarray, ci_lo: float, ci_hi: float,
@@ -239,18 +257,19 @@ def _draw_coverage_curve(ax, real_to_synth: np.ndarray, threshold: float,
 
 
 def _draw_feature_importance(ax, imp: pd.DataFrame, auc_val: float,
-                             title_suffix: str = "") -> None:
-    top30 = imp.head(30)
-    bars = ax.barh(top30["feature"][::-1], top30["gain_norm"][::-1],
+                             title_suffix: str = "", top_n: int = 30) -> None:
+    top = imp.head(top_n)
+    bars = ax.barh(top["feature"][::-1], top["gain_norm"][::-1],
                    color="steelblue", alpha=0.85)
     ax.set_xlabel("Normalised gain (fraction of total discriminator gain)")
     title = f"Feature importance — discriminator gain  (AUC={auc_val:.4f})"
     if title_suffix:
         title += f"  [{title_suffix}]"
     ax.set_title(title)
-    for bar, val in zip(bars, top30["gain_norm"][::-1]):
+    for bar, val in zip(bars, top["gain_norm"][::-1]):
         ax.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height() / 2,
-                f"{val:.3f}", va="center", fontsize=7)
+                f"{val:.3f}", va="center",
+                fontsize=mpl.rcParams["legend.fontsize"])
 
 
 def _draw_pca(ax, X_2d: np.ndarray, labels: np.ndarray, var: np.ndarray,
@@ -459,9 +478,11 @@ def analyse_pca(real: np.ndarray, synth: np.ndarray, run,
 # Combined 3-row plots (one row per feature mode)
 # ------------------------------------------------------------------
 def plot_combined_all(rank: int, mode_data: dict, tag_base: str, cfg: dict) -> None:
-    """Produce a 3-row combined figure for each measure (one row per feature mode)
-    and log all five images in a single summary wandb run."""
+    """Produce 1×3-column combined figures for each measure (one column per feature
+    mode), sized for US letter-paper inclusion (full text width ≈ 6.5 in).
+    All six figures are logged in a single summary wandb run."""
     modes_ordered = list(FEATURE_MODES.keys())  # full, scalar_only, hist_only
+    _COLORS = {"full": "#2980b9", "scalar_only": "#e67e22", "hist_only": "#27ae60"}
 
     # Open one summary run for all combined figures for this config rank
     summary_run = None
@@ -474,52 +495,69 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str, cfg: dict) -> N
             reinit=True,
         )
 
-    # ── per_feature_ks ──────────────────────────────────────────────
-    fig, axes = plt.subplots(3, 1, figsize=(10, 15))
-    for ax, mode in zip(axes, modes_ordered):
-        _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], mode)
-    fig.suptitle(f"Per-feature KS — rank {rank+1} (all feature modes)", fontsize=13)
-    plt.tight_layout()
-    _save_and_log(fig, "combined_per_feature_ks", summary_run, tag_base)
+    with mpl.rc_context(_PAPER_RC):
+        # ── per_feature_ks  (1 row × 3 cols) ────────────────────────
+        fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
+        for ax, mode in zip(axes, modes_ordered):
+            _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], mode, top_n=10)
+        fig.suptitle(f"Per-feature KS — rank {rank+1}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_per_feature_ks", summary_run, tag_base)
 
-    # ── bootstrap_auc ───────────────────────────────────────────────
-    fig, axes = plt.subplots(3, 1, figsize=(7, 10.5))
-    for ax, mode in zip(axes, modes_ordered):
-        d = mode_data[mode]["boot"]
-        _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"], mode)
-    fig.suptitle(f"Bootstrap AUC — rank {rank+1} (all feature modes)", fontsize=13)
-    plt.tight_layout()
-    _save_and_log(fig, "combined_bootstrap_auc", summary_run, tag_base)
+        # ── bootstrap_auc  (1 row × 3 cols) ─────────────────────────
+        fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
+        for ax, mode in zip(axes, modes_ordered):
+            d = mode_data[mode]["boot"]
+            _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"], mode)
+        fig.suptitle(f"Bootstrap AUC — rank {rank+1}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_bootstrap_auc", summary_run, tag_base)
 
-    # ── coverage (3 rows × 2 cols) ──────────────────────────────────
-    fig, axes = plt.subplots(3, 2, figsize=(12, 12))
-    for row_i, mode in enumerate(modes_ordered):
-        d = mode_data[mode]["cov"]
-        _draw_coverage_dists(axes[row_i, 0], d["real_to_synth"], d["synth_internal"],
-                             d["threshold"], mode)
-        _draw_coverage_curve(axes[row_i, 1], d["real_to_synth"], d["threshold"],
-                             d["uncovered"], mode)
-    fig.suptitle(f"Coverage — rank {rank+1} (all feature modes)", fontsize=13)
-    plt.tight_layout()
-    _save_and_log(fig, "combined_coverage", summary_run, tag_base)
+        # ── coverage  (2 rows × 3 cols: row 0 = dists, row 1 = curve) ──
+        fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
+        for col_i, mode in enumerate(modes_ordered):
+            d = mode_data[mode]["cov"]
+            _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
+                                 d["threshold"], mode)
+            _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
+                                 d["uncovered"], mode)
+        fig.suptitle(f"Coverage — rank {rank+1}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_coverage", summary_run, tag_base)
 
-    # ── feature_importance ──────────────────────────────────────────
-    fig, axes = plt.subplots(3, 1, figsize=(10, 15))
-    for ax, mode in zip(axes, modes_ordered):
-        d = mode_data[mode]["imp"]
-        _draw_feature_importance(ax, d["imp"], d["auc_val"], mode)
-    fig.suptitle(f"Feature importance — rank {rank+1} (all feature modes)", fontsize=13)
-    plt.tight_layout()
-    _save_and_log(fig, "combined_feature_importance", summary_run, tag_base)
+        # ── overlaid coverage curves  (single panel) ─────────────────
+        fig, ax = plt.subplots(figsize=(3.2, 2.4))
+        for mode in modes_ordered:
+            d = mode_data[mode]["cov"]
+            sorted_d = np.sort(d["real_to_synth"])
+            ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                    color=_COLORS[mode], label=mode, linewidth=0.9)
+            ax.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
+                       linewidth=0.6, alpha=0.7)
+        ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+        ax.set_ylabel("Cumulative fraction of real samples")
+        ax.set_title(f"Coverage curves — rank {rank+1}")
+        ax.legend()
+        plt.tight_layout()
+        _save_and_log(fig, "combined_coverage_curves", summary_run, tag_base)
 
-    # ── pca ─────────────────────────────────────────────────────────
-    fig, axes = plt.subplots(3, 1, figsize=(7, 18))
-    for ax, mode in zip(axes, modes_ordered):
-        d = mode_data[mode]["pca"]
-        _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode)
-    fig.suptitle(f"PCA — rank {rank+1} (all feature modes)", fontsize=13)
-    plt.tight_layout()
-    _save_and_log(fig, "combined_pca", summary_run, tag_base)
+        # ── feature_importance  (1 row × 3 cols) ─────────────────────
+        fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
+        for ax, mode in zip(axes, modes_ordered):
+            d = mode_data[mode]["imp"]
+            _draw_feature_importance(ax, d["imp"], d["auc_val"], mode, top_n=10)
+        fig.suptitle(f"Feature importance — rank {rank+1}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_feature_importance", summary_run, tag_base)
+
+        # ── pca  (1 row × 3 cols) ────────────────────────────────────
+        fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
+        for ax, mode in zip(axes, modes_ordered):
+            d = mode_data[mode]["pca"]
+            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode)
+        fig.suptitle(f"PCA — rank {rank+1}", fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_pca", summary_run, tag_base)
 
     if summary_run is not None:
         summary_run.finish()
