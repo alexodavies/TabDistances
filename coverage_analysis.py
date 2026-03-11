@@ -74,6 +74,10 @@ TOP_K         = 5       # number of top configs to analyse
 WANDB_PROJECT = "tabicl-coverage-analysis"
 OUTPUT_DIR    = Path("coverage-results")
 
+# Display labels for the two sides in plots
+_LABEL_REAL  = "Web-Scraped"   # t4 real data
+_LABEL_SYNTH = "Synthetic"     # tabICL prior
+
 # rcParams for combined figures intended for US letter-paper inclusion
 # (full text width ≈ 6.5 in, 1-in margins)
 _PAPER_RC = {
@@ -524,31 +528,61 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str, cfg: dict) -> N
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", summary_run, tag_base)
 
-        # ── coverage  (2 rows × 3 cols: row 0 = dists, row 1 = curve) ──
+        # ── coverage forward  (2 rows × 3 cols: row 0 = dists, row 1 = curve) ──
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
             d = mode_data[mode]["cov"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
-                                 d["threshold"], mode)
+                                 d["threshold"], mode,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode)
-        fig.suptitle(f"Coverage — rank {rank+1}", fontsize=9)
+                                 d["uncovered"], mode, label_ref=d["label_ref"])
+        fig.suptitle(f"Coverage ({_LABEL_REAL} covered by {_LABEL_SYNTH}) — rank {rank+1}",
+                     fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_coverage", summary_run, tag_base)
 
-        # ── overlaid coverage curves  (single panel) ─────────────────
-        fig, ax = plt.subplots(figsize=(3.2, 2.4))
+        # ── coverage reverse  (2 rows × 3 cols) ──────────────────────
+        fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
+        for col_i, mode in enumerate(modes_ordered):
+            d = mode_data[mode]["cov_rev"]
+            _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
+                                 d["threshold"], mode,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
+            _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
+                                 d["uncovered"], mode, label_ref=d["label_ref"])
+        fig.suptitle(f"Coverage ({_LABEL_SYNTH} covered by {_LABEL_REAL}) — rank {rank+1}",
+                     fontsize=9)
+        plt.tight_layout()
+        _save_and_log(fig, "combined_coverage_rev", summary_run, tag_base)
+
+        # ── overlaid coverage curves  (1×2: forward | reverse) ──────
+        fig, (ax_fwd, ax_rev) = plt.subplots(1, 2, figsize=(6.5, 2.4))
         for mode in modes_ordered:
             d = mode_data[mode]["cov"]
             sorted_d = np.sort(d["real_to_synth"])
-            ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                    color=_COLORS[mode], label=mode, linewidth=0.9)
-            ax.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
-                       linewidth=0.6, alpha=0.7)
-        ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax.set_ylabel("Cumulative fraction of real samples")
-        ax.set_title(f"Coverage curves — rank {rank+1}")
-        ax.legend()
+            ax_fwd.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                        color=_COLORS[mode], label=mode, linewidth=0.9)
+            ax_fwd.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
+                           linewidth=0.6, alpha=0.7)
+        ax_fwd.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+        ax_fwd.set_ylabel(f"CDF of {_LABEL_REAL} samples")
+        ax_fwd.set_title(f"{_LABEL_REAL} covered by {_LABEL_SYNTH}")
+        ax_fwd.legend()
+
+        for mode in modes_ordered:
+            d = mode_data[mode]["cov_rev"]
+            sorted_d = np.sort(d["real_to_synth"])
+            ax_rev.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
+                        color=_COLORS[mode], label=mode, linewidth=0.9)
+            ax_rev.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
+                           linewidth=0.6, alpha=0.7)
+        ax_rev.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
+        ax_rev.set_ylabel(f"CDF of {_LABEL_SYNTH} samples")
+        ax_rev.set_title(f"{_LABEL_SYNTH} covered by {_LABEL_REAL}")
+        ax_rev.legend()
+
+        fig.suptitle(f"Coverage curves — rank {rank+1}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_coverage_curves", summary_run, tag_base)
 
@@ -661,18 +695,26 @@ def main(results_csv: str, modes: list[str]) -> None:
                     reinit=True,
                 )
 
-            _, ks_data   = analyse_per_feature(real_m, synth_m, run, tag, fnames)
-            _, imp_data  = analyse_feature_importance(real_m, synth_m, run, tag, fnames)
-            _, boot_data = analyse_bootstrap_auc(real_m, synth_m, run, tag)
-            _, cov_data  = analyse_coverage(real_m, synth_m, run, tag)
-            _, pca_data  = analyse_pca(real_m, synth_m, run, tag)
+            _, ks_data      = analyse_per_feature(real_m, synth_m, run, tag, fnames)
+            _, imp_data     = analyse_feature_importance(real_m, synth_m, run, tag, fnames)
+            _, boot_data    = analyse_bootstrap_auc(real_m, synth_m, run, tag)
+            _, cov_data     = analyse_coverage(real_m, synth_m, run, tag,
+                                               label_ref=_LABEL_REAL,
+                                               label_cand=_LABEL_SYNTH)
+            _, cov_rev_data = analyse_coverage(synth_m, real_m, run, tag + "_rev",
+                                               label_ref=_LABEL_SYNTH,
+                                               label_cand=_LABEL_REAL)
+            _, pca_data     = analyse_pca(real_m, synth_m, run, tag,
+                                          label_ref=_LABEL_REAL,
+                                          label_cand=_LABEL_SYNTH)
 
             mode_data[mode] = {
-                "ks":   ks_data,
-                "imp":  imp_data,
-                "boot": boot_data,
-                "cov":  cov_data,
-                "pca":  pca_data,
+                "ks":      ks_data,
+                "imp":     imp_data,
+                "boot":    boot_data,
+                "cov":     cov_data,
+                "cov_rev": cov_rev_data,
+                "pca":     pca_data,
             }
 
             if run is not None:
