@@ -101,6 +101,11 @@ _MODE_COLORS = {
     "scalar_only": "#e67e22",
     "hist_only":   "#27ae60",
 }
+_MODE_LABELS = {
+    "full":        "All Feats.",
+    "scalar_only": "Aggregates",
+    "hist_only":   "Col. Hists.",
+}
 
 
 # ------------------------------------------------------------------
@@ -159,6 +164,27 @@ def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
 
 
 # ------------------------------------------------------------------
+# Figure helper
+# ------------------------------------------------------------------
+def _collect_legend_below(fig, axes) -> None:
+    """Move all per-axes legends to a single figure legend below the grid (3 cols)."""
+    all_handles, all_labels = [], []
+    seen = set()
+    for ax in axes.flat:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            if l not in seen:
+                all_handles.append(h)
+                all_labels.append(l)
+                seen.add(l)
+        if ax.get_legend():
+            ax.get_legend().remove()
+    plt.tight_layout()
+    fig.legend(all_handles, all_labels, loc="lower center", ncols=3,
+               bbox_to_anchor=(0.5, 0), fontsize=7)
+    plt.subplots_adjust(bottom=0.14)
+
+
+# ------------------------------------------------------------------
 # Combined figures — per pair (columns = modes)
 # ------------------------------------------------------------------
 def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list) -> None:
@@ -168,7 +194,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
     with mpl.rc_context(_PAPER_RC):
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
         for ax, mode in zip(axes, modes_ordered):
-            _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], mode, top_n=10)
+            _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], _MODE_LABELS[mode], top_n=10)
         fig.suptitle(f"Per-feature KS — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_per_feature_ks", None, tag)
@@ -176,7 +202,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
         for ax, mode in zip(axes, modes_ordered):
             d = mode_data[mode]["boot"]
-            _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"], mode)
+            _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"], _MODE_LABELS[mode])
         fig.suptitle(f"Bootstrap AUC — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", None, tag)
@@ -190,24 +216,26 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         for col_i, mode in enumerate(modes_ordered):
             d = mode_data[mode]["cov"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
-                                 d["threshold"], mode,
+                                 d["threshold"], _MODE_LABELS[mode],
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode, label_ref=d["label_ref"])
-        fig.suptitle(f"Coverage ({fwd_title}) — {pair_key}", fontsize=9)
-        plt.tight_layout()
+                                 d["uncovered"], _MODE_LABELS[mode], label_ref=d["label_ref"])
+        for ax in axes[0]:
+            ax.set_xlabel("")
+        _collect_legend_below(fig, axes)
         _save_and_log(fig, "combined_coverage", None, tag)
 
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
             d = mode_data[mode]["cov_rev"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
-                                 d["threshold"], mode,
+                                 d["threshold"], _MODE_LABELS[mode],
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode, label_ref=d["label_ref"])
-        fig.suptitle(f"Coverage ({rev_title}) — {pair_key}", fontsize=9)
-        plt.tight_layout()
+                                 d["uncovered"], _MODE_LABELS[mode], label_ref=d["label_ref"])
+        for ax in axes[0]:
+            ax.set_xlabel("")
+        _collect_legend_below(fig, axes)
         _save_and_log(fig, "combined_coverage_rev", None, tag)
 
         fig, (ax_fwd, ax_rev) = plt.subplots(1, 2, figsize=(6.5, 2.4))
@@ -215,7 +243,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             d = mode_data[mode]["cov"]
             sorted_d = np.sort(d["real_to_synth"])
             ax_fwd.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                        color=_MODE_COLORS[mode], label=mode, linewidth=0.9)
+                        color=_MODE_COLORS[mode], label=_MODE_LABELS[mode], linewidth=0.9)
             ax_fwd.axvline(d["threshold"], color=_MODE_COLORS[mode],
                            linestyle="--", linewidth=0.6, alpha=0.7)
         ax_fwd.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
@@ -227,7 +255,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             d = mode_data[mode]["cov_rev"]
             sorted_d = np.sort(d["real_to_synth"])
             ax_rev.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                        color=_MODE_COLORS[mode], label=mode, linewidth=0.9)
+                        color=_MODE_COLORS[mode], label=_MODE_LABELS[mode], linewidth=0.9)
             ax_rev.axvline(d["threshold"], color=_MODE_COLORS[mode],
                            linestyle="--", linewidth=0.6, alpha=0.7)
         ax_rev.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
@@ -242,7 +270,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
         for ax, mode in zip(axes, modes_ordered):
             d = mode_data[mode]["imp"]
-            _draw_feature_importance(ax, d["imp"], d["auc_val"], mode, top_n=10)
+            _draw_feature_importance(ax, d["imp"], d["auc_val"], _MODE_LABELS[mode], top_n=10)
         fig.suptitle(f"Feature importance — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_feature_importance", None, tag)
@@ -250,7 +278,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
         for ax, mode in zip(axes, modes_ordered):
             d = mode_data[mode]["pca"]
-            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode,
+            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], "",
                       label_ref=d["label_ref"], label_cand=d["label_cand"])
         fig.suptitle(f"PCA — {pair_key}", fontsize=9)
         plt.tight_layout()
@@ -292,8 +320,9 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], pk, label_ref=d["label_ref"])
-        fig.suptitle("Coverage (A covered by B) — all pairs (full features)", fontsize=9)
-        plt.tight_layout()
+        for ax in axes[0]:
+            ax.set_xlabel("")
+        _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage", summary_run, tag)
 
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
@@ -304,8 +333,9 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], pk, label_ref=d["label_ref"])
-        fig.suptitle("Coverage (B covered by A) — all pairs (full features)", fontsize=9)
-        plt.tight_layout()
+        for ax in axes[0]:
+            ax.set_xlabel("")
+        _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage_rev", summary_run, tag)
 
         # Overlaid coverage curves — 2×3: row 0 = forward, row 1 = reverse; cols = feature modes
@@ -329,7 +359,7 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                 axes[1, col_i].axvline(d_rev["threshold"], color=_PAIR_COLORS[pk],
                                        linestyle="--", linewidth=0.6, alpha=0.7)
 
-            axes[0, col_i].set_title(feat_mode)
+            axes[0, col_i].set_title(_MODE_LABELS[feat_mode])
             axes[0, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
             axes[0, col_i].set_ylabel("CDF (A covered by B)")
             axes[0, col_i].legend()
@@ -351,7 +381,7 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
         for ax, pk in zip(axes, pairs_ordered):
             d = all_pair_data[pk][mode]["pca"]
-            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], pk,
+            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], "",
                       label_ref=d["label_ref"], label_cand=d["label_cand"])
         fig.suptitle("PCA — all pairs (full features)", fontsize=9)
         plt.tight_layout()
