@@ -412,7 +412,7 @@ _HIST_MEAN_SLICE = slice(10, 40)   # hist_mean[0..29] in the raw feature vector
 _HIST_STD_SLICE  = slice(40, 70)   # hist_std[0..29]
 
 
-def _plot_hist_features(datasets: dict) -> None:
+def _plot_hist_features(datasets: dict, run=None) -> None:
     """Mean ± 1 SD band plot of histogram features for each dataset."""
     bins = np.arange(30)
     with mpl.rc_context(_PAPER_RC):
@@ -435,7 +435,7 @@ def _plot_hist_features(datasets: dict) -> None:
         ax_std.set_title("Col. histogram std")
         ax_std.legend()
         plt.tight_layout()
-        _save_and_log(fig, "hist_features", None, "all_datasets")
+        _save_and_log(fig, "hist_features", run, "all_datasets")
 
 
 # ------------------------------------------------------------------
@@ -456,7 +456,17 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
         print(f"  {name}: {arr.shape}")
 
     print("\n── Histogram feature distributions ──")
-    _plot_hist_features(datasets)
+    hist_run = None
+    if _WANDB_AVAILABLE and WANDB_PROJECT:
+        hist_run = wandb.init(
+            project=WANDB_PROJECT,
+            name="hist_features",
+            config={"summary": True, "datasets": list(datasets.keys())},
+            reinit=True,
+        )
+    _plot_hist_features(datasets, hist_run)
+    if hist_run is not None:
+        hist_run.finish()
 
     # ── Run analyses for each pair × mode ───────────────────────────
     all_modes_run  = set(modes) == set(FEATURE_MODES.keys())
