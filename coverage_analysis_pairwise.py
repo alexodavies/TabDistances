@@ -135,6 +135,7 @@ def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     if not paths:
         print(f"ERROR: no .parquet files in {tabicl_dir}")
         sys.exit(1)
+    rng.shuffle(paths := np.array(paths))  # random order so the sample is unbiased
     feats, errors = [], 0
     for p in tqdm(paths, desc="featurising tabicl tables", unit="table"):
         try:
@@ -145,10 +146,10 @@ def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
             feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
         except Exception:
             errors += 1
+        if len(feats) >= n:
+            break
     print(f"  Loaded {len(feats)} tabicl tables ({errors} skipped)")
-    arr = np.array(feats)
-    idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
-    return arr[idx]
+    return np.array(feats)
 
 
 # ------------------------------------------------------------------
