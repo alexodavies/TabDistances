@@ -225,11 +225,12 @@ def _draw_bootstrap_auc(ax, boot_aucs: np.ndarray, ci_lo: float, ci_hi: float,
 
 
 def _draw_coverage_dists(ax, real_to_synth: np.ndarray, synth_internal: np.ndarray,
-                         threshold: float, title_suffix: str = "") -> None:
+                         threshold: float, title_suffix: str = "",
+                         label_ref: str = "real", label_cand: str = "synthetic") -> None:
     ax.hist(synth_internal.mean(axis=1), bins=50, alpha=0.6,
-            color="steelblue", label="within-synthetic", edgecolor="white")
+            color="steelblue", label=f"within-{label_cand}", edgecolor="white")
     ax.hist(real_to_synth, bins=50, alpha=0.6,
-            color="salmon", label="real → nearest synthetic", edgecolor="white")
+            color="salmon", label=f"{label_ref} → nearest {label_cand}", edgecolor="white")
     ax.axvline(threshold, color="black", linestyle="--",
                label=f"threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f}): {threshold:.3f}")
     ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
@@ -242,13 +243,14 @@ def _draw_coverage_dists(ax, real_to_synth: np.ndarray, synth_internal: np.ndarr
 
 
 def _draw_coverage_curve(ax, real_to_synth: np.ndarray, threshold: float,
-                         uncovered: float, title_suffix: str = "") -> None:
+                         uncovered: float, title_suffix: str = "",
+                         label_ref: str = "real") -> None:
     ax.plot(np.sort(real_to_synth), np.linspace(0, 1, len(real_to_synth)), color="salmon")
     ax.axvline(threshold, color="black", linestyle="--", label=f"threshold: {threshold:.3f}")
     ax.axhline(1 - uncovered, color="steelblue", linestyle=":",
                label=f"covered fraction: {1-uncovered:.3f}")
     ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-    ax.set_ylabel("Cumulative fraction of real samples")
+    ax.set_ylabel(f"Cumulative fraction of {label_ref} samples")
     title = "Coverage curve"
     if title_suffix:
         title += f"  [{title_suffix}]"
@@ -273,14 +275,15 @@ def _draw_feature_importance(ax, imp: pd.DataFrame, auc_val: float,
 
 
 def _draw_pca(ax, X_2d: np.ndarray, labels: np.ndarray, var: np.ndarray,
-              title_suffix: str = "") -> None:
-    for label, color, alpha in [("real", "#e74c3c", 0.5), ("synthetic", "#2980b9", 0.35)]:
+              title_suffix: str = "",
+              label_ref: str = "real", label_cand: str = "synthetic") -> None:
+    for label, color, alpha in [(label_ref, "#e74c3c", 0.5), (label_cand, "#2980b9", 0.35)]:
         mask = labels == label
         ax.scatter(X_2d[mask, 0], X_2d[mask, 1],
                    c=color, label=label, alpha=alpha, s=8, linewidths=0)
     ax.set_xlabel(f"PC1  ({var[0]:.1%} variance)")
     ax.set_ylabel(f"PC2  ({var[1]:.1%} variance)")
-    title = "PCA: real vs synthetic feature vectors"
+    title = f"PCA: {label_ref} vs {label_cand}"
     if title_suffix:
         title += f"  [{title_suffix}]"
     ax.set_title(title)
@@ -370,7 +373,9 @@ def analyse_bootstrap_auc(real: np.ndarray, synth: np.ndarray, run,
 # Analysis 3: coverage (k-NN)
 # ------------------------------------------------------------------
 def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
-                     tag: str = "") -> tuple[dict, dict]:
+                     tag: str = "",
+                     label_ref: str = "real", label_cand: str = "synthetic"
+                     ) -> tuple[dict, dict]:
     print(f"\n── Coverage analysis  (k={KNN_K}) ──")
 
     lo  = np.minimum(real.min(0), synth.min(0))
@@ -390,13 +395,15 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
     real_to_synth = dists_rs.mean(axis=1)
 
     uncovered = (real_to_synth > threshold).mean()
-    print(f"  Coverage threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f} within-synth): {threshold:.4f}")
-    print(f"  Fraction of real samples uncovered: {uncovered:.3f}")
-    print(f"  Median real→synth distance: {np.median(real_to_synth):.4f}")
+    print(f"  Coverage threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f} within-{label_cand}): {threshold:.4f}")
+    print(f"  Fraction of {label_ref} samples uncovered: {uncovered:.3f}")
+    print(f"  Median {label_ref}→{label_cand} distance: {np.median(real_to_synth):.4f}")
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    _draw_coverage_dists(axes[0], real_to_synth, synth_internal, threshold, tag)
-    _draw_coverage_curve(axes[1], real_to_synth, threshold, uncovered, tag)
+    _draw_coverage_dists(axes[0], real_to_synth, synth_internal, threshold, tag,
+                         label_ref=label_ref, label_cand=label_cand)
+    _draw_coverage_curve(axes[1], real_to_synth, threshold, uncovered, tag,
+                         label_ref=label_ref)
     plt.tight_layout()
     _save_and_log(fig, "coverage", run, tag)
 
@@ -405,7 +412,8 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
     if run is not None:
         run.log({f"coverage/{k}": v for k, v in result.items()})
     return result, {"real_to_synth": real_to_synth, "synth_internal": synth_internal,
-                    "threshold": threshold, "uncovered": uncovered}
+                    "threshold": threshold, "uncovered": uncovered,
+                    "label_ref": label_ref, "label_cand": label_cand}
 
 
 # ------------------------------------------------------------------
@@ -452,10 +460,12 @@ def analyse_feature_importance(real: np.ndarray, synth: np.ndarray, run, tag: st
 # Analysis 5: PCA projection
 # ------------------------------------------------------------------
 def analyse_pca(real: np.ndarray, synth: np.ndarray, run,
-                tag: str = "") -> tuple[None, dict]:
+                tag: str = "",
+                label_ref: str = "real", label_cand: str = "synthetic"
+                ) -> tuple[None, dict]:
     print("\n── PCA projection ──")
     X_all  = np.vstack([real, synth])
-    labels = np.array(["real"] * len(real) + ["synthetic"] * len(synth))
+    labels = np.array([label_ref] * len(real) + [label_cand] * len(synth))
 
     pca = PCA(n_components=2, random_state=RANDOM_STATE)
     X_2d = pca.fit_transform(X_all)
@@ -464,14 +474,15 @@ def analyse_pca(real: np.ndarray, synth: np.ndarray, run,
     print(f"  PC1 variance explained: {var[0]:.3f}   PC2: {var[1]:.3f}")
 
     fig, ax = plt.subplots(figsize=(7, 6))
-    _draw_pca(ax, X_2d, labels, var, tag)
+    _draw_pca(ax, X_2d, labels, var, tag, label_ref=label_ref, label_cand=label_cand)
     plt.tight_layout()
     _save_and_log(fig, "pca", run, tag)
 
     if run is not None:
         run.log({"pca/pc1_var_explained": var[0], "pca/pc2_var_explained": var[1]})
 
-    return None, {"X_2d": X_2d, "labels": labels, "var": var}
+    return None, {"X_2d": X_2d, "labels": labels, "var": var,
+                  "label_ref": label_ref, "label_cand": label_cand}
 
 
 # ------------------------------------------------------------------

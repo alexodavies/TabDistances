@@ -85,6 +85,12 @@ PAIRS = [
     ("icl", "t4"),
 ]
 
+_DATASET_LABELS = {
+    "fm":  "Collated",
+    "t4":  "Web-Scraped",
+    "icl": "Synthetic",
+}
+
 _PAIR_COLORS = {
     "icl_vs_fm": "#2980b9",
     "t4_vs_fm":  "#e67e22",
@@ -179,9 +185,10 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         for col_i, mode in enumerate(modes_ordered):
             d = mode_data[mode]["cov"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
-                                 d["threshold"], mode)
+                                 d["threshold"], mode,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode)
+                                 d["uncovered"], mode, label_ref=d["label_ref"])
         fig.suptitle(f"Coverage — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_coverage", None, tag)
@@ -212,7 +219,8 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
         for ax, mode in zip(axes, modes_ordered):
             d = mode_data[mode]["pca"]
-            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode)
+            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], mode,
+                      label_ref=d["label_ref"], label_cand=d["label_cand"])
         fig.suptitle(f"PCA — {pair_key}", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "combined_pca", None, tag)
@@ -223,7 +231,9 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
 # ------------------------------------------------------------------
 def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
     """1×3-col figures where each column is a pair, using the 'full' feature mode."""
-    pairs_ordered = [f"{a}_vs_{b}" for a, b in PAIRS]
+    pairs_ordered      = [f"{a}_vs_{b}" for a, b in PAIRS]
+    pairs_display      = {f"{a}_vs_{b}": f"{_DATASET_LABELS[a]} vs {_DATASET_LABELS[b]}"
+                          for a, b in PAIRS}
     mode = "full"
     tag  = "all_pairs"
 
@@ -247,9 +257,10 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
         for col_i, pk in enumerate(pairs_ordered):
             d = all_pair_data[pk][mode]["cov"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
-                                 d["threshold"], pk)
+                                 d["threshold"], pk,
+                                 label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], pk)
+                                 d["uncovered"], pk, label_ref=d["label_ref"])
         fig.suptitle("Coverage — all pairs (full features)", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "xpair_coverage", summary_run, tag)
@@ -262,7 +273,7 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                 d = all_pair_data[pk][feat_mode]["cov"]
                 sorted_d = np.sort(d["real_to_synth"])
                 ax.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
-                        color=_PAIR_COLORS[pk], label=pk, linewidth=0.9)
+                        color=_PAIR_COLORS[pk], label=pairs_display[pk], linewidth=0.9)
                 ax.axvline(d["threshold"], color=_PAIR_COLORS[pk],
                            linestyle="--", linewidth=0.6, alpha=0.7)
             ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
@@ -284,7 +295,8 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 2.4))
         for ax, pk in zip(axes, pairs_ordered):
             d = all_pair_data[pk][mode]["pca"]
-            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], pk)
+            _draw_pca(ax, d["X_2d"], d["labels"], d["var"], pk,
+                      label_ref=d["label_ref"], label_cand=d["label_cand"])
         fig.suptitle("PCA — all pairs (full features)", fontsize=9)
         plt.tight_layout()
         _save_and_log(fig, "xpair_pca", summary_run, tag)
@@ -339,12 +351,16 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
                     reinit=True,
                 )
 
-            # A = "synthetic", B = "real" in the analysis functions
+            # A = candidate, B = reference
             _, ks_data   = analyse_per_feature(b_m, a_m, run, tag, fn)
             _, imp_data  = analyse_feature_importance(b_m, a_m, run, tag, fn)
             _, boot_data = analyse_bootstrap_auc(b_m, a_m, run, tag)
-            _, cov_data  = analyse_coverage(b_m, a_m, run, tag)
-            _, pca_data  = analyse_pca(b_m, a_m, run, tag)
+            _, cov_data  = analyse_coverage(b_m, a_m, run, tag,
+                                            label_ref=_DATASET_LABELS[b_name],
+                                            label_cand=_DATASET_LABELS[a_name])
+            _, pca_data  = analyse_pca(b_m, a_m, run, tag,
+                                       label_ref=_DATASET_LABELS[b_name],
+                                       label_cand=_DATASET_LABELS[a_name])
 
             pair_mode_data[mode] = {
                 "ks": ks_data, "imp": imp_data, "boot": boot_data,
