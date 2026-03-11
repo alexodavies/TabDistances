@@ -615,7 +615,7 @@ def _save_and_log(fig: plt.Figure, name: str, run, tag: str = "") -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     suffix = f"_{tag}" if tag else ""
     path = OUTPUT_DIR / f"coverage_{name}{suffix}.png"
-    fig.savefig(path, dpi=120, bbox_inches="tight")
+    fig.savefig(path, dpi=300, bbox_inches="tight")
     print(f"  Plot saved -> {path}")
     if run is not None:
         run.log({name: wandb.Image(str(path))})
