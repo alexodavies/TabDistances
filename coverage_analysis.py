@@ -528,6 +528,8 @@ def _save_and_log(fig: plt.Figure, name: str, run, tag: str = "") -> None:
 def main(results_csv: str, modes: list[str]) -> None:
     # ── Load top-k configs ────────────────────────────────────────
     df_results = pd.read_csv(results_csv)
+
+    print(f"\nLoaded {len(df_results)} grid-search results from {results_csv}")
     top_configs = df_results.nsmallest(TOP_K, "auc").reset_index(drop=True)
     print(f"Top-{TOP_K} configs to analyse:")
     print(top_configs[["auc"] + [c for c in top_configs.columns if c != "auc"]].to_string())
