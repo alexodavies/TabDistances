@@ -179,7 +179,15 @@ def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
 # Figure helper
 # ------------------------------------------------------------------
 def _collect_legend_below(fig, axes) -> None:
-    """Move all per-axes legends to a single figure legend below the grid (3 cols)."""
+    """Move all per-axes legends to a single figure legend below the grid (3 cols).
+    Also strips x-labels from non-bottom rows and y-labels from non-left columns."""
+    nrows, ncols = axes.shape
+    for r in range(nrows):
+        for c in range(ncols):
+            if r < nrows - 1:
+                axes[r, c].set_xlabel("")
+            if c > 0:
+                axes[r, c].set_ylabel("")
     all_handles, all_labels = [], []
     seen = set()
     for ax in axes.flat:
@@ -232,8 +240,6 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], _MODE_LABELS[mode], label_ref=d["label_ref"])
-        for ax in axes[0]:
-            ax.set_xlabel("")
         _collect_legend_below(fig, axes)
         _save_and_log(fig, "combined_coverage", None, tag)
 
@@ -245,8 +251,6 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], _MODE_LABELS[mode], label_ref=d["label_ref"])
-        for ax in axes[0]:
-            ax.set_xlabel("")
         _collect_legend_below(fig, axes)
         _save_and_log(fig, "combined_coverage_rev", None, tag)
 
@@ -332,8 +336,6 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], pk, label_ref=d["label_ref"])
-        for ax in axes[0]:
-            ax.set_xlabel("")
         _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage", summary_run, tag)
 
@@ -345,8 +347,6 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
                                  d["uncovered"], pk, label_ref=d["label_ref"])
-        for ax in axes[0]:
-            ax.set_xlabel("")
         _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage_rev", summary_run, tag)
 
