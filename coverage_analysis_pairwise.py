@@ -65,32 +65,18 @@ from coverage_analysis import (
     _draw_feature_importance, _draw_pca,
     _save_and_log,
 )
-from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.features import df_to_vec
 
 # ------------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------------
 TABLES_DIR    = Path("tables-tabfm/parquet")
+TABICL_DIR    = Path("tables-tabicl/parquet")
 T4_CACHE      = Path("cache/real_feats_t4_5000_512.npz")
 
 N_SAMPLE      = 1000     # samples drawn from each dataset for analysis
 MAX_ROWS      = 512
-BATCH_SIZE    = 8
 WANDB_PROJECT = "tabicl-coverage-pairwise"
-
-# Default SCMPrior parameters used to generate the "icl" dataset
-ICL_PARAMS: dict = {
-    "prior_type":               "tree_scm",
-    "replay_small":             False,
-    "max_classes":              10,
-    "mix_prob_mlp":             0.5,
-    "cat_prob":                 0.3,
-    "multiclass_ordered_prob":  0.5,
-    "balanced":                 False,
-    "tree_depth_lambda":        0.5,
-    "tree_n_estimators_lambda": 0.5,
-}
 
 # Pairs: (A_name, B_name) — A is "candidate", B is "reference"
 PAIRS = [
@@ -144,49 +130,25 @@ def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     return arr[idx]
 
 
-def _generate_icl(params: dict, n: int,
-                  min_features: int, max_features: int) -> np.ndarray:
-    prior = SCMPrior(
-        batch_size=BATCH_SIZE,
-        min_features=min_features,
-        max_features=max_features,
-        max_classes=int(params["max_classes"]),
-        max_seq_len=MAX_ROWS,
-        log_seq_len=True,
-        min_train_size=0.1,
-        max_train_size=0.9,
-        prior_type=params["prior_type"],
-        replay_small=bool(params["replay_small"]),
-        fixed_hp={
-            "mix_probas":               (float(params["mix_prob_mlp"]),
-                                         1.0 - float(params["mix_prob_mlp"])),
-            "cat_prob":                 float(params["cat_prob"]),
-            "multiclass_ordered_prob":  float(params["multiclass_ordered_prob"]),
-            "balanced":                 bool(params["balanced"]),
-            "tree_depth_lambda":        float(params["tree_depth_lambda"]),
-            "tree_n_estimators_lambda": float(params["tree_n_estimators_lambda"]),
-        },
-        n_jobs=1,
-        device="cpu",
-    )
-    feats = []
-    with tqdm(total=n, desc="generating ICL tables", unit="table") as pbar:
-        while len(feats) < n:
-            X, y, d, seq_lens, _ = prior.get_batch()
-            for i in range(X.shape[0]):
-                n_feat  = int(d[i].item())
-                seq_len = int(seq_lens[i].item())
-                if n_feat < min_features or seq_len == 0:
-                    continue
-                X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
-                y_i = y[i, :seq_len].numpy().astype(int)
-                df_i = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
-                df_i["target"] = y_i
-                feats.append(df_to_vec(df_i))
-                pbar.update(1)
-                if len(feats) >= n:
-                    break
-    return np.array(feats)
+def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
+    paths = sorted(tabicl_dir.glob("*.parquet"))
+    if not paths:
+        print(f"ERROR: no .parquet files in {tabicl_dir}")
+        sys.exit(1)
+    feats, errors = [], 0
+    for p in tqdm(paths, desc="featurising tabicl tables", unit="table"):
+        try:
+            df = pd.read_parquet(p).select_dtypes(include=[float, int, "number"])
+            if df.shape[0] == 0 or df.shape[1] == 0:
+                errors += 1
+                continue
+            feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
+        except Exception:
+            errors += 1
+    print(f"  Loaded {len(feats)} tabicl tables ({errors} skipped)")
+    arr = np.array(feats)
+    idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
+    return arr[idx]
 
 
 # ------------------------------------------------------------------
@@ -327,21 +289,15 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
-def main(tables_dir: Path, modes: list[str]) -> None:
+def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(RANDOM_STATE)
 
-    # ── Load / generate all three datasets ──────────────────────────
+    # ── Load all three datasets ──────────────────────────────────────
     print("\n=== Loading datasets ===")
     fm_feats  = _load_fm(tables_dir, N_SAMPLE, rng)
-
     t4_feats  = _load_t4(T4_CACHE, N_SAMPLE, rng)
-
-    col_counts   = t4_feats[:, 0].astype(int)
-    min_features = int(col_counts.min())
-    max_features = int(col_counts.max())
-    print(f"\nGenerating ICL tables (feature range [{min_features}, {max_features}]) ...")
-    icl_feats = _generate_icl(ICL_PARAMS, N_SAMPLE, min_features, max_features)
+    icl_feats = _load_icl(icl_dir, N_SAMPLE, rng)
 
     datasets = {"fm": fm_feats, "t4": t4_feats, "icl": icl_feats}
     for name, arr in datasets.items():
@@ -422,8 +378,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--tables-dir", type=Path, default=TABLES_DIR,
                         help="Directory of tabfm .parquet files (default: %(default)s)")
+    parser.add_argument("--icl-dir", type=Path, default=TABICL_DIR,
+                        help="Directory of tabicl .parquet files (default: %(default)s)")
     parser.add_argument("--mode", nargs="+", choices=list(FEATURE_MODES.keys()),
                         default=list(FEATURE_MODES.keys()),
                         help="Feature mode(s) to run (default: all)")
     args = parser.parse_args()
-    main(args.tables_dir, args.mode)
+    main(args.tables_dir, args.icl_dir, args.mode)
