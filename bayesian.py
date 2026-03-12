@@ -50,7 +50,8 @@ REAL_SOURCES = {
 }
 
 N_EVAL       = 200    # synthetic tables generated per fitness evaluation
-N_REAL       = 200    # real tables to pre-featurize and cache
+N_REAL_CACHE = 10000   # real tables to pre-featurize and cache
+N_REAL_EVAL  = 200    # real tables sampled per trial (from cache)
 MAX_ROWS     = 512    # max rows sampled per table (discriminator caps at 512 anyway)
 BATCH_SIZE   = 1      # SCMPrior batch size (fixed; not optimised)
 RANDOM_STATE = 42
@@ -66,15 +67,15 @@ WANDB_PROJECT = "tabicl-coverage-bayesian"
 
 def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}_v2.npz"
+    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL_CACHE}_{MAX_ROWS}_v2.npz"
 
     if cache_path.exists():
         print(f"  Loading cached features: {cache_path}")
         return np.load(cache_path)["feats"]
 
-    print(f"  Loading up to {N_REAL} real tables from {path} ...")
+    print(f"  Loading up to {N_REAL_CACHE} real tables from {path} ...")
     dfs = [df for df, _ in load_dataframes(
-        path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL, random_state=RANDOM_STATE,
+        path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL_CACHE, random_state=RANDOM_STATE,
     )]
     print(f"  Featurizing {len(dfs)} tables ...")
     feats = np.array([df_to_vec(df) for df in dfs])
@@ -171,13 +172,19 @@ def evaluate(params: dict, real_feats: np.ndarray) -> float:
         print(f"    [generate error] {exc}")
         return 0.0
 
+    # Sample a fresh subset of real tables for diversity across trials
+    idxs = np.random.choice(len(real_feats), size=min(N_REAL_EVAL, len(real_feats)), replace=False)
+    real_sample = real_feats[idxs]
+
     synth_feats = np.array([df_to_vec(df) for df in synth_dfs])
-    real_m,  _  = _select_features(real_feats,  FEATURE_MODE)
+    real_m,  _  = _select_features(real_sample,  FEATURE_MODE)
     synth_m, _  = _select_features(synth_feats, FEATURE_MODE)
 
-    result, _ = analyse_coverage(real_m, synth_m, None, "",
-                                  label_ref="real", label_cand="synth")
-    return float(1.0 - result["uncovered_fraction"])
+    fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
+    rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
+    coverage_real_by_synth = 1.0 - fwd["uncovered_fraction"]
+    coverage_synth_by_real = 1.0 - rev["uncovered_fraction"]
+    return float(coverage_real_by_synth - (1.0 - coverage_synth_by_real))
 
 
 # ------------------------------------------------------------------
