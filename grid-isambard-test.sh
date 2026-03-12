@@ -10,7 +10,6 @@
 #SBATCH --output=logs/slurm-test-%A_%a.out
 #SBATCH --error=logs/slurm-test-%A_%a.err
 #SBATCH --partition=hopper
-#SBATCH --array=0-5
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=128
