@@ -44,18 +44,43 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 # CONFIG
 # ------------------------------------------------------------------
 REAL_SOURCES = {
-    # "cleantablib": Path("tables/parquet"),
-    "t4":          Path("tables-t4/parquet"),
     "tabfm":       Path("tables-tabfm/parquet"),
+    "t4":          Path("tables-t4/parquet"),
+    # "cleantablib": Path("tables/parquet"),
 }
 
 N_EVAL       = 200    # synthetic tables generated per fitness evaluation
-N_REAL       = 200   # real tables sampled per source (cap for speed)
-MAX_ROWS     = 512  # max rows sampled per table (discriminator caps at 512 anyway)
-BATCH_SIZE   = 1     # SCMPrior batch size (fixed; not optimised)
+N_REAL       = 200    # real tables to pre-featurize and cache
+MAX_ROWS     = 512    # max rows sampled per table (discriminator caps at 512 anyway)
+BATCH_SIZE   = 1      # SCMPrior batch size (fixed; not optimised)
 RANDOM_STATE = 42
 N_TRIALS     = 100    # Optuna trials per source
 FEATURE_MODE = "full"   # feature selection mode for coverage: "full" | "scalar_only" | "hist_only"
+CACHE_DIR    = Path("feature-cache")
+WANDB_PROJECT = "tabicl-coverage-bayesian"
+
+
+# ------------------------------------------------------------------
+# Real-data feature caching
+# ------------------------------------------------------------------
+
+def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}_v2.npz"
+
+    if cache_path.exists():
+        print(f"  Loading cached features: {cache_path}")
+        return np.load(cache_path)["feats"]
+
+    print(f"  Loading up to {N_REAL} real tables from {path} ...")
+    dfs = [df for df, _ in load_dataframes(
+        path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL, random_state=RANDOM_STATE,
+    )]
+    print(f"  Featurizing {len(dfs)} tables ...")
+    feats = np.array([df_to_vec(df) for df in dfs])
+    np.savez(cache_path, feats=feats)
+    print(f"  Cached -> {cache_path}  shape={feats.shape}")
+    return feats
 
 
 # ------------------------------------------------------------------
@@ -141,7 +166,7 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 def evaluate(params: dict, real_feats: np.ndarray) -> float:
     """k-NN coverage of real by synthetic.  Higher = more realistic."""
     try:
-        synth_dfs = generate_synthetic_dataframes(params, len(real_feats))
+        synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}")
         return 0.0
@@ -159,30 +184,46 @@ def evaluate(params: dict, real_feats: np.ndarray) -> float:
 # Bayesian study (single source)
 # ------------------------------------------------------------------
 
-def run_study(source_name: str, real_dfs: list) -> tuple[dict, float]:
+def run_study(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, float]:
     """Run an Optuna TPE study against one real-data source.
 
+    real_feats: pre-featurized array shape (N, 70); index 0 = n_cols.
     Returns the best (params, coverage) found.
     """
     print(f"\n{'#'*60}")
     print(f"  Bayesian: tabicl  vs  {source_name}  ({N_TRIALS} trials)")
     print(f"{'#'*60}")
 
-    # Compute column range and featurize real data once (reused every trial)
-    col_counts   = [len(df.columns) for df in real_dfs]
+    # Derive column range from cached feature vectors (index 0 = n_cols)
+    col_counts   = real_feats[:, 0].astype(int)
     fixed_params = {
-        "min_features": min(col_counts),
-        "max_features": max(col_counts),
+        "min_features": int(col_counts.min()),
+        "max_features": int(col_counts.max()),
     }
     print(f"  Fitted from data: min_features={fixed_params['min_features']}  "
           f"max_features={fixed_params['max_features']}")
-    print(f"  Featurizing {len(real_dfs)} real tables ...")
-    real_feats = np.array([df_to_vec(df) for df in real_dfs])
+    print(f"  Using {len(real_feats)} cached real feature vectors")
+
+    _running_best = [0.0]
 
     def objective(trial: optuna.Trial) -> float:
         params   = {**make_params(trial), **fixed_params}
         coverage = evaluate(params, real_feats)
         print(f"  Trial {trial.number:3d}: coverage={coverage:.4f}  {params}")
+
+        if coverage > _running_best[0]:
+            _running_best[0] = coverage
+
+        if run is not None:
+            log_params = {k: (1 if v is True else 0 if v is False else v)
+                          for k, v in trial.user_attrs["params"].items()}
+            run.log({
+                f"{source_name}/coverage":      coverage,
+                f"{source_name}/best_coverage": _running_best[0],
+                f"{source_name}/trial":         trial.number,
+                **{f"{source_name}/param/{k}": v for k, v in log_params.items()},
+            })
+
         return coverage
 
     study = optuna.create_study(
@@ -210,21 +251,37 @@ if __name__ == "__main__":
         print("Run cleantab-export.py and tabfm-export.py first.")
         sys.exit(1)
 
-    # Load real DataFrames once per source (subsample for speed)
-    print("Loading real tables...")
-    real_dfs_by_source = {}
+    # Load / compute real feature vectors once per source
+    print("Loading real feature vectors...")
+    real_feats_by_source = {}
     for name, path in REAL_SOURCES.items():
-        dfs = [df for df, _ in load_dataframes(
-            path, label=0, max_rows=MAX_ROWS, max_tables=N_REAL, random_state=RANDOM_STATE,
-        )]
-        real_dfs_by_source[name] = dfs
-        print(f"  {name}: {len(dfs)} tables")
+        real_feats_by_source[name] = load_or_compute_real_feats(name, path)
+        print(f"  {name}: {real_feats_by_source[name].shape[0]} tables")
 
     # Run one study per source
     results = {}
-    for source_name, real_dfs in real_dfs_by_source.items():
-        best_params, best_coverage = run_study(source_name, real_dfs)
+    for source_name, real_feats in real_feats_by_source.items():
+        run = None
+        if _WANDB_AVAILABLE:
+            run = wandb.init(
+                project=WANDB_PROJECT,
+                name=f"bayesian_{source_name}",
+                config={
+                    "source":       source_name,
+                    "n_eval":       N_EVAL,
+                    "n_real":       len(real_feats),
+                    "n_trials":     N_TRIALS,
+                    "feature_mode": FEATURE_MODE,
+                },
+                reinit=True,
+            )
+
+        best_params, best_coverage = run_study(source_name, real_feats, run=run)
         results[source_name] = (best_params, best_coverage)
+
+        if run is not None:
+            run.summary[f"{source_name}/best_coverage"] = best_coverage
+            run.finish()
 
     # Final summary
     print(f"\n{'#'*60}")
