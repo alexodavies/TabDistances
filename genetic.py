@@ -1,10 +1,10 @@
 """Genetic optimisation of TabICL prior parameters.
 
 Runs one independent GA per real-data source (cleantablib, tabfm).
-Each GA minimises the ROC-AUC of a binary discriminator that tries to
-separate TabICL-generated tables from that source's tables.
-A lower ROC-AUC means the prior's output is less distinguishable from the
-target real tables — i.e. the prior is more realistic for that source.
+Each GA maximises k-NN coverage: the fraction of real tables whose nearest
+synthetic neighbours fall within the synthetic set's internal distance
+threshold.  Higher coverage means the prior's output spans more of the
+real distribution.
 
 Usage
 -----
@@ -26,12 +26,11 @@ sys.path.insert(0, str(Path(".").resolve()))
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
 
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.dataset import load_dataframes
-from tabdistances.discriminator.models.tabicl_disc import SmallTabICLDiscriminator
+from tabdistances.discriminator.features import df_to_vec
+from coverage_analysis import analyse_coverage, _select_features
 
 # ------------------------------------------------------------------
 # CONFIG
@@ -45,9 +44,8 @@ N_EVAL        = 50    # synthetic tables generated per fitness evaluation
 N_REAL        = 100   # real tables sampled per source (cap for speed)
 MAX_ROWS      = 1024  # max rows sampled per table (discriminator caps at 512 anyway)
 BATCH_SIZE    = 8     # SCMPrior batch size (fixed; not optimised)
-TEST_FRAC     = 0.3   # fraction held out for AUC estimation
 RANDOM_STATE  = 42
-DISC_EPOCHS   = 10    # discriminator training epochs per evaluation
+FEATURE_MODE  = "full"   # feature selection mode for coverage: "full" | "scalar_only" | "hist_only"
 
 # Genetic algorithm
 POP_SIZE      = 8
@@ -121,9 +119,9 @@ def mutate(ind: dict) -> dict:
 
 
 def tournament_select(population: list, fitnesses: list) -> dict:
-    """Lower fitness = better (minimise ROC-AUC)."""
+    """Higher fitness = better (maximise coverage)."""
     idxs = random.sample(range(len(population)), TOURNAMENT_K)
-    winner = min(idxs, key=lambda i: fitnesses[i])
+    winner = max(idxs, key=lambda i: fitnesses[i])
     return population[winner]
 
 
@@ -179,28 +177,21 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # Fitness (single source)
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_dfs: list) -> float:
-    """ROC-AUC for tabicl vs one real source.  Lower is better."""
+def evaluate(params: dict, real_feats: np.ndarray) -> float:
+    """k-NN coverage of real by synthetic.  Higher = more realistic."""
     try:
-        synth = generate_synthetic_dataframes(params, len(real_dfs))
+        synth_dfs = generate_synthetic_dataframes(params, len(real_feats))
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 1.0
+        return 0.0
 
-    X_all = synth + real_dfs
-    y_all = [0] * len(synth) + [1] * len(real_dfs)
+    synth_feats = np.array([df_to_vec(df) for df in synth_dfs])
+    real_m,  _  = _select_features(real_feats,  FEATURE_MODE)
+    synth_m, _  = _select_features(synth_feats, FEATURE_MODE)
 
-    X_tr, X_te, y_tr, y_te = train_test_split(
-        X_all, y_all,
-        test_size=TEST_FRAC,
-        random_state=RANDOM_STATE,
-        stratify=y_all,
-    )
-
-    clf = SmallTabICLDiscriminator(num_classes=2, epochs=DISC_EPOCHS)
-    clf.fit(X_tr, np.array(y_tr))
-    proba = clf.predict_proba(X_te)[:, 1]
-    return float(roc_auc_score(y_te, proba))
+    result, _ = analyse_coverage(real_m, synth_m, None, "",
+                                  label_ref="real", label_cand="synth")
+    return float(1.0 - result["uncovered_fraction"])
 
 
 # ------------------------------------------------------------------
@@ -210,13 +201,13 @@ def evaluate(params: dict, real_dfs: list) -> float:
 def run_ga(source_name: str, real_dfs: list) -> tuple[dict, float]:
     """Run the genetic algorithm against one real-data source.
 
-    Returns the best (params, auc) found.
+    Returns the best (params, coverage) found.
     """
     print(f"\n{'#'*60}")
     print(f"  GA: tabicl  vs  {source_name}")
     print(f"{'#'*60}")
 
-    # Compute column range directly from the real DataFrames
+    # Compute column range and featurize real data once (reused every evaluation)
     col_counts   = [len(df.columns) for df in real_dfs]
     fixed_params = {
         "min_features": min(col_counts),
@@ -224,10 +215,12 @@ def run_ga(source_name: str, real_dfs: list) -> tuple[dict, float]:
     }
     print(f"  Fitted from data: min_features={fixed_params['min_features']}  "
           f"max_features={fixed_params['max_features']}")
+    print(f"  Featurizing {len(real_dfs)} real tables ...")
+    real_feats = np.array([df_to_vec(df) for df in real_dfs])
 
     population = [sample_individual() for _ in range(POP_SIZE)]
     fitnesses  = [None] * POP_SIZE
-    best_params, best_fit = None, float("inf")
+    best_params, best_coverage = None, 0.0
 
     for gen in range(N_GENERATIONS):
         print(f"\n{'='*60}")
@@ -238,17 +231,17 @@ def run_ga(source_name: str, real_dfs: list) -> tuple[dict, float]:
             if fitnesses[idx] is not None:
                 continue
             print(f"\n  Individual {idx + 1}/{POP_SIZE}: {ind}")
-            fitnesses[idx] = evaluate({**ind, **fixed_params}, real_dfs)
-            print(f"  → AUC = {fitnesses[idx]:.4f}")
+            fitnesses[idx] = evaluate({**ind, **fixed_params}, real_feats)
+            print(f"  → coverage = {fitnesses[idx]:.4f}")
 
-            if fitnesses[idx] < best_fit:
-                best_fit    = fitnesses[idx]
-                best_params = dict(ind)
+            if fitnesses[idx] > best_coverage:
+                best_coverage = fitnesses[idx]
+                best_params   = dict(ind)
 
-        ranked = sorted(range(POP_SIZE), key=lambda i: fitnesses[i])
+        ranked = sorted(range(POP_SIZE), key=lambda i: fitnesses[i], reverse=True)
         print(f"\n  Generation {gen + 1} summary  [{source_name}]:")
         for rank, idx in enumerate(ranked):
-            print(f"    [{rank+1}] AUC={fitnesses[idx]:.4f}  {population[idx]}")
+            print(f"    [{rank+1}] coverage={fitnesses[idx]:.4f}  {population[idx]}")
 
         if gen == N_GENERATIONS - 1:
             break
@@ -267,7 +260,7 @@ def run_ga(source_name: str, real_dfs: list) -> tuple[dict, float]:
 
         population, fitnesses = next_pop, next_fit
 
-    return best_params, best_fit
+    return best_params, best_coverage
 
 
 # ------------------------------------------------------------------
@@ -295,14 +288,14 @@ if __name__ == "__main__":
     random.seed(RANDOM_STATE)
     results = {}
     for source_name, real_dfs in real_dfs_by_source.items():
-        best_params, best_fit = run_ga(source_name, real_dfs)
-        results[source_name] = (best_params, best_fit)
+        best_params, best_coverage = run_ga(source_name, real_dfs)
+        results[source_name] = (best_params, best_coverage)
 
     # Final summary
     print(f"\n{'#'*60}")
     print("  RESULTS")
     print(f"{'#'*60}")
-    for source_name, (params, auc) in results.items():
-        print(f"\n  [{source_name}]  best AUC = {auc:.4f}  (lower = more realistic)")
+    for source_name, (params, coverage) in results.items():
+        print(f"\n  [{source_name}]  best coverage = {coverage:.4f}  (higher = more realistic)")
         for k, v in params.items():
             print(f"    {k}: {v}")
