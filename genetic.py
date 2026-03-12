@@ -46,9 +46,9 @@ REAL_SOURCES = {
     "t4":    Path("tables-t4/parquet"),
 }
 
-N_EVAL        = 50    # synthetic tables generated per fitness evaluation
+N_EVAL        = 200    # synthetic tables generated per fitness evaluation
 N_REAL_CACHE  = 5000  # real tables to pre-featurize and cache
-N_REAL_EVAL   = 100   # real tables sampled per fitness evaluation (from cache)
+N_REAL_EVAL   = 200   # real tables sampled per fitness evaluation (from cache)
 MAX_ROWS      = 1024  # max rows sampled per table (discriminator caps at 512 anyway)
 BATCH_SIZE    = 8     # SCMPrior batch size (fixed; not optimised)
 RANDOM_STATE  = 42
@@ -57,9 +57,9 @@ CACHE_DIR     = Path("feature-cache")
 WANDB_PROJECT = "tabicl-coverage-genetic"
 
 # Genetic algorithm
-POP_SIZE      = 8
-N_GENERATIONS = 6
-N_ELITE       = 2     # individuals carried over unchanged each generation
+POP_SIZE      = 12
+N_GENERATIONS = 100
+N_ELITE       = 3     # individuals carried over unchanged each generation
 TOURNAMENT_K  = 3     # contestants per tournament selection
 MUTATION_PROB = 0.25  # per-parameter mutation probability
 
