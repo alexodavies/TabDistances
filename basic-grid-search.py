@@ -117,7 +117,7 @@ def build_grid(granularity: int) -> list[dict]:
 
 def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
     CACHE_DIR.mkdir(exist_ok=True)
-    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}.npz"
+    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}_v2.npz"
 
     if cache_path.exists():
         print(f"  Loading cached features: {cache_path}")

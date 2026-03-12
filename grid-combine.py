@@ -26,7 +26,7 @@ try:
 except ImportError:
     _WANDB_AVAILABLE = False
 
-WANDB_PROJECT = "tabicl-grid-search"
+WANDB_PROJECT = "tabicl-coverage-search"
 
 # Must match PARAM_SPACE in grid-isambard.py
 PARAM_SPACE = {
@@ -78,14 +78,14 @@ def collect_results(results_dir: Path) -> dict[str, pd.DataFrame]:
 # Plots (same logic as grid-isambard.py)
 # ------------------------------------------------------------------
 
-def _fig_auc_histogram(df: pd.DataFrame) -> plt.Figure:
+def _fig_coverage_histogram(df: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(df["auc"], bins=30, edgecolor="white", color="#4C72B0")
-    ax.axvline(df["auc"].min(),  color="red",    linestyle="--", label=f"best={df['auc'].min():.4f}")
-    ax.axvline(df["auc"].mean(), color="orange", linestyle="--", label=f"mean={df['auc'].mean():.4f}")
-    ax.set_xlabel("AUC  (lower = more realistic)")
+    ax.hist(df["coverage"], bins=30, edgecolor="white", color="#4C72B0")
+    ax.axvline(df["coverage"].max(),  color="red",    linestyle="--", label=f"best={df['coverage'].max():.4f}")
+    ax.axvline(df["coverage"].mean(), color="orange", linestyle="--", label=f"mean={df['coverage'].mean():.4f}")
+    ax.set_xlabel("Coverage  (higher = more realistic)")
     ax.set_ylabel("Count")
-    ax.set_title("AUC distribution across grid")
+    ax.set_title("Coverage distribution across grid")
     ax.legend()
     fig.tight_layout()
     return fig
@@ -99,17 +99,17 @@ def _fig_cat_param_means(df: pd.DataFrame) -> plt.Figure:
     for ax, param in zip(axes, _CAT_PARAMS):
         if param not in df.columns:
             continue
-        means = df.groupby(param)["auc"].mean().sort_values()
+        means = df.groupby(param)["coverage"].mean().sort_values(ascending=False)
         bars  = ax.bar([str(v) for v in means.index], means.values, color="#DD8452")
         ax.set_title(param)
         ax.set_xlabel("value")
         if ax is axes[0]:
-            ax.set_ylabel("mean AUC")
+            ax.set_ylabel("mean coverage")
         ax.tick_params(axis="x", rotation=20)
         for bar, val in zip(bars, means.values):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
                     f"{val:.3f}", ha="center", va="bottom", fontsize=8)
-    fig.suptitle("Mean AUC by categorical parameter value", y=1.02)
+    fig.suptitle("Mean coverage by categorical parameter value", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -122,24 +122,24 @@ def _fig_float_param_scatter(df: pd.DataFrame) -> plt.Figure:
     for ax, param in zip(axes, _FLOAT_PARAMS):
         if param not in df.columns:
             continue
-        ax.scatter(df[param], df["auc"], alpha=0.3, s=10, color="#55A868")
-        z  = np.polyfit(df[param].astype(float), df["auc"], 1)
+        ax.scatter(df[param], df["coverage"], alpha=0.3, s=10, color="#55A868")
+        z  = np.polyfit(df[param].astype(float), df["coverage"], 1)
         xs = np.linspace(df[param].min(), df[param].max(), 100)
         ax.plot(xs, np.poly1d(z)(xs), color="red", linewidth=1.5)
         ax.set_xlabel(param)
         if ax is axes[0]:
-            ax.set_ylabel("AUC")
+            ax.set_ylabel("Coverage")
         ax.set_title(param)
-    fig.suptitle("AUC vs continuous/integer parameters", y=1.02)
+    fig.suptitle("Coverage vs continuous/integer parameters", y=1.02)
     fig.tight_layout()
     return fig
 
 
 def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
-    top = df.nsmallest(top_n, "auc").copy()
+    top = df.nlargest(top_n, "coverage").copy()
 
     plot_df = pd.DataFrame()
-    for col in list(PARAM_SPACE.keys()) + ["auc"]:
+    for col in list(PARAM_SPACE.keys()) + ["coverage"]:
         if col not in top.columns:
             continue
         vals = top[col]
@@ -155,8 +155,8 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
         if rng > 0:
             normed[col] = (normed[col] - normed[col].min()) / rng
 
-    cmap   = plt.cm.viridis_r
-    colors = [cmap(v) for v in normed["auc"]]
+    cmap   = plt.cm.viridis
+    colors = [cmap(v) for v in normed["coverage"]]
 
     fig, ax = plt.subplots(figsize=(max(12, len(normed.columns) * 1.4), 5))
     cols = normed.columns.tolist()
@@ -166,18 +166,18 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     ax.set_xticks(range(len(cols)))
     ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=8)
     ax.set_ylabel("Normalised value")
-    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = AUC, darker = better)")
+    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = coverage, darker = better)")
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["auc"].min(), top["auc"].max()))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["coverage"].min(), top["coverage"].max()))
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label="AUC", pad=0.01)
+    fig.colorbar(sm, ax=ax, label="Coverage", pad=0.01)
     fig.tight_layout()
     return fig
 
 
 def log_summary_plots(df: pd.DataFrame, source: str, out_dir: Path, run) -> None:
     plots = {
-        "auc_histogram":       _fig_auc_histogram(df),
+        "coverage_histogram":  _fig_coverage_histogram(df),
         "cat_param_means":     _fig_cat_param_means(df),
         "float_param_scatter": _fig_float_param_scatter(df),
         "parallel_coords":     _fig_parallel_coords(df),
@@ -238,8 +238,8 @@ if __name__ == "__main__":
         if run is not None:
             run.finish()
 
-        top10 = df.nsmallest(10, "auc")
-        print(f"\n  TOP-10  [{source}]  (lower AUC = more realistic)", flush=True)
+        top10 = df.nlargest(10, "coverage")
+        print(f"\n  TOP-10  [{source}]  (higher coverage = more realistic)", flush=True)
         print(top10.to_string(index=False), flush=True)
 
     print(f"\nDone.", flush=True)

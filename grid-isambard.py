@@ -59,9 +59,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
-from xgboost import XGBClassifier
+from coverage_analysis import analyse_coverage, _select_features
 
 try:
     import wandb
@@ -109,23 +107,17 @@ N_EVAL       = int(os.environ.get("TAB_N_EVAL",    200))   # synthetic (and real
 N_REAL       = int(os.environ.get("TAB_N_REAL",   5000))  # real tables to pre-featurize and cache
 MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled per table
 BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky startup overhead
-TEST_FRAC    = 0.3
 RANDOM_STATE = 42
 GRANULARITY  = int(os.environ.get("TAB_GRANULARITY", 4))   # grid points for int/float parameters (cat params use all values)
 # Shard runs land in tabicl-grid-shards (grouped by array job).
 # The combine step logs the final merged run to tabicl-grid-search.
-WANDB_PROJECT = "tabicl-grid-shards"  # set to None to disable wandb
+WANDB_PROJECT = "tabicl-coverage-shards"  # set to None to disable wandb
+FEATURE_MODE  = "full"   # feature selection mode: "full" | "scalar_only" | "hist_only"
 
 # --- Per-trial timeout --------------------------------------------
 # If a worker deadlocks (e.g. inside SCMPrior's loky pool), pebble will
 # kill the subprocess after this many seconds and record AUC=1.0.
 TRIAL_TIMEOUT = 300   # seconds
-
-# --- XGBoost device -----------------------------------------------
-# Forced to CPU: each worker would otherwise contend for the single
-# H100 GPU on a GH200 node.  The discriminator fits are tiny (≤280
-# rows, 300 trees) so CPU is fast enough.
-XGB_DEVICE = "cpu"
 
 # --- Parameter space ----------------------------------------------
 PARAM_SPACE = {
@@ -230,7 +222,7 @@ def build_grid(granularity: int) -> list[dict]:
 
 def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}.npz"
+    cache_path = CACHE_DIR / f"real_feats_{source_name}_{N_REAL}_{MAX_ROWS}_v2.npz"
 
     if cache_path.exists():
         print(f"  Loading cached features: {cache_path}", flush=True)
@@ -304,12 +296,12 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # ------------------------------------------------------------------
 
 def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
-    """ROC-AUC for tabicl vs one real source.  Lower AUC = more realistic."""
+    """k-NN coverage of real by synthetic.  Higher = more realistic."""
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}", flush=True)
-        return 1.0
+        return 0.0
 
     with ThreadPoolExecutor(max_workers=4) as tp:
         synth_feats = np.array(list(tp.map(df_to_vec, synth_dfs)))
@@ -320,28 +312,12 @@ def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
     idxs = rng.choice(len(real_feats), size=n_real_sample, replace=False)
     real_sample = real_feats[idxs]
 
-    X_all = np.vstack([synth_feats, real_sample])
-    y_all = np.array([0] * len(synth_feats) + [1] * n_real_sample)
+    real_m,  _ = _select_features(real_sample, FEATURE_MODE)
+    synth_m, _ = _select_features(synth_feats, FEATURE_MODE)
 
-    X_tr, X_te, y_tr, y_te = train_test_split(
-        X_all, y_all,
-        test_size=TEST_FRAC,
-        random_state=RANDOM_STATE,
-        stratify=y_all,
-    )
-
-    clf = XGBClassifier(
-        n_estimators=100,
-        device=XGB_DEVICE,
-        eval_metric="logloss",
-        verbosity=0,
-        random_state=RANDOM_STATE,
-    )
-    print(f"    Fitting discriminator ({len(X_tr)} train / {len(X_te)} test) ...", flush=True)
-    clf.fit(X_tr, y_tr)
-    print(f"    Discriminator fit done.", flush=True)
-    proba = clf.predict_proba(X_te)[:, 1]
-    return float(roc_auc_score(y_te, proba))
+    result, _ = analyse_coverage(real_m, synth_m, None, "",
+                                  label_ref="real", label_cand="synth")
+    return float(1.0 - result["uncovered_fraction"])
 
 
 # ------------------------------------------------------------------
@@ -352,14 +328,14 @@ _CAT_PARAMS   = [k for k, s in PARAM_SPACE.items() if s[0] == "cat"]
 _FLOAT_PARAMS = [k for k, s in PARAM_SPACE.items() if s[0] in ("float", "int")]
 
 
-def _fig_auc_histogram(df: pd.DataFrame) -> plt.Figure:
+def _fig_coverage_histogram(df: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(df["auc"], bins=30, edgecolor="white", color="#4C72B0")
-    ax.axvline(df["auc"].min(), color="red",    linestyle="--", label=f"best={df['auc'].min():.4f}")
-    ax.axvline(df["auc"].mean(), color="orange", linestyle="--", label=f"mean={df['auc'].mean():.4f}")
-    ax.set_xlabel("AUC  (lower = more realistic)")
+    ax.hist(df["coverage"], bins=30, edgecolor="white", color="#4C72B0")
+    ax.axvline(df["coverage"].max(),  color="red",    linestyle="--", label=f"best={df['coverage'].max():.4f}")
+    ax.axvline(df["coverage"].mean(), color="orange", linestyle="--", label=f"mean={df['coverage'].mean():.4f}")
+    ax.set_xlabel("Coverage  (higher = more realistic)")
     ax.set_ylabel("Count")
-    ax.set_title("AUC distribution across grid")
+    ax.set_title("Coverage distribution across grid")
     ax.legend()
     fig.tight_layout()
     return fig
@@ -371,17 +347,17 @@ def _fig_cat_param_means(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _CAT_PARAMS):
-        means = df.groupby(param)["auc"].mean().sort_values()
+        means = df.groupby(param)["coverage"].mean().sort_values(ascending=False)
         bars  = ax.bar([str(v) for v in means.index], means.values, color="#DD8452")
         ax.set_title(param)
         ax.set_xlabel("value")
         if ax is axes[0]:
-            ax.set_ylabel("mean AUC")
+            ax.set_ylabel("mean coverage")
         ax.tick_params(axis="x", rotation=20)
         for bar, val in zip(bars, means.values):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
                     f"{val:.3f}", ha="center", va="bottom", fontsize=8)
-    fig.suptitle("Mean AUC by categorical parameter value", y=1.02)
+    fig.suptitle("Mean coverage by categorical parameter value", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -392,27 +368,27 @@ def _fig_float_param_scatter(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _FLOAT_PARAMS):
-        ax.scatter(df[param], df["auc"], alpha=0.3, s=10, color="#55A868")
+        ax.scatter(df[param], df["coverage"], alpha=0.3, s=10, color="#55A868")
         # trend line
-        z = np.polyfit(df[param].astype(float), df["auc"], 1)
+        z = np.polyfit(df[param].astype(float), df["coverage"], 1)
         xs = np.linspace(df[param].min(), df[param].max(), 100)
         ax.plot(xs, np.poly1d(z)(xs), color="red", linewidth=1.5)
         ax.set_xlabel(param)
         if ax is axes[0]:
-            ax.set_ylabel("AUC")
+            ax.set_ylabel("Coverage")
         ax.set_title(param)
-    fig.suptitle("AUC vs continuous/integer parameters", y=1.02)
+    fig.suptitle("Coverage vs continuous/integer parameters", y=1.02)
     fig.tight_layout()
     return fig
 
 
 def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
-    """Parallel coordinates plot for the top_n trials (lowest AUC)."""
-    top = df.nsmallest(top_n, "auc").copy()
+    """Parallel coordinates plot for the top_n trials (highest coverage)."""
+    top = df.nlargest(top_n, "coverage").copy()
 
     # Encode categoricals to numeric ranks for the plot
     plot_df = pd.DataFrame()
-    for col in list(PARAM_SPACE.keys()) + ["auc"]:
+    for col in list(PARAM_SPACE.keys()) + ["coverage"]:
         if col not in top.columns:
             continue
         vals = top[col]
@@ -429,9 +405,9 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
         if rng > 0:
             normed[col] = (normed[col] - normed[col].min()) / rng
 
-    # Colour by AUC (lower = darker blue)
-    cmap   = plt.cm.viridis_r
-    colors = [cmap(v) for v in normed["auc"]]
+    # Colour by coverage (higher = darker blue)
+    cmap   = plt.cm.viridis
+    colors = [cmap(v) for v in normed["coverage"]]
 
     fig, ax = plt.subplots(figsize=(max(12, len(normed.columns) * 1.4), 5))
     cols = normed.columns.tolist()
@@ -441,11 +417,11 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     ax.set_xticks(range(len(cols)))
     ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=8)
     ax.set_ylabel("Normalised value")
-    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = AUC, darker = better)")
+    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = coverage, darker = better)")
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["auc"].min(), top["auc"].max()))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["coverage"].min(), top["coverage"].max()))
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label="AUC", pad=0.01)
+    fig.colorbar(sm, ax=ax, label="Coverage", pad=0.01)
     fig.tight_layout()
     return fig
 
@@ -453,10 +429,10 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
 def log_summary_plots(df_results: pd.DataFrame, source_name: str, run) -> None:
     """Create summary figures and log them to wandb + disk."""
     plots = {
-        "auc_histogram":      _fig_auc_histogram(df_results),
-        "cat_param_means":    _fig_cat_param_means(df_results),
+        "coverage_histogram":  _fig_coverage_histogram(df_results),
+        "cat_param_means":     _fig_cat_param_means(df_results),
         "float_param_scatter": _fig_float_param_scatter(df_results),
-        "parallel_coords":    _fig_parallel_coords(df_results),
+        "parallel_coords":     _fig_parallel_coords(df_results),
     }
     for name, fig in plots.items():
         path = OUT_DIR / f"grid_plot_{source_name}_{name}_{JOB_ID}.png"
@@ -505,7 +481,7 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
 
     n_total = len(grid)
     print(f"  Grid size: {n_total} combinations  (GRANULARITY={GRANULARITY})", flush=True)
-    print(f"  XGB device: {XGB_DEVICE}", flush=True)
+    print(f"  Feature mode: {FEATURE_MODE}", flush=True)
     print(f"  N_WORKERS={N_WORKERS}  _SCMPRIOR_JOBS={_SCMPRIOR_JOBS}", flush=True)
 
     run = None
@@ -521,7 +497,7 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
                 "max_rows":        MAX_ROWS,
                 "granularity":     GRANULARITY,
                 "grid_size":       n_total,
-                "xgb_device":      XGB_DEVICE,
+                "feature_mode":    FEATURE_MODE,
                 "n_workers":       N_WORKERS,
                 "scmprior_jobs":   _SCMPRIOR_JOBS,
                 "total_cpus":      _TOTAL_CPUS,
@@ -533,9 +509,9 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
 
     # Submit all trials; each worker gets its own seed for reproducible but
     # independent real-feature subsampling.
-    records  = [None] * n_total
-    best_auc = float("inf")
-    done     = 0
+    records       = [None] * n_total
+    best_coverage = 0.0
+    done          = 0
     with ProcessPool(max_workers=N_WORKERS) as pool:
         futures = {
             pool.schedule(evaluate, args=[{**params, **fixed_params}, real_feats, RANDOM_STATE + i],
@@ -545,20 +521,20 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
         for fut in as_completed(futures):
             i, params = futures[fut]
             try:
-                auc = fut.result()
+                coverage = fut.result()
             except FutTimeoutError:
-                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped (AUC=1.0)", flush=True)
-                auc = 1.0
+                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped (coverage=0.0)", flush=True)
+                coverage = 0.0
             except Exception as exc:
-                print(f"  (trial {i:5d}) ERROR: {exc} — skipped (AUC=1.0)", flush=True)
-                auc = 1.0
-            records[i - 1] = {**params, "auc": auc}
+                print(f"  (trial {i:5d}) ERROR: {exc} — skipped (coverage=0.0)", flush=True)
+                coverage = 0.0
+            records[i - 1] = {**params, "coverage": coverage}
             done += 1
-            if auc < best_auc:
-                best_auc = auc
-            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) AUC={auc:.4f}  best={best_auc:.4f}", flush=True)
+            if coverage > best_coverage:
+                best_coverage = coverage
+            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) coverage={coverage:.4f}  best={best_coverage:.4f}", flush=True)
             if run is not None:
-                run.log({"trial": i, "auc": auc, "best_auc": best_auc, **params})
+                run.log({"trial": i, "coverage": coverage, "best_coverage": best_coverage, **params})
 
     df_results = pd.DataFrame(records)
     out_path   = OUT_DIR / f"grid_results_{source_name}_{JOB_ID}.csv"
@@ -567,8 +543,7 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
 
     # Summary table + plots
     if run is not None:
-        table = wandb.Table(dataframe=df_results)
-        run.log({f"{source_name}/results_table": table})
+        run.log({f"{source_name}/results_table": wandb.Table(dataframe=df_results)})
 
     print(f"  Generating summary plots ...", flush=True)
     log_summary_plots(df_results, source_name, run)
@@ -590,7 +565,7 @@ if __name__ == "__main__":
     print(f"_SCMPRIOR_JOBS      = {_SCMPRIOR_JOBS}", flush=True)
     print(f"OUT_DIR             = {OUT_DIR}", flush=True)
     print(f"DATA_ROOT           = {DATA_ROOT}", flush=True)
-    print(f"XGB_DEVICE          = {XGB_DEVICE}", flush=True)
+    print(f"FEATURE_MODE        = {FEATURE_MODE}", flush=True)
 
     missing = [n for n, p in REAL_SOURCES.items() if not any(p.glob("*.parquet"))]
     if missing:
@@ -610,9 +585,9 @@ if __name__ == "__main__":
         all_results[source_name] = df_res
 
     print(f"\n{'#'*60}", flush=True)
-    print("  TOP-10 RESULTS PER SOURCE  (lower AUC = more realistic)", flush=True)
+    print("  TOP-10 RESULTS PER SOURCE  (higher coverage = more realistic)", flush=True)
     print(f"{'#'*60}", flush=True)
     for source_name, df_res in all_results.items():
-        top10 = df_res.nsmallest(10, "auc")
+        top10 = df_res.nlargest(10, "coverage")
         print(f"\n  [{source_name}]", flush=True)
         print(top10.to_string(index=False), flush=True)

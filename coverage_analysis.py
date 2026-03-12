@@ -108,13 +108,15 @@ FEATURE_NAMES = (
 )
 
 # Feature modes: indices to keep per mode.
-# "scalar_only" drops n_cols (idx 0) and all histogram features (idx 10-69),
-# leaving the 9 distributional scalars that are independent of table size/shape.
-# "hist_only" keeps only the 60 histogram features (idx 10-69).
+# n_cols (idx 0) is excluded from all modes — it is retained in the raw vector
+# only so that basic-grid-search.py can derive min/max_features from it.
+# "scalar_only" keeps the 9 distributional scalars (idx 1-9).
+# "hist_only"   keeps the 60 numeric-column histogram features (idx 10-69).
+# "full"        is the union of scalar_only and hist_only (idx 1-69).
 _SCALAR_ONLY_IDX = list(range(1, 10))
 _HIST_ONLY_IDX   = list(range(10, 70))
 FEATURE_MODES = {
-    "full":        list(range(len(FEATURE_NAMES))),
+    "full":        list(range(1, len(FEATURE_NAMES))),
     "scalar_only": _SCALAR_ONLY_IDX,
     "hist_only":   _HIST_ONLY_IDX,
 }
@@ -635,7 +637,7 @@ def main(results_csv: str, modes: list[str]) -> None:
     print(top_configs[["auc"] + [c for c in top_configs.columns if c != "auc"]].to_string())
 
     # ── Load cached real features (shared across all configs) ─────
-    cache_path = CACHE_DIR / f"real_feats_{SOURCE_NAME}_{N_REAL_CACHE}_{MAX_ROWS}.npz"
+    cache_path = CACHE_DIR / f"real_feats_{SOURCE_NAME}_{N_REAL_CACHE}_{MAX_ROWS}_v2.npz"
     if not cache_path.exists():
         print(f"ERROR: cache not found at {cache_path}. Run basic-grid-search.py first.")
         sys.exit(1)

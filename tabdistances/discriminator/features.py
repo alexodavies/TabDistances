@@ -19,8 +19,8 @@ Feature layout (70 dimensions)
 7       mean_abs_corr     — mean absolute pairwise Pearson correlation
 8       std_abs_corr      — std  of absolute pairwise correlations
 9       frac_high_corr    — fraction of column pairs with |r| > 0.7
-10..39  histogram_mean    — mean of each 30-bin cumulative histogram across columns
-40..69  histogram_std     — std  of each 30-bin cumulative histogram across columns
+10..39  histogram_mean    — mean of each 30-bin cumulative histogram across numeric columns only
+40..69  histogram_std     — std  of each 30-bin cumulative histogram across numeric columns only
 """
 
 from __future__ import annotations
@@ -78,9 +78,13 @@ def df_to_vec(df: pd.DataFrame) -> np.ndarray:
         mean_col_skew = std_col_skew = mean_col_kurt = std_col_kurt = 0.0
         mean_abs_corr = std_abs_corr = frac_high_corr = 0.0
 
-    histograms = np.stack([get_histogram(df[col]) for col in df.columns])  # (n_cols, 30)
-    hist_mean  = histograms.mean(axis=0)
-    hist_std   = histograms.std(axis=0)
+    num_cols = [col for col, ct in col_types.items() if ct != ColumnType.CATEGORICAL]
+    if num_cols:
+        histograms = np.stack([get_histogram(df[col]) for col in num_cols])  # (n_num, 30)
+        hist_mean  = histograms.mean(axis=0)
+        hist_std   = histograms.std(axis=0) if len(num_cols) > 1 else np.zeros(_N_HIST_BINS)
+    else:
+        hist_mean = hist_std = np.zeros(_N_HIST_BINS)
 
     return np.concatenate([
         [n_cols, type_ratio, missing_rate,
