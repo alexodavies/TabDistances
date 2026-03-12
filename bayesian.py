@@ -164,13 +164,16 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # Fitness (single source)  (identical to genetic.py)
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray) -> float:
-    """k-NN coverage of real by synthetic.  Higher = more realistic."""
+def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]:
+    """Return (score, coverage_real_by_synth, coverage_synth_by_real).
+
+    score = coverage_real_by_synth - (1 - coverage_synth_by_real), range [-1, 1].
+    """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 0.0
+        return 0.0, 0.0, 0.0
 
     # Sample a fresh subset of real tables for diversity across trials
     idxs = np.random.choice(len(real_feats), size=min(N_REAL_EVAL, len(real_feats)), replace=False)
@@ -182,9 +185,10 @@ def evaluate(params: dict, real_feats: np.ndarray) -> float:
 
     fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
-    coverage_real_by_synth = 1.0 - fwd["uncovered_fraction"]
-    coverage_synth_by_real = 1.0 - rev["uncovered_fraction"]
-    return float(coverage_real_by_synth - (1.0 - coverage_synth_by_real))
+    coverage_real_by_synth = float(1.0 - fwd["uncovered_fraction"])
+    coverage_synth_by_real = float(1.0 - rev["uncovered_fraction"])
+    score = coverage_real_by_synth - (1.0 - coverage_synth_by_real)
+    return score, coverage_real_by_synth, coverage_synth_by_real
 
 
 # ------------------------------------------------------------------
@@ -214,24 +218,27 @@ def run_study(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict,
     _running_best = [0.0]
 
     def objective(trial: optuna.Trial) -> float:
-        params   = {**make_params(trial), **fixed_params}
-        coverage = evaluate(params, real_feats)
-        print(f"  Trial {trial.number:3d}: coverage={coverage:.4f}  {params}")
+        params                       = {**make_params(trial), **fixed_params}
+        score, fwd_cov, rev_cov      = evaluate(params, real_feats)
+        print(f"  Trial {trial.number:3d}: score={score:.4f}  "
+              f"real_by_synth={fwd_cov:.4f}  synth_by_real={rev_cov:.4f}  {params}")
 
-        if coverage > _running_best[0]:
-            _running_best[0] = coverage
+        if score > _running_best[0]:
+            _running_best[0] = score
 
         if run is not None:
             log_params = {k: (1 if v is True else 0 if v is False else v)
                           for k, v in trial.user_attrs["params"].items()}
             run.log({
-                f"{source_name}/coverage":      coverage,
-                f"{source_name}/best_coverage": _running_best[0],
+                f"{source_name}/score":         score,
+                f"{source_name}/best_score":    _running_best[0],
+                f"{source_name}/real_by_synth": fwd_cov,
+                f"{source_name}/synth_by_real": rev_cov,
                 f"{source_name}/trial":         trial.number,
                 **{f"{source_name}/param/{k}": v for k, v in log_params.items()},
             })
 
-        return coverage
+        return score
 
     study = optuna.create_study(
         direction="maximize",
@@ -243,7 +250,7 @@ def run_study(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict,
     best_params    = best_trial.user_attrs["params"]
     best_coverage  = best_trial.value
 
-    print(f"\n  Best trial: {best_trial.number}  coverage={best_coverage:.4f}")
+    print(f"\n  Best trial: {best_trial.number}  score={best_coverage:.4f}")
     return best_params, best_coverage
 
 
@@ -287,7 +294,7 @@ if __name__ == "__main__":
         results[source_name] = (best_params, best_coverage)
 
         if run is not None:
-            run.summary[f"{source_name}/best_coverage"] = best_coverage
+            run.summary[f"{source_name}/best_score"] = best_coverage
             run.finish()
 
     # Final summary

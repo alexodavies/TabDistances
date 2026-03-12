@@ -209,13 +209,16 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # Fitness (single source)
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray) -> float:
-    """k-NN coverage of real by synthetic.  Higher = more realistic."""
+def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]:
+    """Return (score, coverage_real_by_synth, coverage_synth_by_real).
+
+    score = coverage_real_by_synth - (1 - coverage_synth_by_real), range [-1, 1].
+    """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 0.0
+        return 0.0, 0.0, 0.0
 
     # Sample a fresh subset of real tables for diversity across evaluations
     idxs = np.random.choice(len(real_feats), size=min(N_REAL_EVAL, len(real_feats)), replace=False)
@@ -227,9 +230,10 @@ def evaluate(params: dict, real_feats: np.ndarray) -> float:
 
     fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
-    coverage_real_by_synth = 1.0 - fwd["uncovered_fraction"]
-    coverage_synth_by_real = 1.0 - rev["uncovered_fraction"]
-    return float(coverage_real_by_synth - (1.0 - coverage_synth_by_real))
+    coverage_real_by_synth = float(1.0 - fwd["uncovered_fraction"])
+    coverage_synth_by_real = float(1.0 - rev["uncovered_fraction"])
+    score = coverage_real_by_synth - (1.0 - coverage_synth_by_real)
+    return score, coverage_real_by_synth, coverage_synth_by_real
 
 
 # ------------------------------------------------------------------
@@ -270,20 +274,24 @@ def run_ga(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, fl
             if fitnesses[idx] is not None:
                 continue
             print(f"\n  Individual {idx + 1}/{POP_SIZE}: {ind}")
-            fitnesses[idx] = evaluate({**ind, **fixed_params}, real_feats)
+            score, fwd_cov, rev_cov = evaluate({**ind, **fixed_params}, real_feats)
+            fitnesses[idx] = score
             eval_count += 1
-            print(f"  → coverage = {fitnesses[idx]:.4f}")
+            print(f"  → score={score:.4f}  "
+                  f"real_by_synth={fwd_cov:.4f}  synth_by_real={rev_cov:.4f}")
 
-            if fitnesses[idx] > best_coverage:
-                best_coverage = fitnesses[idx]
+            if score > best_coverage:
+                best_coverage = score
                 best_params   = dict(ind)
 
             if run is not None:
                 run.log({
-                    f"{source_name}/coverage":      fitnesses[idx],
-                    f"{source_name}/best_coverage": best_coverage,
-                    f"{source_name}/eval":          eval_count,
-                    f"{source_name}/generation":    gen + 1,
+                    f"{source_name}/score":              score,
+                    f"{source_name}/best_score":         best_coverage,
+                    f"{source_name}/real_by_synth":      fwd_cov,
+                    f"{source_name}/synth_by_real":      rev_cov,
+                    f"{source_name}/eval":               eval_count,
+                    f"{source_name}/generation":         gen + 1,
                     **{f"{source_name}/param/{k}": (1 if v is True else 0 if v is False else v)
                        for k, v in ind.items()},
                 })
@@ -291,7 +299,7 @@ def run_ga(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, fl
         ranked = sorted(range(POP_SIZE), key=lambda i: fitnesses[i], reverse=True)
         print(f"\n  Generation {gen + 1} summary  [{source_name}]:")
         for rank, idx in enumerate(ranked):
-            print(f"    [{rank+1}] coverage={fitnesses[idx]:.4f}  {population[idx]}")
+            print(f"    [{rank+1}] score={fitnesses[idx]:.4f}  {population[idx]}")
 
         if gen == N_GENERATIONS - 1:
             break
@@ -355,7 +363,7 @@ if __name__ == "__main__":
         results[source_name] = (best_params, best_coverage)
 
         if run is not None:
-            run.summary[f"{source_name}/best_coverage"] = best_coverage
+            run.summary[f"{source_name}/best_score"] = best_coverage
             run.finish()
 
     # Final summary
