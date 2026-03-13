@@ -380,7 +380,8 @@ def analyse_bootstrap_auc(real: np.ndarray, synth: np.ndarray, run,
 # ------------------------------------------------------------------
 def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
                      tag: str = "",
-                     label_ref: str = "real", label_cand: str = "synthetic"
+                     label_ref: str = "real", label_cand: str = "synthetic",
+                     log_prefix: str = "coverage"
                      ) -> tuple[dict, dict]:
     print(f"\n── Coverage analysis  (k={KNN_K}) ──")
 
@@ -416,7 +417,7 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
     result = {"threshold": threshold, "uncovered_fraction": uncovered,
               "median_real_to_synth_dist": float(np.median(real_to_synth))}
     if run is not None:
-        run.log({f"coverage/{k}": v for k, v in result.items()})
+        run.log({f"{log_prefix}/{k}": v for k, v in result.items()})
     return result, {"real_to_synth": real_to_synth, "synth_internal": synth_internal,
                     "threshold": threshold, "uncovered": uncovered,
                     "label_ref": label_ref, "label_cand": label_cand}
@@ -705,7 +706,8 @@ def main(results_csv: str, modes: list[str]) -> None:
                                                label_cand=_LABEL_SYNTH)
             _, cov_rev_data = analyse_coverage(synth_m, real_m, run, tag + "_rev",
                                                label_ref=_LABEL_SYNTH,
-                                               label_cand=_LABEL_REAL)
+                                               label_cand=_LABEL_REAL,
+                                               log_prefix="coverage_rev")
             _, pca_data     = analyse_pca(real_m, synth_m, run, tag,
                                           label_ref=_LABEL_REAL,
                                           label_cand=_LABEL_SYNTH)
