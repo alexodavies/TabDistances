@@ -504,12 +504,14 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
             _, ks_data   = analyse_per_feature(b_m, a_m, run, tag, fn)
             _, imp_data  = analyse_feature_importance(b_m, a_m, run, tag, fn)
             _, boot_data = analyse_bootstrap_auc(b_m, a_m, run, tag)
-            _, cov_data     = analyse_coverage(b_m, a_m, run, tag,
-                                               label_ref=_DATASET_LABELS[b_name],
-                                               label_cand=_DATASET_LABELS[a_name])
-            _, cov_rev_data = analyse_coverage(a_m, b_m, run, tag + "_rev",
-                                               label_ref=_DATASET_LABELS[a_name],
-                                               label_cand=_DATASET_LABELS[b_name])
+            _, cov_data          = analyse_coverage(b_m, a_m, run, tag,
+                                                    label_ref=_DATASET_LABELS[b_name],
+                                                    label_cand=_DATASET_LABELS[a_name])
+            cov_rev_result, cov_rev_data = analyse_coverage(a_m, b_m, None, tag + "_rev",
+                                                            label_ref=_DATASET_LABELS[a_name],
+                                                            label_cand=_DATASET_LABELS[b_name])
+            if run is not None:
+                run.log({f"coverage_rev/{k}": v for k, v in cov_rev_result.items()})
             _, pca_data     = analyse_pca(b_m, a_m, run, tag,
                                           label_ref=_DATASET_LABELS[b_name],
                                           label_cand=_DATASET_LABELS[a_name])
