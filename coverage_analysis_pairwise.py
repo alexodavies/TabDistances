@@ -103,7 +103,7 @@ PAIRS = [
 ]
 
 _DATASET_LABELS = {
-    "fm":  "Collated",
+    "fm":  "Curated",
     "t4":  "Web-Scraped",
     "icl": "Synthetic",
 }
