@@ -133,10 +133,11 @@ _DATASET_COLORS = {
 # Dataset loaders
 # ------------------------------------------------------------------
 def _load_fm(tables_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
-    paths = sorted(tables_dir.glob("*.parquet"))
-    if not paths:
+    paths = np.array(sorted(tables_dir.glob("*.parquet")))
+    if not len(paths):
         print(f"ERROR: no .parquet files in {tables_dir}")
         sys.exit(1)
+    rng.shuffle(paths)
     feats, errors = [], 0
     for p in tqdm(paths, desc="featurising tabfm tables", unit="table"):
         try:
@@ -147,18 +148,19 @@ def _load_fm(tables_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
             feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
         except Exception:
             errors += 1
+        if len(feats) >= n:
+            break
     print(f"  Loaded {len(feats)} tabfm tables ({errors} skipped)")
-    arr = np.array(feats)
-    idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
-    return arr[idx]
+    return np.array(feats)
 
 
 def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     if not cache_path.exists():
-        paths = sorted(T4_DIR.glob("*.parquet"))
-        if not paths:
+        paths = np.array(sorted(T4_DIR.glob("*.parquet")))
+        if not len(paths):
             print(f"ERROR: no .parquet files in {T4_DIR}")
             sys.exit(1)
+        rng.shuffle(paths)
         feats, errors = [], 0
         for p in tqdm(paths, desc="featurising t4 tables", unit="table"):
             try:
@@ -169,6 +171,8 @@ def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
                 feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
             except Exception:
                 errors += 1
+            if len(feats) >= n:
+                break
         print(f"  Loaded {len(feats)} t4 tables ({errors} skipped)")
         arr = np.array(feats)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -176,8 +180,9 @@ def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
         print(f"  Cached -> {cache_path}")
     else:
         arr = np.load(cache_path)["feats"]
-    idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
-    return arr[idx]
+        idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
+        arr = arr[idx]
+    return arr
 
 
 def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
