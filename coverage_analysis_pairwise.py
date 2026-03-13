@@ -502,12 +502,13 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str]) -> None:
 
     for a_name, b_name in PAIRS:
         pair_key  = f"{a_name}_vs_{b_name}"
-        a_full    = datasets[a_name]   # "synthetic" / candidate
-        b_full    = datasets[b_name]   # "real"      / reference
+        n_pair    = min(len(datasets[a_name]), len(datasets[b_name]))
+        a_full    = datasets[a_name][rng.choice(len(datasets[a_name]), size=n_pair, replace=False)]
+        b_full    = datasets[b_name][rng.choice(len(datasets[b_name]), size=n_pair, replace=False)]
         pair_mode_data: dict[str, dict] = {}
 
         print(f"\n{'='*60}")
-        print(f"  Pair: {pair_key}  (A={a_name} vs B={b_name})")
+        print(f"  Pair: {pair_key}  (A={a_name} vs B={b_name}, n={n_pair})")
         print(f"{'='*60}")
 
         for mode in modes:
