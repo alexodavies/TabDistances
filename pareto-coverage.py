@@ -56,7 +56,8 @@ N_REAL_EVAL   = 200    # real tables sampled per evaluation (from cache)
 MAX_ROWS      = 512    # must match bayesian.py to share the cache
 BATCH_SIZE    = 1
 RANDOM_STATE  = 42
-N_TRIALS      = 500    # more trials than bayesian.py to map the front densely
+N_TRIALS        = 1000    # more trials than bayesian.py to map the front densely
+N_TRIALS_SINGLE = 1000    # single-objective run (recall only)
 FEATURE_MODE  = "full"
 CACHE_DIR     = Path("feature-cache")
 OUT_DIR       = Path("pareto-results")
@@ -201,40 +202,133 @@ def _pareto_mask(fwd: np.ndarray, rev: np.ndarray) -> np.ndarray:
 
 
 # ------------------------------------------------------------------
+# Single-objective study (recall only)
+# ------------------------------------------------------------------
+
+def run_single_objective_study(source_name: str, real_feats: np.ndarray, run=None) -> pd.DataFrame:
+    """TPE study maximising only coverage_real_by_synth (recall).
+
+    Returns a DataFrame with columns [trial, real_by_synth, synth_by_real, ...params].
+    """
+    print(f"\n{'#'*60}")
+    print(f"  Single-objective (recall-only) study: tabicl  vs  {source_name}  ({N_TRIALS_SINGLE} trials)")
+    print(f"{'#'*60}")
+
+    col_counts   = real_feats[:, 0].astype(int)
+    fixed_params = {
+        "min_features": int(col_counts.min()),
+        "max_features": int(col_counts.max()),
+    }
+
+    _live_points: list[list[float]] = []
+
+    def objective(trial: optuna.Trial) -> float:
+        params           = {**make_params(trial), **fixed_params}
+        fwd_cov, rev_cov = evaluate(params, real_feats)
+        _live_points.append([fwd_cov, rev_cov])
+        print(f"  Trial {trial.number:3d}: real_by_synth={fwd_cov:.4f}  "
+              f"synth_by_real={rev_cov:.4f}")
+
+        if run is not None:
+            log_p = {k: (1 if v is True else 0 if v is False else v)
+                     for k, v in trial.user_attrs["params"].items()}
+            scatter_table = wandb.Table(
+                data=_live_points,
+                columns=["real_by_synth", "synth_by_real"],
+            )
+            run.log({
+                f"{source_name}_single/real_by_synth": fwd_cov,
+                f"{source_name}_single/synth_by_real": rev_cov,
+                f"{source_name}_single/trial":         trial.number,
+                f"{source_name}_single/coverage_scatter": wandb.plot.scatter(
+                    scatter_table,
+                    "real_by_synth",
+                    "synth_by_real",
+                    title=f"Coverage scatter (recall-only) — {source_name}",
+                ),
+                **{f"{source_name}_single/param/{k}": v for k, v in log_p.items()},
+            })
+
+        return fwd_cov
+
+    study = optuna.create_study(
+        direction="maximize",
+        sampler=optuna.samplers.TPESampler(seed=RANDOM_STATE),
+    )
+    study.optimize(objective, n_trials=N_TRIALS_SINGLE)
+
+    rows = []
+    for t in study.trials:
+        if t.value is None:
+            continue
+        row = {"trial": t.number, "real_by_synth": t.value}
+        # retrieve synth_by_real from the live list (same order as trials)
+        if t.number < len(_live_points):
+            row["synth_by_real"] = _live_points[t.number][1]
+        else:
+            row["synth_by_real"] = float("nan")
+        row.update(t.user_attrs.get("params", {}))
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+    print(f"\n  Best recall-only trial: real_by_synth={study.best_value:.4f}")
+    return df
+
+
+# ------------------------------------------------------------------
 # Plots
 # ------------------------------------------------------------------
 
-def _fig_pareto_scatter(df: pd.DataFrame, source_name: str) -> plt.Figure:
-    """Scatter all trials coloured by trial order; overlay Pareto front in red."""
-    fig, ax = plt.subplots(figsize=(6, 6))
+def _fig_pareto_scatter(
+    df: pd.DataFrame,
+    source_name: str,
+    df_single: pd.DataFrame | None = None,
+) -> plt.Figure:
+    """Scatter all trials coloured by trial order; overlay Pareto front in red.
+
+    If *df_single* is provided (single-objective recall-only run), those points
+    are overlaid in orange on the same axes.
+    """
+    fig, ax = plt.subplots(figsize=(7, 7))
 
     fwd = df["real_by_synth"].values
     rev = df["synth_by_real"].values
     trial_idx = df["trial"].values
     pareto = df["is_pareto"].values
 
+    # Non-Pareto multi-objective trials
     sc = ax.scatter(fwd[~pareto], rev[~pareto],
-                    c=trial_idx[~pareto], cmap="Blues", s=15, alpha=0.5,
-                    vmin=0, vmax=len(df), label="all trials")
-    fig.colorbar(sc, ax=ax, label="trial number")
+                    c=trial_idx[~pareto], cmap="Blues", s=18, alpha=0.45,
+                    vmin=0, vmax=len(df), label=f"NSGA-II ({(~pareto).sum()} trials)")
+    fig.colorbar(sc, ax=ax, label="NSGA-II trial number", shrink=0.85)
 
+    # Pareto-optimal points + step line
     ax.scatter(fwd[pareto], rev[pareto],
-               color="red", s=50, zorder=5, label=f"Pareto front ({pareto.sum()} pts)")
-
-    # Connect Pareto front with a step line (sorted by fwd_cov)
+               color="crimson", s=60, zorder=5,
+               label=f"Pareto front ({pareto.sum()} pts)", edgecolors="darkred", linewidths=0.5)
     pf = df[pareto].sort_values("real_by_synth")
     ax.step(pf["real_by_synth"].values, pf["synth_by_real"].values,
-            where="post", color="red", linewidth=1.5, zorder=4)
+            where="post", color="crimson", linewidth=1.8, zorder=4)
+
+    # Single-objective (recall-only) overlay
+    if df_single is not None and len(df_single):
+        ax.scatter(df_single["real_by_synth"].values, df_single["synth_by_real"].values,
+                   color="darkorange", s=22, alpha=0.55, zorder=3, marker="^",
+                   label=f"recall-only TPE ({len(df_single)} trials)")
 
     # Equal-coverage diagonal
-    lims = [min(fwd.min(), rev.min()) - 0.02, max(fwd.max(), rev.max()) + 0.02]
-    ax.plot(lims, lims, "--", color="grey", linewidth=1, alpha=0.6, label="y = x")
-    ax.set_xlim(lims); ax.set_ylim(lims)
+    ax.plot([0, 1], [0, 1], "--", color="grey", linewidth=1, alpha=0.5, label="y = x")
 
-    ax.set_xlabel("coverage_real_by_synth  (recall)")
-    ax.set_ylabel("coverage_synth_by_real  (precision)")
-    ax.set_title(f"Pareto front — {source_name}  ({N_TRIALS} trials)")
-    ax.legend(fontsize=8)
+    ax.set_xlim(0, 1.1)
+    ax.set_ylim(0, 1.1)
+    ax.set_xticks(np.arange(0, 1.11, 0.1))
+    ax.set_yticks(np.arange(0, 1.11, 0.1))
+    ax.grid(True, linestyle=":", linewidth=0.6, alpha=0.6)
+
+    ax.set_xlabel("coverage_real_by_synth  (recall)", fontsize=11)
+    ax.set_ylabel("coverage_synth_by_real  (precision)", fontsize=11)
+    ax.set_title(f"Pareto front — {source_name}  (NSGA-II {N_TRIALS} + TPE {N_TRIALS_SINGLE} trials)")
+    ax.legend(fontsize=8, loc="lower left")
     ax.set_aspect("equal")
     fig.tight_layout()
     return fig
@@ -262,10 +356,10 @@ def _fig_pareto_correlation(df: pd.DataFrame, source_name: str) -> plt.Figure:
     return fig
 
 
-def log_plots(df: pd.DataFrame, source_name: str, run) -> None:
+def log_plots(df: pd.DataFrame, source_name: str, run, df_single: pd.DataFrame | None = None) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     plots = {
-        "pareto_scatter":     _fig_pareto_scatter(df, source_name),
+        "pareto_scatter":     _fig_pareto_scatter(df, source_name, df_single=df_single),
         "pareto_correlation": _fig_pareto_correlation(df, source_name),
     }
     for name, fig in plots.items():
@@ -379,27 +473,37 @@ if __name__ == "__main__":
                 project=WANDB_PROJECT,
                 name=f"pareto_{source_name}",
                 config={
-                    "source":       source_name,
-                    "n_eval":       N_EVAL,
-                    "n_real":       len(real_feats),
-                    "n_trials":     N_TRIALS,
-                    "feature_mode": FEATURE_MODE,
-                    "sampler":      "NSGA-II",
+                    "source":              source_name,
+                    "n_eval":              N_EVAL,
+                    "n_real":              len(real_feats),
+                    "n_trials_nsga2":      N_TRIALS,
+                    "n_trials_single":     N_TRIALS_SINGLE,
+                    "feature_mode":        FEATURE_MODE,
+                    "sampler_multi":       "NSGA-II",
+                    "sampler_single":      "TPE",
                 },
                 reinit=True,
             )
 
+        df_single = run_single_objective_study(source_name, real_feats, run=run)
         df = run_pareto_study(source_name, real_feats, run=run)
 
-        # Save results CSV
+        # Save results CSVs
         csv_path = OUT_DIR / f"pareto_results_{source_name}.csv"
         df.to_csv(csv_path, index=False)
         print(f"  Results CSV -> {csv_path}")
 
-        if run is not None:
-            run.log({f"{source_name}/results_table": wandb.Table(dataframe=df)})
+        csv_single_path = OUT_DIR / f"single_results_{source_name}.csv"
+        df_single.to_csv(csv_single_path, index=False)
+        print(f"  Single-obj CSV -> {csv_single_path}")
 
-        log_plots(df, source_name, run)
+        if run is not None:
+            run.log({
+                f"{source_name}/results_table":        wandb.Table(dataframe=df),
+                f"{source_name}_single/results_table": wandb.Table(dataframe=df_single),
+            })
+
+        log_plots(df, source_name, run, df_single=df_single)
 
         if run is not None:
             run.summary[f"{source_name}/n_pareto"] = int(df["is_pareto"].sum())
