@@ -70,12 +70,15 @@ from tabdistances.discriminator.features import df_to_vec
 
 
 def _select_features(feats: np.ndarray, mode: str) -> tuple[np.ndarray, list[str]]:
-    """Wrapper around coverage_analysis._select_features that drops missing_rate."""
+    """Wrapper around coverage_analysis._select_features that drops missing_rate
+    and prepends n_cols (idx 0, excluded from all modes by default)."""
     arr, names = _ca_select_features(feats, mode)
     if "missing_rate" in names:
         i = names.index("missing_rate")
         arr = np.delete(arr, i, axis=1)
         names = [n for n in names if n != "missing_rate"]
+    arr   = np.concatenate([feats[:, [0]], arr], axis=1)
+    names = ["n_cols"] + names
     return arr, names
 
 
