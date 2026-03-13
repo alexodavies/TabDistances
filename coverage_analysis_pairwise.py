@@ -84,6 +84,7 @@ def _select_features(feats: np.ndarray, mode: str) -> tuple[np.ndarray, list[str
 # ------------------------------------------------------------------
 TABLES_DIR    = Path("tables-tabfm/parquet")
 TABICL_DIR    = Path("tables-tabicl/parquet")
+T4_DIR        = Path("tables-t4/parquet")
 T4_CACHE      = Path("cache/real_feats_t4_5000_512_v2.npz")
 
 N_SAMPLE      = 25000     # samples drawn from each dataset for analysis
@@ -151,9 +152,27 @@ def _load_fm(tables_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
 
 def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     if not cache_path.exists():
-        print(f"ERROR: t4 cache not found at {cache_path}. Run basic-grid-search.py first.")
-        sys.exit(1)
-    arr = np.load(cache_path)["feats"]
+        paths = sorted(T4_DIR.glob("*.parquet"))
+        if not paths:
+            print(f"ERROR: no .parquet files in {T4_DIR}")
+            sys.exit(1)
+        feats, errors = [], 0
+        for p in tqdm(paths, desc="featurising t4 tables", unit="table"):
+            try:
+                df = pd.read_parquet(p).select_dtypes(include=[float, int, "number"])
+                if df.shape[0] == 0 or df.shape[1] == 0:
+                    errors += 1
+                    continue
+                feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
+            except Exception:
+                errors += 1
+        print(f"  Loaded {len(feats)} t4 tables ({errors} skipped)")
+        arr = np.array(feats)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(cache_path, feats=arr)
+        print(f"  Cached -> {cache_path}")
+    else:
+        arr = np.load(cache_path)["feats"]
     idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
     return arr[idx]
 
