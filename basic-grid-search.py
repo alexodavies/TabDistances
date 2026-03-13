@@ -27,6 +27,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import NearestNeighbors
 from xgboost import XGBClassifier
 
 try:

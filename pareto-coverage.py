@@ -24,6 +24,11 @@ import numpy as np
 import pandas as pd
 import optuna
 from scipy import stats
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from xgboost import XGBClassifier
 
 import matplotlib
 matplotlib.use("Agg")
@@ -162,16 +167,33 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # Evaluation
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float]:
-    """Return (coverage_real_by_synth, coverage_synth_by_real).
+def compute_discriminator_auc(real_m: np.ndarray, synth_m: np.ndarray) -> float:
+    """Train XGBoost (100 trees) to distinguish real vs synth; return ROC-AUC."""
+    X = np.vstack([real_m, synth_m])
+    y = np.concatenate([np.zeros(len(real_m)), np.ones(len(synth_m))])
+    try:
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X, y, test_size=0.3, random_state=RANDOM_STATE, stratify=y
+        )
+        clf = XGBClassifier(n_estimators=100, random_state=RANDOM_STATE,
+                            n_jobs=1, verbosity=0, eval_metric="logloss")
+        clf.fit(X_tr, y_tr)
+        return float(roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1]))
+    except Exception as exc:
+        print(f"    [auc error] {exc}")
+        return 0.5
 
-    Both in [0, 1]; higher = better for each objective independently.
+
+def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]:
+    """Return (coverage_real_by_synth, coverage_synth_by_real, discriminator_auc).
+
+    Coverages in [0, 1]; AUC in [0.5, 1] where 0.5=indistinguishable (good).
     """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.5
 
     idxs = np.random.choice(len(real_feats), size=min(N_REAL_EVAL, len(real_feats)), replace=False)
     real_sample = real_feats[idxs]
@@ -182,7 +204,8 @@ def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float]:
 
     fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
-    return float(1.0 - fwd["uncovered_fraction"]), float(1.0 - rev["uncovered_fraction"])
+    auc    = compute_discriminator_auc(real_m, synth_m)
+    return float(1.0 - fwd["uncovered_fraction"]), float(1.0 - rev["uncovered_fraction"]), auc
 
 
 # ------------------------------------------------------------------
@@ -206,12 +229,12 @@ def _pareto_mask(fwd: np.ndarray, rev: np.ndarray) -> np.ndarray:
 # ------------------------------------------------------------------
 
 def run_single_objective_study(source_name: str, real_feats: np.ndarray, run=None) -> pd.DataFrame:
-    """TPE study maximising only coverage_real_by_synth (recall).
+    """TPE study maximising coverage_real_by_synth + coverage_synth_by_real - 1 (combined).
 
-    Returns a DataFrame with columns [trial, real_by_synth, synth_by_real, ...params].
+    Returns a DataFrame with columns [trial, real_by_synth, synth_by_real, discriminator_auc, combined, ...params].
     """
     print(f"\n{'#'*60}")
-    print(f"  Single-objective (recall-only) study: tabicl  vs  {source_name}  ({N_TRIALS_SINGLE} trials)")
+    print(f"  Single-objective (combined) study: tabicl  vs  {source_name}  ({N_TRIALS_SINGLE} trials)")
     print(f"{'#'*60}")
 
     col_counts   = real_feats[:, 0].astype(int)
@@ -223,33 +246,36 @@ def run_single_objective_study(source_name: str, real_feats: np.ndarray, run=Non
     _live_points: list[list[float]] = []
 
     def objective(trial: optuna.Trial) -> float:
-        params           = {**make_params(trial), **fixed_params}
-        fwd_cov, rev_cov = evaluate(params, real_feats)
-        _live_points.append([fwd_cov, rev_cov])
+        params                = {**make_params(trial), **fixed_params}
+        fwd_cov, rev_cov, auc = evaluate(params, real_feats)
+        combined              = fwd_cov + rev_cov - 1.0
+        _live_points.append([fwd_cov, rev_cov, auc])
         print(f"  Trial {trial.number:3d}: real_by_synth={fwd_cov:.4f}  "
-              f"synth_by_real={rev_cov:.4f}")
+              f"synth_by_real={rev_cov:.4f}  combined={combined:.4f}  auc={auc:.4f}")
 
         if run is not None:
             log_p = {k: (1 if v is True else 0 if v is False else v)
                      for k, v in trial.user_attrs["params"].items()}
             scatter_table = wandb.Table(
                 data=_live_points,
-                columns=["real_by_synth", "synth_by_real"],
+                columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
             )
             run.log({
-                f"{source_name}_single/real_by_synth": fwd_cov,
-                f"{source_name}_single/synth_by_real": rev_cov,
-                f"{source_name}_single/trial":         trial.number,
+                f"{source_name}_single/real_by_synth":     fwd_cov,
+                f"{source_name}_single/synth_by_real":     rev_cov,
+                f"{source_name}_single/combined":          combined,
+                f"{source_name}_single/discriminator_auc": auc,
+                f"{source_name}_single/trial":             trial.number,
                 f"{source_name}_single/coverage_scatter": wandb.plot.scatter(
                     scatter_table,
                     "real_by_synth",
                     "synth_by_real",
-                    title=f"Coverage scatter (recall-only) — {source_name}",
+                    title=f"Coverage scatter (combined) — {source_name}",
                 ),
                 **{f"{source_name}_single/param/{k}": v for k, v in log_p.items()},
             })
 
-        return fwd_cov
+        return combined
 
     study = optuna.create_study(
         direction="maximize",
@@ -261,17 +287,23 @@ def run_single_objective_study(source_name: str, real_feats: np.ndarray, run=Non
     for t in study.trials:
         if t.value is None:
             continue
-        row = {"trial": t.number, "real_by_synth": t.value}
-        # retrieve synth_by_real from the live list (same order as trials)
-        if t.number < len(_live_points):
-            row["synth_by_real"] = _live_points[t.number][1]
-        else:
-            row["synth_by_real"] = float("nan")
+        fwd, rev, auc = _live_points[t.number] if t.number < len(_live_points) else (float("nan"),) * 3
+        row = {
+            "trial":            t.number,
+            "real_by_synth":    fwd,
+            "synth_by_real":    rev,
+            "discriminator_auc": auc,
+            "combined":         t.value,
+        }
         row.update(t.user_attrs.get("params", {}))
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    print(f"\n  Best recall-only trial: real_by_synth={study.best_value:.4f}")
+    best = df.loc[df["combined"].idxmax()]
+    print(f"\n  Best combined trial: combined={best['combined']:.4f}  "
+          f"real_by_synth={best['real_by_synth']:.4f}  "
+          f"synth_by_real={best['synth_by_real']:.4f}  "
+          f"auc={best['discriminator_auc']:.4f}")
     return df
 
 
@@ -291,30 +323,42 @@ def _fig_pareto_scatter(
     """
     fig, ax = plt.subplots(figsize=(7, 7))
 
-    fwd = df["real_by_synth"].values
-    rev = df["synth_by_real"].values
-    trial_idx = df["trial"].values
+    fwd    = df["real_by_synth"].values
+    rev    = df["synth_by_real"].values
     pareto = df["is_pareto"].values
+    auc    = df["discriminator_auc"].values if "discriminator_auc" in df.columns else np.full(len(df), 0.75)
 
-    # Non-Pareto multi-objective trials
-    sc = ax.scatter(fwd[~pareto], rev[~pareto],
-                    c=trial_idx[~pareto], cmap="Blues", s=18, alpha=0.45,
-                    vmin=0, vmax=len(df), label=f"NSGA-II ({(~pareto).sum()} trials)")
-    fig.colorbar(sc, ax=ax, label="NSGA-II trial number", shrink=0.85)
+    # Shared AUC colormap: green=low AUC (indistinguishable=good), red=high AUC (easily separated=bad)
+    norm = mcolors.Normalize(vmin=0.5, vmax=1.0)
+    cmap = cm.RdYlGn_r
+
+    # Non-Pareto NSGA-II trials
+    ax.scatter(fwd[~pareto], rev[~pareto],
+               c=auc[~pareto], cmap=cmap, norm=norm,
+               s=18, alpha=0.5, zorder=2, label=f"NSGA-II ({(~pareto).sum()} trials)")
 
     # Pareto-optimal points + step line
     ax.scatter(fwd[pareto], rev[pareto],
-               color="crimson", s=60, zorder=5,
-               label=f"Pareto front ({pareto.sum()} pts)", edgecolors="darkred", linewidths=0.5)
+               c=auc[pareto], cmap=cmap, norm=norm,
+               s=80, zorder=5, marker="*", edgecolors="k", linewidths=0.4,
+               label=f"Pareto front ({pareto.sum()} pts)")
     pf = df[pareto].sort_values("real_by_synth")
     ax.step(pf["real_by_synth"].values, pf["synth_by_real"].values,
-            where="post", color="crimson", linewidth=1.8, zorder=4)
+            where="post", color="k", linewidth=1.4, zorder=4, alpha=0.5)
 
-    # Single-objective (recall-only) overlay
+    # Single-objective (combined) overlay
     if df_single is not None and len(df_single):
+        auc_s = (df_single["discriminator_auc"].values
+                 if "discriminator_auc" in df_single.columns
+                 else np.full(len(df_single), 0.75))
         ax.scatter(df_single["real_by_synth"].values, df_single["synth_by_real"].values,
-                   color="darkorange", s=22, alpha=0.55, zorder=3, marker="^",
-                   label=f"recall-only TPE ({len(df_single)} trials)")
+                   c=auc_s, cmap=cmap, norm=norm,
+                   s=30, alpha=0.6, zorder=3, marker="^", edgecolors="k", linewidths=0.3,
+                   label=f"combined TPE ({len(df_single)} trials)")
+
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax, label="discriminator AUC  (0.5 = indistinguishable)", shrink=0.85)
 
     # Equal-coverage diagonal
     ax.plot([0, 1], [0, 1], "--", color="grey", linewidth=1, alpha=0.5, label="y = x")
@@ -393,23 +437,24 @@ def run_pareto_study(source_name: str, real_feats: np.ndarray, run=None) -> pd.D
     _live_points: list[list[float]] = []  # accumulates [fwd_cov, rev_cov] per trial
 
     def objective(trial: optuna.Trial) -> tuple[float, float]:
-        params              = {**make_params(trial), **fixed_params}
-        fwd_cov, rev_cov    = evaluate(params, real_feats)
-        _live_points.append([fwd_cov, rev_cov])
+        params                = {**make_params(trial), **fixed_params}
+        fwd_cov, rev_cov, auc = evaluate(params, real_feats)
+        _live_points.append([fwd_cov, rev_cov, auc])
         print(f"  Trial {trial.number:3d}: real_by_synth={fwd_cov:.4f}  "
-              f"synth_by_real={rev_cov:.4f}")
+              f"synth_by_real={rev_cov:.4f}  auc={auc:.4f}")
 
         if run is not None:
             log_p = {k: (1 if v is True else 0 if v is False else v)
                      for k, v in trial.user_attrs["params"].items()}
             scatter_table = wandb.Table(
                 data=_live_points,
-                columns=["real_by_synth", "synth_by_real"],
+                columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
             )
             run.log({
-                f"{source_name}/real_by_synth": fwd_cov,
-                f"{source_name}/synth_by_real": rev_cov,
-                f"{source_name}/trial":         trial.number,
+                f"{source_name}/real_by_synth":     fwd_cov,
+                f"{source_name}/synth_by_real":     rev_cov,
+                f"{source_name}/discriminator_auc": auc,
+                f"{source_name}/trial":             trial.number,
                 f"{source_name}/coverage_scatter": wandb.plot.scatter(
                     scatter_table,
                     "real_by_synth",
@@ -433,6 +478,8 @@ def run_pareto_study(source_name: str, real_feats: np.ndarray, run=None) -> pd.D
         if t.values is None:
             continue
         row = {"trial": t.number, "real_by_synth": t.values[0], "synth_by_real": t.values[1]}
+        if t.number < len(_live_points):
+            row["discriminator_auc"] = _live_points[t.number][2]
         row.update(t.user_attrs.get("params", {}))
         rows.append(row)
     df = pd.DataFrame(rows)
@@ -443,7 +490,7 @@ def run_pareto_study(source_name: str, real_feats: np.ndarray, run=None) -> pd.D
     # Print Pareto front
     front = df[df["is_pareto"]].sort_values("real_by_synth", ascending=False)
     print(f"\n  Pareto front ({len(front)} trials)  [{source_name}]:")
-    print(front[["trial", "real_by_synth", "synth_by_real"]].to_string(index=False))
+    print(front[["trial", "real_by_synth", "synth_by_real", "discriminator_auc"]].to_string(index=False))
 
     return df
 

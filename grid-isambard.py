@@ -59,7 +59,11 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from coverage_analysis import analyse_coverage, _select_features
+from coverage_analysis import _select_features
+from sklearn.neighbors import NearestNeighbors
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from xgboost import XGBClassifier
 
 try:
     import wandb
@@ -292,16 +296,62 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 
 
 # ------------------------------------------------------------------
+# Coverage + discriminator helpers  (no matplotlib side-effects)
+# ------------------------------------------------------------------
+
+_KNN_K      = 5
+_COVERAGE_Q = 0.95
+
+
+def _knn_coverage(ref_m: np.ndarray, cand_m: np.ndarray) -> float:
+    """Fraction of ref covered by cand (1 - uncovered_fraction)."""
+    lo = np.minimum(ref_m.min(0), cand_m.min(0))
+    hi = np.maximum(ref_m.max(0), cand_m.max(0))
+    rng = hi - lo
+    rng[rng == 0] = 1.0
+    ref_n  = (ref_m  - lo) / rng
+    cand_n = (cand_m - lo) / rng
+
+    nn_ss = NearestNeighbors(n_neighbors=_KNN_K + 1, algorithm="ball_tree").fit(cand_n)
+    d_ss, _ = nn_ss.kneighbors(cand_n)
+    threshold = np.percentile(d_ss[:, 1:].mean(axis=1), _COVERAGE_Q * 100)
+
+    nn_rs = NearestNeighbors(n_neighbors=_KNN_K, algorithm="ball_tree").fit(cand_n)
+    d_rs, _ = nn_rs.kneighbors(ref_n)
+    return float(1.0 - (d_rs.mean(axis=1) > threshold).mean())
+
+
+def _discriminator_auc(real_m: np.ndarray, synth_m: np.ndarray, seed: int) -> float:
+    """XGBoost (100 trees) ROC-AUC for real vs synth. 0.5=indistinguishable."""
+    X = np.vstack([real_m, synth_m])
+    y = np.concatenate([np.zeros(len(real_m)), np.ones(len(synth_m))])
+    try:
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X, y, test_size=0.3, random_state=seed, stratify=y
+        )
+        clf = XGBClassifier(n_estimators=100, random_state=seed,
+                            n_jobs=1, verbosity=0, eval_metric="logloss")
+        clf.fit(X_tr, y_tr)
+        return float(roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1]))
+    except Exception as exc:
+        print(f"    [auc error] {exc}", flush=True)
+        return 0.5
+
+
+# ------------------------------------------------------------------
 # Fitness
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
-    """k-NN coverage of real by synthetic.  Higher = more realistic."""
+def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> tuple[float, float, float, float]:
+    """Return (combined, real_by_synth, synth_by_real, discriminator_auc).
+
+    combined = real_by_synth + synth_by_real - 1, range [-1, 1].
+    """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}", flush=True)
-        return 0.0
+        return 0.0, 0.0, 0.0, 0.5
 
     with ThreadPoolExecutor(max_workers=4) as tp:
         synth_feats = np.array(list(tp.map(df_to_vec, synth_dfs)))
@@ -315,9 +365,11 @@ def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> float:
     real_m,  _ = _select_features(real_sample, FEATURE_MODE)
     synth_m, _ = _select_features(synth_feats, FEATURE_MODE)
 
-    result, _ = analyse_coverage(real_m, synth_m, None, "",
-                                  label_ref="real", label_cand="synth")
-    return float(1.0 - result["uncovered_fraction"])
+    fwd_cov  = _knn_coverage(real_m,  synth_m)
+    rev_cov  = _knn_coverage(synth_m, real_m)
+    auc      = _discriminator_auc(real_m, synth_m, seed)
+    combined = fwd_cov + rev_cov - 1.0
+    return combined, fwd_cov, rev_cov, auc
 
 
 # ------------------------------------------------------------------
@@ -330,12 +382,12 @@ _FLOAT_PARAMS = [k for k, s in PARAM_SPACE.items() if s[0] in ("float", "int")]
 
 def _fig_coverage_histogram(df: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(df["coverage"], bins=30, edgecolor="white", color="#4C72B0")
-    ax.axvline(df["coverage"].max(),  color="red",    linestyle="--", label=f"best={df['coverage'].max():.4f}")
-    ax.axvline(df["coverage"].mean(), color="orange", linestyle="--", label=f"mean={df['coverage'].mean():.4f}")
-    ax.set_xlabel("Coverage  (higher = more realistic)")
+    ax.hist(df["combined"], bins=30, edgecolor="white", color="#4C72B0")
+    ax.axvline(df["combined"].max(),  color="red",    linestyle="--", label=f"best={df['combined'].max():.4f}")
+    ax.axvline(df["combined"].mean(), color="orange", linestyle="--", label=f"mean={df['combined'].mean():.4f}")
+    ax.set_xlabel("Combined score  (real_by_synth + synth_by_real - 1)")
     ax.set_ylabel("Count")
-    ax.set_title("Coverage distribution across grid")
+    ax.set_title("Combined score distribution across grid")
     ax.legend()
     fig.tight_layout()
     return fig
@@ -347,17 +399,17 @@ def _fig_cat_param_means(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _CAT_PARAMS):
-        means = df.groupby(param)["coverage"].mean().sort_values(ascending=False)
+        means = df.groupby(param)["combined"].mean().sort_values(ascending=False)
         bars  = ax.bar([str(v) for v in means.index], means.values, color="#DD8452")
         ax.set_title(param)
         ax.set_xlabel("value")
         if ax is axes[0]:
-            ax.set_ylabel("mean coverage")
+            ax.set_ylabel("mean combined score")
         ax.tick_params(axis="x", rotation=20)
         for bar, val in zip(bars, means.values):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
                     f"{val:.3f}", ha="center", va="bottom", fontsize=8)
-    fig.suptitle("Mean coverage by categorical parameter value", y=1.02)
+    fig.suptitle("Mean combined score by categorical parameter value", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -368,27 +420,27 @@ def _fig_float_param_scatter(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _FLOAT_PARAMS):
-        ax.scatter(df[param], df["coverage"], alpha=0.3, s=10, color="#55A868")
+        ax.scatter(df[param], df["combined"], alpha=0.3, s=10, color="#55A868")
         # trend line
-        z = np.polyfit(df[param].astype(float), df["coverage"], 1)
+        z = np.polyfit(df[param].astype(float), df["combined"], 1)
         xs = np.linspace(df[param].min(), df[param].max(), 100)
         ax.plot(xs, np.poly1d(z)(xs), color="red", linewidth=1.5)
         ax.set_xlabel(param)
         if ax is axes[0]:
-            ax.set_ylabel("Coverage")
+            ax.set_ylabel("Combined score")
         ax.set_title(param)
-    fig.suptitle("Coverage vs continuous/integer parameters", y=1.02)
+    fig.suptitle("Combined score vs continuous/integer parameters", y=1.02)
     fig.tight_layout()
     return fig
 
 
 def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     """Parallel coordinates plot for the top_n trials (highest coverage)."""
-    top = df.nlargest(top_n, "coverage").copy()
+    top = df.nlargest(top_n, "combined").copy()
 
     # Encode categoricals to numeric ranks for the plot
     plot_df = pd.DataFrame()
-    for col in list(PARAM_SPACE.keys()) + ["coverage"]:
+    for col in list(PARAM_SPACE.keys()) + ["combined"]:
         if col not in top.columns:
             continue
         vals = top[col]
@@ -405,9 +457,9 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
         if rng > 0:
             normed[col] = (normed[col] - normed[col].min()) / rng
 
-    # Colour by coverage (higher = darker blue)
+    # Colour by combined score (higher = darker blue)
     cmap   = plt.cm.viridis
-    colors = [cmap(v) for v in normed["coverage"]]
+    colors = [cmap(v) for v in normed["combined"]]
 
     fig, ax = plt.subplots(figsize=(max(12, len(normed.columns) * 1.4), 5))
     cols = normed.columns.tolist()
@@ -417,11 +469,11 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     ax.set_xticks(range(len(cols)))
     ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=8)
     ax.set_ylabel("Normalised value")
-    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = coverage, darker = better)")
+    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = combined score, darker = better)")
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["coverage"].min(), top["coverage"].max()))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["combined"].min(), top["combined"].max()))
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label="Coverage", pad=0.01)
+    fig.colorbar(sm, ax=ax, label="Combined score", pad=0.01)
     fig.tight_layout()
     return fig
 
@@ -510,8 +562,9 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     # Submit all trials; each worker gets its own seed for reproducible but
     # independent real-feature subsampling.
     records       = [None] * n_total
-    best_coverage = 0.0
+    best_combined = -1.0
     done          = 0
+    _live_points: list[list[float]] = []
     with ProcessPool(max_workers=N_WORKERS) as pool:
         futures = {
             pool.schedule(evaluate, args=[{**params, **fixed_params}, real_feats, RANDOM_STATE + i],
@@ -521,20 +574,41 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
         for fut in as_completed(futures):
             i, params = futures[fut]
             try:
-                coverage = fut.result()
+                combined, fwd_cov, rev_cov, auc = fut.result()
             except FutTimeoutError:
-                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped (coverage=0.0)", flush=True)
-                coverage = 0.0
+                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped", flush=True)
+                combined, fwd_cov, rev_cov, auc = 0.0, 0.0, 0.0, 0.5
             except Exception as exc:
-                print(f"  (trial {i:5d}) ERROR: {exc} — skipped (coverage=0.0)", flush=True)
-                coverage = 0.0
-            records[i - 1] = {**params, "coverage": coverage}
+                print(f"  (trial {i:5d}) ERROR: {exc} — skipped", flush=True)
+                combined, fwd_cov, rev_cov, auc = 0.0, 0.0, 0.0, 0.5
+            records[i - 1] = {**params, "combined": combined,
+                               "real_by_synth": fwd_cov, "synth_by_real": rev_cov,
+                               "discriminator_auc": auc}
+            _live_points.append([fwd_cov, rev_cov, auc])
             done += 1
-            if coverage > best_coverage:
-                best_coverage = coverage
-            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) coverage={coverage:.4f}  best={best_coverage:.4f}", flush=True)
+            if combined > best_combined:
+                best_combined = combined
+            print(f"  [{done:5d}/{n_total}] (trial {i:5d}) "
+                  f"combined={combined:.4f}  real_by_synth={fwd_cov:.4f}  "
+                  f"synth_by_real={rev_cov:.4f}  auc={auc:.4f}  best={best_combined:.4f}", flush=True)
             if run is not None:
-                run.log({"trial": i, "coverage": coverage, "best_coverage": best_coverage, **params})
+                scatter_table = wandb.Table(
+                    data=_live_points,
+                    columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
+                )
+                run.log({
+                    "trial":                        i,
+                    f"{source_name}/combined":       combined,
+                    f"{source_name}/best_combined":  best_combined,
+                    f"{source_name}/real_by_synth":  fwd_cov,
+                    f"{source_name}/synth_by_real":  rev_cov,
+                    f"{source_name}/discriminator_auc": auc,
+                    f"{source_name}/coverage_scatter": wandb.plot.scatter(
+                        scatter_table, "real_by_synth", "synth_by_real",
+                        title=f"Coverage scatter — {source_name}",
+                    ),
+                    **params,
+                })
 
     df_results = pd.DataFrame(records)
     out_path   = OUT_DIR / f"grid_results_{source_name}_{JOB_ID}.csv"
@@ -585,9 +659,12 @@ if __name__ == "__main__":
         all_results[source_name] = df_res
 
     print(f"\n{'#'*60}", flush=True)
-    print("  TOP-10 RESULTS PER SOURCE  (higher coverage = more realistic)", flush=True)
+    print("  TOP-10 RESULTS PER SOURCE  (higher combined = more realistic)", flush=True)
     print(f"{'#'*60}", flush=True)
     for source_name, df_res in all_results.items():
-        top10 = df_res.nlargest(10, "coverage")
+        top10 = df_res.nlargest(10, "combined")[
+            ["combined", "real_by_synth", "synth_by_real", "discriminator_auc"]
+            + list(PARAM_SPACE.keys())
+        ]
         print(f"\n  [{source_name}]", flush=True)
         print(top10.to_string(index=False), flush=True)

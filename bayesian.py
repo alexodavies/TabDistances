@@ -26,6 +26,9 @@ sys.path.insert(0, str(Path(".").resolve()))
 import numpy as np
 import pandas as pd
 import optuna
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from xgboost import XGBClassifier
 
 try:
     import wandb
@@ -164,16 +167,34 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # Fitness (single source)  (identical to genetic.py)
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]:
-    """Return (score, coverage_real_by_synth, coverage_synth_by_real).
+def compute_discriminator_auc(real_m: np.ndarray, synth_m: np.ndarray) -> float:
+    """Train XGBoost (100 trees) to distinguish real vs synth; return ROC-AUC."""
+    X = np.vstack([real_m, synth_m])
+    y = np.concatenate([np.zeros(len(real_m)), np.ones(len(synth_m))])
+    try:
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X, y, test_size=0.3, random_state=RANDOM_STATE, stratify=y
+        )
+        clf = XGBClassifier(n_estimators=100, random_state=RANDOM_STATE,
+                            n_jobs=1, verbosity=0, eval_metric="logloss")
+        clf.fit(X_tr, y_tr)
+        return float(roc_auc_score(y_te, clf.predict_proba(X_te)[:, 1]))
+    except Exception as exc:
+        print(f"    [auc error] {exc}")
+        return 0.5
 
-    score = coverage_real_by_synth - (1 - coverage_synth_by_real), range [-1, 1].
+
+def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float, float]:
+    """Return (score, coverage_real_by_synth, coverage_synth_by_real, discriminator_auc).
+
+    score = coverage_real_by_synth + coverage_synth_by_real - 1, range [-1, 1].
+    discriminator_auc: 0.5 = indistinguishable (good), 1.0 = perfectly separated (bad).
     """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.5
 
     # Sample a fresh subset of real tables for diversity across trials
     idxs = np.random.choice(len(real_feats), size=min(N_REAL_EVAL, len(real_feats)), replace=False)
@@ -187,8 +208,9 @@ def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
     coverage_real_by_synth = float(1.0 - fwd["uncovered_fraction"])
     coverage_synth_by_real = float(1.0 - rev["uncovered_fraction"])
-    score = coverage_real_by_synth - (1.0 - coverage_synth_by_real)
-    return score, coverage_real_by_synth, coverage_synth_by_real
+    score = coverage_real_by_synth + coverage_synth_by_real - 1.0
+    auc   = compute_discriminator_auc(real_m, synth_m)
+    return score, coverage_real_by_synth, coverage_synth_by_real, auc
 
 
 # ------------------------------------------------------------------
@@ -215,13 +237,15 @@ def run_study(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict,
           f"max_features={fixed_params['max_features']}")
     print(f"  Using {len(real_feats)} cached real feature vectors")
 
-    _running_best = [0.0]
+    _running_best  = [0.0]
+    _live_points: list[list[float]] = []
 
     def objective(trial: optuna.Trial) -> float:
-        params                       = {**make_params(trial), **fixed_params}
-        score, fwd_cov, rev_cov      = evaluate(params, real_feats)
+        params                            = {**make_params(trial), **fixed_params}
+        score, fwd_cov, rev_cov, auc      = evaluate(params, real_feats)
+        _live_points.append([fwd_cov, rev_cov, auc])
         print(f"  Trial {trial.number:3d}: score={score:.4f}  "
-              f"real_by_synth={fwd_cov:.4f}  synth_by_real={rev_cov:.4f}  {params}")
+              f"real_by_synth={fwd_cov:.4f}  synth_by_real={rev_cov:.4f}  auc={auc:.4f}")
 
         if score > _running_best[0]:
             _running_best[0] = score
@@ -229,12 +253,23 @@ def run_study(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict,
         if run is not None:
             log_params = {k: (1 if v is True else 0 if v is False else v)
                           for k, v in trial.user_attrs["params"].items()}
+            scatter_table = wandb.Table(
+                data=_live_points,
+                columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
+            )
             run.log({
-                f"{source_name}/score":         score,
-                f"{source_name}/best_score":    _running_best[0],
-                f"{source_name}/real_by_synth": fwd_cov,
-                f"{source_name}/synth_by_real": rev_cov,
-                f"{source_name}/trial":         trial.number,
+                f"{source_name}/score":             score,
+                f"{source_name}/best_score":        _running_best[0],
+                f"{source_name}/real_by_synth":     fwd_cov,
+                f"{source_name}/synth_by_real":     rev_cov,
+                f"{source_name}/discriminator_auc": auc,
+                f"{source_name}/trial":             trial.number,
+                f"{source_name}/coverage_scatter":  wandb.plot.scatter(
+                    scatter_table,
+                    "real_by_synth",
+                    "synth_by_real",
+                    title=f"Coverage scatter — {source_name}",
+                ),
                 **{f"{source_name}/param/{k}": v for k, v in log_params.items()},
             })
 
