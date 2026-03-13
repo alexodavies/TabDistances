@@ -89,6 +89,7 @@ TABLES_DIR    = Path("tables-tabfm/parquet")
 TABICL_DIR    = Path("tables-tabicl/parquet")
 T4_DIR        = Path("tables-t4/parquet")
 T4_CACHE      = Path("cache/real_feats_t4_5000_512_v2.npz")
+ICL_CACHE     = Path("cache/real_feats_icl_25000_512_v2.npz")
 
 N_SAMPLE      = 25000     # samples drawn from each dataset for analysis
 MAX_ROWS      = 512
@@ -186,25 +187,34 @@ def _load_t4(cache_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
 
 
 def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
-    paths = sorted(tabicl_dir.glob("*.parquet"))
-    if not paths:
-        print(f"ERROR: no .parquet files in {tabicl_dir}")
-        sys.exit(1)
-    rng.shuffle(paths := np.array(paths))  # random order so the sample is unbiased
-    feats, errors = [], 0
-    for p in tqdm(paths, desc="featurising tabicl tables", unit="table"):
-        try:
-            df = pd.read_parquet(p).select_dtypes(include=[float, int, "number"])
-            if df.shape[0] == 0 or df.shape[1] == 0:
+    if not ICL_CACHE.exists():
+        paths = sorted(tabicl_dir.glob("*.parquet"))
+        if not paths:
+            print(f"ERROR: no .parquet files in {tabicl_dir}")
+            sys.exit(1)
+        rng.shuffle(paths := np.array(paths))
+        feats, errors = [], 0
+        for p in tqdm(paths, desc="featurising tabicl tables", unit="table"):
+            try:
+                df = pd.read_parquet(p).select_dtypes(include=[float, int, "number"])
+                if df.shape[0] == 0 or df.shape[1] == 0:
+                    errors += 1
+                    continue
+                feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
+            except Exception:
                 errors += 1
-                continue
-            feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
-        except Exception:
-            errors += 1
-        if len(feats) >= n:
-            break
-    print(f"  Loaded {len(feats)} tabicl tables ({errors} skipped)")
-    return np.array(feats)
+            if len(feats) >= n:
+                break
+        print(f"  Loaded {len(feats)} tabicl tables ({errors} skipped)")
+        arr = np.array(feats)
+        ICL_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(ICL_CACHE, feats=arr)
+        print(f"  Cached -> {ICL_CACHE}")
+    else:
+        arr = np.load(ICL_CACHE)["feats"]
+        idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
+        arr = arr[idx]
+    return arr
 
 
 # ------------------------------------------------------------------
