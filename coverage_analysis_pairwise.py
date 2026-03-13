@@ -86,7 +86,7 @@ TABLES_DIR    = Path("tables-tabfm/parquet")
 TABICL_DIR    = Path("tables-tabicl/parquet")
 T4_CACHE      = Path("cache/real_feats_t4_5000_512_v2.npz")
 
-N_SAMPLE      = 1000     # samples drawn from each dataset for analysis
+N_SAMPLE      = 25000     # samples drawn from each dataset for analysis
 MAX_ROWS      = 512
 WANDB_PROJECT = "tabicl-coverage-pairwise"
 
