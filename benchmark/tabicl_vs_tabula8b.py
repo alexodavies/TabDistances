@@ -215,7 +215,11 @@ def _infer_tabula8b(model, tokenizer, serializer, context_df, query_row_df,
     prompt = _build_tabula8b_prompt(
         serializer, context_df, query_row_df, target_col, choice_names
     )
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    tokenizer.truncation_side = "left"
+    inputs = tokenizer(
+        prompt, return_tensors="pt",
+        truncation=True, max_length=tokenizer.model_max_length,
+    ).to(model.device)
 
     stopping_criterion = KeywordsStoppingCriteria(
         keywords=[EOC_TOKEN],
@@ -307,6 +311,9 @@ def run_tabula8b(
 
         accuracy = skm.accuracy_score(y_test_raw, pred_labels)
         avg_recall = skm.balanced_accuracy_score(y_test_raw, pred_labels)
+        avg_precision = skm.precision_score(
+            y_test_raw, pred_labels, average="macro", zero_division=0
+        )
         f1 = skm.f1_score(
             y_test_raw, pred_labels, average="macro", zero_division=0
         )
@@ -317,7 +324,9 @@ def run_tabula8b(
             "inference_time": inference_time,
             "Accuracy": accuracy,
             "Avg_Recall": avg_recall,
+            "Avg_Precision": avg_precision,
             "F1": f1,
+            # LogLoss and AUC omitted: require probability scores
         }
         results.append(row)
         print(
