@@ -180,6 +180,66 @@ def _sample_context(train_df, y_train_raw, class_map, max_context, rng):
     )
 
 
+def _build_tabula8b_prompt(serializer, context_df, query_row_df, target_col, choice_names):
+    """Build a few-shot prompt for tabula-8b without using rtfm.inference_utils."""
+    from rtfm.special_tokens import EOC_TOKEN, QA_SEP_TOKEN
+
+    prefix = f"Predict the {target_col}"
+    suffix = f"What is the value of {target_col}?"
+    parts = []
+
+    for _, row in context_df.iterrows():
+        label = str(row[target_col])
+        features = row.drop(labels=[target_col])
+        serialized = serializer(
+            features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
+        )
+        parts.append(f"{serialized} {QA_SEP_TOKEN} {label} {EOC_TOKEN}")
+
+    query_features = query_row_df.iloc[0].drop(labels=[target_col], errors="ignore")
+    serialized = serializer(
+        query_features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
+    )
+    parts.append(f"{serialized} {QA_SEP_TOKEN}")
+
+    return " ".join(parts)
+
+
+def _infer_tabula8b(model, tokenizer, serializer, context_df, query_row_df,
+                    target_col, choice_names, max_new_tokens=16):
+    """Inference for a single query row, using only tableshift-free rtfm modules."""
+    import torch
+    from rtfm.generation_utils import KeywordsStoppingCriteria, parse_generated_text
+    from rtfm.special_tokens import EOC_TOKEN
+
+    prompt = _build_tabula8b_prompt(
+        serializer, context_df, query_row_df, target_col, choice_names
+    )
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
+    stopping_criterion = KeywordsStoppingCriteria(
+        keywords=[EOC_TOKEN],
+        tokenizer=tokenizer,
+        input_ids=inputs["input_ids"],
+    )
+
+    with torch.no_grad():
+        output = model.generate(
+            inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=max_new_tokens,
+            stopping_criteria=[stopping_criterion],
+            do_sample=False,
+        )
+
+    decoded = tokenizer.decode(output[0], skip_special_tokens=False)
+    try:
+        prediction, _ = parse_generated_text(decoded)
+    except ValueError:
+        prediction = choice_names[0]
+    return prediction.strip()
+
+
 def run_tabula8b(
     dataset_name,
     train_val_data,
@@ -193,7 +253,6 @@ def run_tabula8b(
     serializer,
 ):
     """Run tabula-8b inference; return list of per-seed metric dicts."""
-    from rtfm.inference_utils import infer_on_example
     import sklearn.metrics as skm
 
     N_tv, C_tv, y_tv = train_val_data
@@ -228,14 +287,14 @@ def run_tabula8b(
         for i in range(len(test_df)):
             query_row = test_df.iloc[[i]]
             try:
-                pred_str = infer_on_example(
+                pred_str = _infer_tabula8b(
                     model=model,
                     tokenizer=tokenizer,
                     serializer=serializer,
-                    target_example=query_row,
-                    target_colname="__target__",
-                    target_choices=choice_names,
-                    labeled_examples=ctx,
+                    context_df=ctx,
+                    query_row_df=query_row,
+                    target_col="__target__",
+                    choice_names=choice_names,
                     max_new_tokens=16,
                 )
             except Exception:
