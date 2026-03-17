@@ -18,7 +18,7 @@ import sys
 import itertools
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd

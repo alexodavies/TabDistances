@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pyarrow as pa
 from datasets import load_dataset

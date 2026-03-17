@@ -22,7 +22,7 @@ All tunable constants are in the CONFIG section below.
 import sys
 import random
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,8 @@ except ImportError:
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.dataset import load_dataframes
 from tabdistances.discriminator.features import df_to_vec
-from coverage_analysis import analyse_coverage, _select_features
+from analysis.coverage_analysis import analyse_coverage
+from tabdistances.discriminator.features import select_features as _select_features
 
 # ------------------------------------------------------------------
 # CONFIG

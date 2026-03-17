@@ -22,7 +22,7 @@ concrete discriminator implementation.
 import sys
 from itertools import combinations
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sklearn.metrics import classification_report
 

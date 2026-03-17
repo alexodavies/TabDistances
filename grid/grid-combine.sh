@@ -29,7 +29,7 @@ echo "ARRAY_JOB_ID : ${ARRAY_JOB_ID}"
 echo "RESULTS_DIR  : ${RESULTS_DIR}"
 echo "======================================================================"
 
-python grid-combine.py "$RESULTS_DIR"
+python grid/grid-combine.py "$RESULTS_DIR"
 
 echo "======================================================================"
 echo "Combine job ${SLURM_JOB_ID} finished at $(date)"

@@ -22,7 +22,7 @@ store the CSV files.
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tabdistances.data.tabfm.downloader import TabFMDownloader
 

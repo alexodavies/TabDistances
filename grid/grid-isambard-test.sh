@@ -51,7 +51,7 @@ echo "TEST job ${SLURM_JOB_ID} starting on $(hostname) at $(date)"
 echo "CPUs: ${SLURM_CPUS_PER_TASK}  GRANULARITY=2  N_EVAL=200  N_REAL=200"
 echo "======================================================================"
 
-python grid-isambard.py
+python grid/grid-isambard.py
 
 echo "======================================================================"
 echo "TEST job ${SLURM_JOB_ID} finished at $(date)"

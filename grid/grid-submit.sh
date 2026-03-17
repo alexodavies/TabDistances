@@ -8,10 +8,10 @@
 # =============================================================================
 
 if [[ "${1}" == "--test" ]]; then
-    GRID_SCRIPT="grid-isambard-test.sh"
+    GRID_SCRIPT="grid/grid-isambard-test.sh"
     RESULTS_PREFIX="grid-results-test"
 else
-    GRID_SCRIPT="grid-isambard.sh"
+    GRID_SCRIPT="grid/grid-isambard.sh"
     RESULTS_PREFIX="grid-results"
 fi
 
@@ -30,7 +30,7 @@ echo "Grid array job submitted : ${ARRAY_JOB_ID}  (${GRID_SCRIPT})"
 COMBINE_JOB_ID=$(sbatch --parsable \
     --dependency=afterok:${ARRAY_JOB_ID} \
     --export=ALL,ARRAY_JOB_ID=${ARRAY_JOB_ID},RESULTS_PREFIX=${RESULTS_PREFIX} \
-    grid-combine.sh)
+    grid/grid-combine.sh)
 if [[ -z "$COMBINE_JOB_ID" ]]; then
     echo "ERROR: sbatch failed for grid-combine.sh" >&2
     exit 1

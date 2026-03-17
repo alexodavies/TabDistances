@@ -1,8 +1,12 @@
-"""Bayesian optimisation of TabICL prior parameters using Optuna (TPE).
+"""Bayesian optimisation of TabICL prior parameters — fast RF variant.
 
-Uses aggregate table metrics (n_cols, type_ratio, histograms, n_rows) as
-features fed into a Random Forest discriminator — much faster than the
-deep-learning discriminator in bayesian.py.
+Uses aggregate table features fed into a Random Forest discriminator (much
+faster than the deep-learning discriminator in bayesian.py).  Objective:
+minimise ROC-AUC (lower = harder for the RF to separate real from synthetic
+= more realistic synthetic data).
+
+Runs N_RESTARTS independent Optuna TPE studies per source.  Results are
+persisted to disk after every trial so the script can be interrupted safely.
 
 Usage
 -----
@@ -15,8 +19,9 @@ All tunable constants are in the CONFIG section below.
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from collections import Counter
 import numpy as np
 import pandas as pd
 import optuna
@@ -37,13 +42,16 @@ REAL_SOURCES = {
     "tabfm": Path("tables-tabfm/parquet"),
 }
 
-N_EVAL       = 50    # synthetic tables generated per fitness evaluation
-N_REAL       = 100   # real tables sampled per source (cap for speed)
+N_EVAL       = 500   # synthetic tables per fitness evaluation
+N_REAL       = 500   # real tables loaded per source
 MAX_ROWS     = 1024  # max rows sampled per table
-BATCH_SIZE   = 8     # SCMPrior batch size (fixed; not optimised)
-TEST_FRAC    = 0.3   # fraction held out for AUC estimation
+BATCH_SIZE   = 8     # SCMPrior batch size
+TEST_FRAC    = 0.3
 RANDOM_STATE = 42
-N_TRIALS     = 25    # Optuna trials per source
+N_TRIALS     = 100   # Optuna trials per restart
+N_RESTARTS   = 100   # independent TPE restarts per source
+
+OUT_DIR = Path("basic-bayesian-results")
 
 
 # ------------------------------------------------------------------
@@ -73,14 +81,14 @@ def make_params(trial: optuna.Trial) -> dict:
 # Synthetic data generation
 # ------------------------------------------------------------------
 
-def generate_synthetic_dataframes(params: dict, n: int) -> list:
-    prior = SCMPrior(
+def _make_prior(params: dict, n_cols: int) -> SCMPrior:
+    return SCMPrior(
         batch_size=BATCH_SIZE,
         batch_size_per_gp=params["batch_size_per_gp"],
-        min_features=params["min_features"],
-        max_features=params["max_features"],
+        min_features=n_cols,
+        max_features=n_cols,
         max_classes=params["max_classes"],
-        max_seq_len=1024,
+        max_seq_len=MAX_ROWS,
         log_seq_len=True,
         min_train_size=0.1,
         max_train_size=0.9,
@@ -98,87 +106,162 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
         device="cpu",
     )
 
-    dataframes = []
-    while len(dataframes) < n:
-        X, y, d, seq_lens, _ = prior.get_batch()
-        for i in range(X.shape[0]):
-            n_feat  = int(d[i].item())
-            seq_len = int(seq_lens[i].item())
-            if n_feat < params["min_features"] or seq_len == 0:
-                continue
-            X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
-            y_i = y[i, :seq_len].numpy().astype(int)
-            df = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
-            df["target"] = y_i
-            dataframes.append(df)
-            if len(dataframes) >= n:
-                break
 
-    return dataframes
+def generate_synthetic_dataframes(params: dict, target_col_counts: list) -> list:
+    """Generate synthetic tables whose column counts match *target_col_counts*."""
+    count_map = Counter(target_col_counts)
+    results_by_count: dict = {}
+    for n_cols, n_needed in count_map.items():
+        prior = _make_prior(params, n_cols)
+        dfs: list = []
+        while len(dfs) < n_needed:
+            X, y, d, seq_lens, _ = prior.get_batch()
+            for i in range(X.shape[0]):
+                seq_len = int(seq_lens[i].item())
+                n_feat  = int(d[i].item())
+                if seq_len == 0:
+                    continue
+                X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
+                y_i = y[i, :seq_len].numpy().astype(int)
+                df = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
+                df["target"] = y_i
+                dfs.append(df)
+                if len(dfs) >= n_needed:
+                    break
+        results_by_count[n_cols] = dfs
+    idx_by_count = {nc: 0 for nc in count_map}
+    output = []
+    for nc in target_col_counts:
+        output.append(results_by_count[nc][idx_by_count[nc]])
+        idx_by_count[nc] += 1
+    return output
 
 
 # ------------------------------------------------------------------
-# Fitness (single source)
+# Fitness
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_dfs: list) -> float:
-    """ROC-AUC for tabicl vs one real source using aggregate features.  Lower is better."""
+def evaluate(
+    params: dict,
+    real_dfs: list,
+    seed: int,
+    running_mean: float = 1.0,
+) -> float:
+    """ROC-AUC for tabicl vs one real source.  Lower = more realistic.
+
+    Column counts for synthetic tables are sampled i.i.d. from the real
+    distribution.  On generation failure returns *running_mean* (the
+    current average AUC across completed trials).
+    """
+    rng = np.random.default_rng(seed)
+    col_counts = [len(df.columns) for df in real_dfs]
+    target_col_counts = rng.choice(col_counts, size=N_EVAL, replace=True).tolist()
+
     try:
-        synth = generate_synthetic_dataframes(params, len(real_dfs))
+        synth = generate_synthetic_dataframes(params, target_col_counts)
     except Exception as exc:
         print(f"    [generate error] {exc}")
-        return 1.0
+        return running_mean
 
-    X_all = synth + real_dfs
-    y_all = [0] * len(synth) + [1] * len(real_dfs)
+    # Sample N_EVAL real tables (with replacement to allow N_EVAL > N_REAL)
+    real_idxs = rng.choice(len(real_dfs), size=N_EVAL, replace=True).tolist()
+    real_sample = [real_dfs[i] for i in real_idxs]
+
+    X_all = synth + real_sample
+    y_all = [0] * len(synth) + [1] * len(real_sample)
 
     X_tr, X_te, y_tr, y_te = train_test_split(
         X_all, y_all,
         test_size=TEST_FRAC,
-        random_state=RANDOM_STATE,
+        random_state=seed,
         stratify=y_all,
     )
-
-    clf = RFDiscriminator(random_state=RANDOM_STATE)
+    clf = RFDiscriminator(random_state=seed)
     clf.fit(X_tr, np.array(y_tr))
     proba = clf.predict_proba(X_te)[:, 1]
     return float(roc_auc_score(y_te, proba))
 
 
 # ------------------------------------------------------------------
-# Bayesian study (single source)
+# Multi-restart Bayesian study (single source)
 # ------------------------------------------------------------------
 
-def run_study(source_name: str, real_dfs: list) -> tuple[dict, float]:
-    print(f"\n{'#'*60}")
-    print(f"  Bayesian (basic): tabicl  vs  {source_name}  ({N_TRIALS} trials)")
-    print(f"{'#'*60}")
+def run_single_restart(
+    source_name: str,
+    real_dfs: list,
+    restart_idx: int,
+    out_csv: Path,
+) -> tuple:
+    """One independent TPE study (direction=minimize AUC).
 
-    col_counts   = [len(df.columns) for df in real_dfs]
-    fixed_params = {
-        "min_features": min(col_counts),
-        "max_features": max(col_counts),
-    }
-    print(f"  Fitted from data: min_features={fixed_params['min_features']}  "
-          f"max_features={fixed_params['max_features']}")
+    Appends all trial rows to *out_csv* immediately (interrupt-safe).
+    Returns (best_params, best_auc).
+    """
+    seed = RANDOM_STATE + restart_idx * 1000
+
+    running_sum   = [0.0]
+    running_count = [0]
 
     def objective(trial: optuna.Trial) -> float:
-        params = {**make_params(trial), **fixed_params}
-        auc = evaluate(params, real_dfs)
-        print(f"  Trial {trial.number:3d}: AUC={auc:.4f}  {params}")
+        rm = running_sum[0] / running_count[0] if running_count[0] > 0 else 1.0
+        params = make_params(trial)
+        trial_seed = seed + trial.number
+        auc = evaluate(params, real_dfs, trial_seed, rm)
+
+        running_sum[0]   += auc
+        running_count[0] += 1
+
+        print(f"  [r{restart_idx+1:03d}|t{trial.number:03d}] AUC={auc:.4f}")
+
+        row = {
+            "restart": restart_idx,
+            "trial":   trial.number,
+            "auc":     auc,
+            **{k: (1 if v is True else 0 if v is False else v)
+               for k, v in params.items()},
+        }
+        pd.DataFrame([row]).to_csv(
+            out_csv, mode="a", header=not out_csv.exists(), index=False
+        )
         return auc
 
     study = optuna.create_study(
         direction="minimize",
-        sampler=optuna.samplers.TPESampler(seed=RANDOM_STATE),
+        sampler=optuna.samplers.TPESampler(seed=seed),
     )
     study.optimize(objective, n_trials=N_TRIALS)
 
     best_trial  = study.best_trial
     best_params = best_trial.user_attrs["params"]
     best_auc    = best_trial.value
+    print(f"  Restart {restart_idx+1} done: best_auc={best_auc:.4f}  trial={best_trial.number}")
+    return best_params, best_auc
 
-    print(f"\n  Best trial: {best_trial.number}  AUC={best_auc:.4f}")
+
+def run_study(source_name: str, real_dfs: list) -> tuple:
+    """Run N_RESTARTS independent TPE restarts; return global best."""
+    print(f"\n{'#'*60}")
+    print(f"  Multi-restart Bayesian (basic): tabicl vs {source_name}")
+    print(f"  {N_RESTARTS} restarts × {N_TRIALS} trials = {N_RESTARTS * N_TRIALS} total evaluations")
+    print(f"{'#'*60}")
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_csv = OUT_DIR / f"basic_bayesian_results_{source_name}.csv"
+    if out_csv.exists():
+        out_csv.unlink()
+    print(f"  Live results -> {out_csv}")
+
+    all_results: list = []
+    for r in range(N_RESTARTS):
+        print(f"\n  ===== Restart {r+1}/{N_RESTARTS} =====")
+        best_params, best_auc = run_single_restart(source_name, real_dfs, r, out_csv)
+        all_results.append((best_params, best_auc))
+
+    # Global best: lowest AUC across all restarts
+    best_r, (best_params, best_auc) = min(
+        enumerate(all_results), key=lambda x: x[1][1]
+    )
+    print(f"\n  Global best: restart={best_r+1}  AUC={best_auc:.4f}")
     return best_params, best_auc
 
 
@@ -190,7 +273,7 @@ if __name__ == "__main__":
     missing = [n for n, p in REAL_SOURCES.items() if not any(p.glob("*.parquet"))]
     if missing:
         print("Missing real-data tables for:", ", ".join(missing))
-        print("Run cleantab-export.py and tabfm-export.py first.")
+        print("Run export scripts first.")
         sys.exit(1)
 
     print("Loading real tables...")

@@ -21,7 +21,7 @@ Usage
 import argparse
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
@@ -92,40 +92,11 @@ _PAPER_RC = {
     "figure.dpi":      300,
 }
 
-# ------------------------------------------------------------------
-# Feature names (matches tabdistances/discriminator/features.py layout)
-# ------------------------------------------------------------------
-_SCALAR_NAMES = [
-    "n_cols", "type_ratio", "missing_rate",
-    "mean_col_skew", "std_col_skew",
-    "mean_col_kurt", "std_col_kurt",
-    "mean_abs_corr", "std_abs_corr", "frac_high_corr",
-]
-FEATURE_NAMES = (
-    _SCALAR_NAMES
-    + [f"hist_mean[{i}]" for i in range(30)]
-    + [f"hist_std[{i}]"  for i in range(30)]
+from tabdistances.discriminator.features import (
+    select_features as _select_features,
+    FEATURE_MODES,
+    FEATURE_NAMES,
 )
-
-# Feature modes: indices to keep per mode.
-# n_cols (idx 0) is excluded from all modes — it is retained in the raw vector
-# only so that basic-grid-search.py can derive min/max_features from it.
-# "scalar_only" keeps the 9 distributional scalars (idx 1-9).
-# "hist_only"   keeps the 60 numeric-column histogram features (idx 10-69).
-# "full"        is the union of scalar_only and hist_only (idx 1-69).
-_SCALAR_ONLY_IDX = list(range(1, 10))
-_HIST_ONLY_IDX   = list(range(10, 70))
-FEATURE_MODES = {
-    "full":        list(range(1, len(FEATURE_NAMES))),
-    "scalar_only": _SCALAR_ONLY_IDX,
-    "hist_only":   _HIST_ONLY_IDX,
-}
-
-
-def _select_features(feats: np.ndarray, mode: str) -> tuple[np.ndarray, list[str]]:
-    """Return (filtered_feats, filtered_names) for the given mode."""
-    idx = FEATURE_MODES[mode]
-    return feats[:, idx], [FEATURE_NAMES[i] for i in idx]
 
 
 # ------------------------------------------------------------------

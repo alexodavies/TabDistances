@@ -33,7 +33,7 @@ Usage
 import argparse
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
@@ -50,11 +50,11 @@ except ImportError:
     _WANDB_AVAILABLE = False
 
 # Patch coverage_analysis OUTPUT_DIR before it is used by imported functions
-import coverage_analysis as _ca
+import analysis.coverage_analysis as _ca
 OUTPUT_DIR = Path("coverage-results-pairwise")
 _ca.OUTPUT_DIR = OUTPUT_DIR
 
-from coverage_analysis import (
+from analysis.coverage_analysis import (
     FEATURE_NAMES, FEATURE_MODES,
     _select_features as _ca_select_features,
     _PAPER_RC, KNN_K, COVERAGE_THRESHOLD_QUANTILE,

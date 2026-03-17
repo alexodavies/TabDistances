@@ -52,14 +52,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pebble import ProcessPool
 from concurrent.futures import TimeoutError as FutTimeoutError
 from pathlib import Path
-sys.path.insert(0, str(Path(".").resolve()))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from coverage_analysis import _select_features
 from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
@@ -75,7 +74,8 @@ from tqdm import tqdm
 
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.dataset import load_dataframes
-from tabdistances.discriminator.features import df_to_vec
+from tabdistances.discriminator.features import df_to_vec, select_features, FEATURE_MODES
+from tabdistances.discriminator.loss import combined_score
 
 # ------------------------------------------------------------------
 # CONFIG
@@ -103,11 +103,12 @@ OUT_DIR   = Path(os.environ.get("TAB_OUT_DIR", f"grid-results-{JOB_ID}"))
 CACHE_DIR = OUT_DIR / "cache"
 
 REAL_SOURCES = {
-    "t4": DATA_ROOT / "tables-t4/parquet",
+    "tabfm": DATA_ROOT / "tables-tabfm/parquet",
+    "t4":    DATA_ROOT / "tables-t4/parquet",
 }
 
 # --- Evaluation settings ------------------------------------------
-N_EVAL       = int(os.environ.get("TAB_N_EVAL",    200))   # synthetic (and real) tables per discriminator evaluation
+N_EVAL       = int(os.environ.get("TAB_N_EVAL",    500))   # synthetic (and real) tables per discriminator evaluation
 N_REAL       = int(os.environ.get("TAB_N_REAL",   5000))  # real tables to pre-featurize and cache
 MAX_ROWS     = int(os.environ.get("TAB_MAX_ROWS",  512))   # max rows sampled per table
 BATCH_SIZE   = 32     # SCMPrior batch size — larger batches amortize loky startup overhead
@@ -247,12 +248,13 @@ def load_or_compute_real_feats(source_name: str, path: Path) -> np.ndarray:
 # Synthetic data generation
 # ------------------------------------------------------------------
 
-def generate_synthetic_dataframes(params: dict, n: int) -> list:
-    prior = SCMPrior(
+def _make_prior(params: dict, n_cols: int) -> SCMPrior:
+    """Construct a SCMPrior fixed to exactly *n_cols* columns."""
+    return SCMPrior(
         batch_size=BATCH_SIZE,
         batch_size_per_gp=1,
-        min_features=params["min_features"],
-        max_features=params["max_features"],
+        min_features=n_cols,
+        max_features=n_cols,
         max_classes=params["max_classes"],
         max_seq_len=MAX_ROWS,
         log_seq_len=True,
@@ -274,25 +276,46 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
         device="cpu",
     )
 
-    dataframes = []
-    with tqdm(total=n, desc="  generating tables", unit="table", leave=False) as pbar:
-        while len(dataframes) < n:
-            X, y, d, seq_lens, _ = prior.get_batch()
-            for i in range(X.shape[0]):
-                n_feat  = int(d[i].item())
-                seq_len = int(seq_lens[i].item())
-                if n_feat < params["min_features"] or seq_len == 0:
-                    continue
-                X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
-                y_i = y[i, :seq_len].numpy().astype(int)
-                df  = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
-                df["target"] = y_i
-                dataframes.append(df)
-                pbar.update(1)
-                if len(dataframes) >= n:
-                    break
 
-    return dataframes
+def generate_synthetic_dataframes(params: dict, target_col_counts: list[int]) -> list:
+    """Generate synthetic tables whose column counts match *target_col_counts*.
+
+    Groups the requested counts by unique value so that only one SCMPrior
+    per distinct column count is constructed (avoids repeated model init).
+    Returns tables in the same order as *target_col_counts*.
+    """
+    from collections import Counter
+    count_map = Counter(target_col_counts)
+    results_by_count: dict[int, list] = {}
+
+    for n_cols, n_needed in count_map.items():
+        prior = _make_prior(params, n_cols)
+        dfs: list = []
+        with tqdm(total=n_needed, desc=f"  gen cols={n_cols}", unit="table", leave=False) as pbar:
+            while len(dfs) < n_needed:
+                X, y, d, seq_lens, _ = prior.get_batch()
+                for i in range(X.shape[0]):
+                    n_feat  = int(d[i].item())
+                    seq_len = int(seq_lens[i].item())
+                    if seq_len == 0:
+                        continue
+                    X_i = X[i, :seq_len, :n_feat].numpy().astype(float)
+                    y_i = y[i, :seq_len].numpy().astype(int)
+                    df  = pd.DataFrame(X_i, columns=[f"f{j}" for j in range(n_feat)])
+                    df["target"] = y_i
+                    dfs.append(df)
+                    pbar.update(1)
+                    if len(dfs) >= n_needed:
+                        break
+        results_by_count[n_cols] = dfs
+
+    # Return in the original requested order
+    output = []
+    idx_by_count: dict[int, int] = {nc: 0 for nc in count_map}
+    for nc in target_col_counts:
+        output.append(results_by_count[nc][idx_by_count[nc]])
+        idx_by_count[nc] += 1
+    return output
 
 
 # ------------------------------------------------------------------
@@ -342,34 +365,45 @@ def _discriminator_auc(real_m: np.ndarray, synth_m: np.ndarray, seed: int) -> fl
 # Fitness
 # ------------------------------------------------------------------
 
-def evaluate(params: dict, real_feats: np.ndarray, seed: int) -> tuple[float, float, float, float]:
-    """Return (combined, real_by_synth, synth_by_real, discriminator_auc).
+def evaluate(
+    params: dict,
+    real_feats: np.ndarray,
+    seed: int,
+    running_mean: float = 0.0,
+) -> tuple[float, float, float, float]:
+    """Return (score, real_by_synth, synth_by_real, discriminator_auc).
 
-    combined = real_by_synth + synth_by_real - 1, range [-1, 1].
+    score = combined_score(fwd_cov, rev_cov, auc) in [0, 1]; MAXIMISE.
+    On generation failure or timeout, returns (running_mean, 0, 0, 0.5).
     """
+    rng = np.random.default_rng(seed)
+
+    # Sample column counts i.i.d. from the real distribution
+    all_col_counts = real_feats[:, 0].astype(int)
+    target_col_counts = rng.choice(all_col_counts, size=N_EVAL, replace=True).tolist()
+
     try:
-        synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
+        synth_dfs = generate_synthetic_dataframes(params, target_col_counts)
     except Exception as exc:
         print(f"    [generate error] {exc}", flush=True)
-        return 0.0, 0.0, 0.0, 0.5
+        return running_mean, 0.0, 0.0, 0.5
 
     with ThreadPoolExecutor(max_workers=4) as tp:
         synth_feats = np.array(list(tp.map(df_to_vec, synth_dfs)))
 
-    # Subsample N_EVAL real features to match synthetic count (no re-featurization)
+    # Subsample real features (independent draw from cache)
     n_real_sample = min(N_EVAL, len(real_feats))
-    rng = np.random.default_rng(seed)
     idxs = rng.choice(len(real_feats), size=n_real_sample, replace=False)
     real_sample = real_feats[idxs]
 
-    real_m,  _ = _select_features(real_sample, FEATURE_MODE)
-    synth_m, _ = _select_features(synth_feats, FEATURE_MODE)
+    real_m,  _ = select_features(real_sample, FEATURE_MODE)
+    synth_m, _ = select_features(synth_feats, FEATURE_MODE)
 
-    fwd_cov  = _knn_coverage(real_m,  synth_m)
-    rev_cov  = _knn_coverage(synth_m, real_m)
-    auc      = _discriminator_auc(real_m, synth_m, seed)
-    combined = fwd_cov + rev_cov - 1.0
-    return combined, fwd_cov, rev_cov, auc
+    fwd_cov = _knn_coverage(real_m,  synth_m)
+    rev_cov = _knn_coverage(synth_m, real_m)
+    auc     = _discriminator_auc(real_m, synth_m, seed)
+    score   = combined_score(fwd_cov, rev_cov, auc)
+    return score, fwd_cov, rev_cov, auc
 
 
 # ------------------------------------------------------------------
@@ -382,12 +416,12 @@ _FLOAT_PARAMS = [k for k, s in PARAM_SPACE.items() if s[0] in ("float", "int")]
 
 def _fig_coverage_histogram(df: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(df["combined"], bins=30, edgecolor="white", color="#4C72B0")
-    ax.axvline(df["combined"].max(),  color="red",    linestyle="--", label=f"best={df['combined'].max():.4f}")
-    ax.axvline(df["combined"].mean(), color="orange", linestyle="--", label=f"mean={df['combined'].mean():.4f}")
-    ax.set_xlabel("Combined score  (real_by_synth + synth_by_real - 1)")
+    ax.hist(df["score"], bins=30, edgecolor="white", color="#4C72B0")
+    ax.axvline(df["score"].max(),  color="red",    linestyle="--", label=f"best={df['score'].max():.4f}")
+    ax.axvline(df["score"].mean(), color="orange", linestyle="--", label=f"mean={df['score'].mean():.4f}")
+    ax.set_xlabel("Score  (Euclidean quality, normalised to [0, 1])")
     ax.set_ylabel("Count")
-    ax.set_title("Combined score distribution across grid")
+    ax.set_title("Score distribution across grid")
     ax.legend()
     fig.tight_layout()
     return fig
@@ -399,17 +433,17 @@ def _fig_cat_param_means(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _CAT_PARAMS):
-        means = df.groupby(param)["combined"].mean().sort_values(ascending=False)
+        means = df.groupby(param)["score"].mean().sort_values(ascending=False)
         bars  = ax.bar([str(v) for v in means.index], means.values, color="#DD8452")
         ax.set_title(param)
         ax.set_xlabel("value")
         if ax is axes[0]:
-            ax.set_ylabel("mean combined score")
+            ax.set_ylabel("mean score")
         ax.tick_params(axis="x", rotation=20)
         for bar, val in zip(bars, means.values):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.002,
                     f"{val:.3f}", ha="center", va="bottom", fontsize=8)
-    fig.suptitle("Mean combined score by categorical parameter value", y=1.02)
+    fig.suptitle("Mean score by categorical parameter value", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -420,27 +454,27 @@ def _fig_float_param_scatter(df: pd.DataFrame) -> plt.Figure:
     if n == 1:
         axes = [axes]
     for ax, param in zip(axes, _FLOAT_PARAMS):
-        ax.scatter(df[param], df["combined"], alpha=0.3, s=10, color="#55A868")
+        ax.scatter(df[param], df["score"], alpha=0.3, s=10, color="#55A868")
         # trend line
-        z = np.polyfit(df[param].astype(float), df["combined"], 1)
+        z = np.polyfit(df[param].astype(float), df["score"], 1)
         xs = np.linspace(df[param].min(), df[param].max(), 100)
         ax.plot(xs, np.poly1d(z)(xs), color="red", linewidth=1.5)
         ax.set_xlabel(param)
         if ax is axes[0]:
-            ax.set_ylabel("Combined score")
+            ax.set_ylabel("Score")
         ax.set_title(param)
-    fig.suptitle("Combined score vs continuous/integer parameters", y=1.02)
+    fig.suptitle("Score vs continuous/integer parameters", y=1.02)
     fig.tight_layout()
     return fig
 
 
 def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     """Parallel coordinates plot for the top_n trials (highest coverage)."""
-    top = df.nlargest(top_n, "combined").copy()
+    top = df.nlargest(top_n, "score").copy()
 
     # Encode categoricals to numeric ranks for the plot
     plot_df = pd.DataFrame()
-    for col in list(PARAM_SPACE.keys()) + ["combined"]:
+    for col in list(PARAM_SPACE.keys()) + ["score"]:
         if col not in top.columns:
             continue
         vals = top[col]
@@ -459,7 +493,7 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
 
     # Colour by combined score (higher = darker blue)
     cmap   = plt.cm.viridis
-    colors = [cmap(v) for v in normed["combined"]]
+    colors = [cmap(v) for v in normed["score"]]
 
     fig, ax = plt.subplots(figsize=(max(12, len(normed.columns) * 1.4), 5))
     cols = normed.columns.tolist()
@@ -469,11 +503,11 @@ def _fig_parallel_coords(df: pd.DataFrame, top_n: int = 100) -> plt.Figure:
     ax.set_xticks(range(len(cols)))
     ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=8)
     ax.set_ylabel("Normalised value")
-    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = combined score, darker = better)")
+    ax.set_title(f"Parallel coordinates – top {top_n} trials (colour = score, darker = better)")
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["combined"].min(), top["combined"].max()))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(top["score"].min(), top["score"].max()))
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label="Combined score", pad=0.01)
+    fig.colorbar(sm, ax=ax, label="Score", pad=0.01)
     fig.tight_layout()
     return fig
 
@@ -506,15 +540,12 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     print(f"  Grid search: tabicl  vs  {source_name}", flush=True)
     print(f"{'#'*60}", flush=True)
 
-    # Derive feature range from cached features (feature index 0 = n_cols)
-    col_counts   = real_feats[:, 0].astype(int)
-    fixed_params = {
-        "min_features": int(col_counts.min()),
-        "max_features": int(col_counts.max()),
-    }
+    # Column counts are sampled from the real distribution inside evaluate();
+    # no global min/max fixed_params needed.
+    col_counts = real_feats[:, 0].astype(int)
     print(
-        f"  Derived: min_features={fixed_params['min_features']}  "
-        f"max_features={fixed_params['max_features']}",
+        f"  Real col counts: min={col_counts.min()}  max={col_counts.max()}  "
+        f"median={int(np.median(col_counts))}",
         flush=True,
     )
 
@@ -554,60 +585,69 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
                 "scmprior_jobs":   _SCMPRIOR_JOBS,
                 "total_cpus":      _TOTAL_CPUS,
                 "job_id":          JOB_ID,
-                **fixed_params,
             },
             reinit=True,
         )
 
     # Submit all trials; each worker gets its own seed for reproducible but
-    # independent real-feature subsampling.
+    # independent column-count sampling and real-feature subsampling.
     records       = [None] * n_total
-    best_combined = -1.0
+    best_score    = 0.0
     done          = 0
+    running_sum   = 0.0
     _live_points: list[list[float]] = []
     with ProcessPool(max_workers=N_WORKERS) as pool:
         futures = {
-            pool.schedule(evaluate, args=[{**params, **fixed_params}, real_feats, RANDOM_STATE + i],
-                          timeout=TRIAL_TIMEOUT): (i, params)
+            pool.schedule(
+                evaluate,
+                args=[params, real_feats, RANDOM_STATE + i, running_sum / done if done else 0.0],
+                timeout=TRIAL_TIMEOUT,
+            ): (i, params)
             for i, params in enumerate(grid, 1)
         }
         for fut in as_completed(futures):
             i, params = futures[fut]
+            running_mean = running_sum / done if done else 0.0
             try:
-                combined, fwd_cov, rev_cov, auc = fut.result()
+                score, fwd_cov, rev_cov, auc = fut.result()
             except FutTimeoutError:
-                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — skipped", flush=True)
-                combined, fwd_cov, rev_cov, auc = 0.0, 0.0, 0.0, 0.5
+                print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — using running mean", flush=True)
+                score, fwd_cov, rev_cov, auc = running_mean, 0.0, 0.0, 0.5
             except Exception as exc:
-                print(f"  (trial {i:5d}) ERROR: {exc} — skipped", flush=True)
-                combined, fwd_cov, rev_cov, auc = 0.0, 0.0, 0.0, 0.5
-            records[i - 1] = {**params, "combined": combined,
-                               "real_by_synth": fwd_cov, "synth_by_real": rev_cov,
+                print(f"  (trial {i:5d}) ERROR: {exc} — using running mean", flush=True)
+                score, fwd_cov, rev_cov, auc = running_mean, 0.0, 0.0, 0.5
+            cov_col_ab = f"Coverage {source_name}->tabicl"
+            cov_col_ba = f"Coverage tabicl->{source_name}"
+            records[i - 1] = {"A": source_name, "B": "tabicl", **params, "score": score,
+                               "cov_A_to_B": fwd_cov, "cov_B_to_A": rev_cov,
                                "discriminator_auc": auc}
             _live_points.append([fwd_cov, rev_cov, auc])
             done += 1
-            if combined > best_combined:
-                best_combined = combined
+            running_sum += score
+            if score > best_score:
+                best_score = score
             print(f"  [{done:5d}/{n_total}] (trial {i:5d}) "
-                  f"combined={combined:.4f}  real_by_synth={fwd_cov:.4f}  "
-                  f"synth_by_real={rev_cov:.4f}  auc={auc:.4f}  best={best_combined:.4f}", flush=True)
+                  f"score={score:.4f}  {cov_col_ab}={fwd_cov:.4f}  "
+                  f"{cov_col_ba}={rev_cov:.4f}  auc={auc:.4f}  best={best_score:.4f}", flush=True)
             if run is not None:
                 scatter_table = wandb.Table(
                     data=_live_points,
-                    columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
+                    columns=[cov_col_ab, cov_col_ba, "AUC"],
                 )
                 run.log({
-                    "trial":                        i,
-                    f"{source_name}/combined":       combined,
-                    f"{source_name}/best_combined":  best_combined,
-                    f"{source_name}/real_by_synth":  fwd_cov,
-                    f"{source_name}/synth_by_real":  rev_cov,
+                    "trial":                         i,
+                    "A":                             source_name,
+                    "B":                             "tabicl",
+                    f"{source_name}/score":          score,
+                    f"{source_name}/best_score":     best_score,
+                    cov_col_ab:                      fwd_cov,
+                    cov_col_ba:                      rev_cov,
                     f"{source_name}/discriminator_auc": auc,
                     f"{source_name}/coverage_scatter": wandb.plot.scatter(
-                        scatter_table, "real_by_synth", "synth_by_real",
+                        scatter_table, cov_col_ab, cov_col_ba,
                         title=f"Coverage scatter — {source_name}",
                     ),
-                    **params,
+                    **{f"{source_name}/{k}": v for k, v in params.items()},
                 })
 
     df_results = pd.DataFrame(records)
@@ -617,7 +657,10 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
 
     # Summary table + plots
     if run is not None:
-        run.log({f"{source_name}/results_table": wandb.Table(dataframe=df_results)})
+        run.log({f"{source_name}/results_table": wandb.Table(dataframe=df_results.rename(columns={
+            "cov_A_to_B": f"Coverage {source_name}->tabicl",
+            "cov_B_to_A": f"Coverage tabicl->{source_name}",
+        }))})
 
     print(f"  Generating summary plots ...", flush=True)
     log_summary_plots(df_results, source_name, run)
@@ -659,11 +702,11 @@ if __name__ == "__main__":
         all_results[source_name] = df_res
 
     print(f"\n{'#'*60}", flush=True)
-    print("  TOP-10 RESULTS PER SOURCE  (higher combined = more realistic)", flush=True)
+    print("  TOP-10 RESULTS PER SOURCE  (higher score = more realistic)", flush=True)
     print(f"{'#'*60}", flush=True)
     for source_name, df_res in all_results.items():
-        top10 = df_res.nlargest(10, "combined")[
-            ["combined", "real_by_synth", "synth_by_real", "discriminator_auc"]
+        top10 = df_res.nlargest(10, "score")[
+            ["score", "cov_A_to_B", "cov_B_to_A", "discriminator_auc"]
             + list(PARAM_SPACE.keys())
         ]
         print(f"\n  [{source_name}]", flush=True)

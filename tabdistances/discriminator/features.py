@@ -94,3 +94,57 @@ def df_to_vec(df: pd.DataFrame) -> np.ndarray:
         hist_mean,
         hist_std,
     ])
+
+
+# ---------------------------------------------------------------------------
+# Feature selection helpers
+# ---------------------------------------------------------------------------
+
+#: Human-readable names for the 70-dimensional feature vector produced by df_to_vec.
+FEATURE_NAMES: list[str] = [
+    "n_cols",
+    "type_ratio",
+    "missing_rate",
+    "mean_col_skew",
+    "std_col_skew",
+    "mean_col_kurt",
+    "std_col_kurt",
+    "mean_abs_corr",
+    "std_abs_corr",
+    "frac_high_corr",
+    *[f"hist_mean[{i}]" for i in range(_N_HIST_BINS)],
+    *[f"hist_std[{i}]"  for i in range(_N_HIST_BINS)],
+]
+
+#: Named subsets of feature indices for use with :func:`select_features`.
+#: Index 0 (n_cols) is excluded from all modes — it is used for conditioning
+#: (column-count matching) but not as a discriminative feature.
+FEATURE_MODES: dict[str, list[int]] = {
+    "full":        list(range(1, FEATURE_DIM)),        # all distributional features
+    "scalar_only": list(range(1, _N_SCALAR)),          # 9 scalar moments / correlations
+    "hist_only":   list(range(_N_SCALAR, FEATURE_DIM)),# 60 histogram features
+}
+
+
+def select_features(
+    feats: np.ndarray,
+    mode: str,
+) -> tuple[np.ndarray, list[str]]:
+    """Return (filtered_feats, filtered_names) for the given feature mode.
+
+    Parameters
+    ----------
+    feats : np.ndarray, shape (N, FEATURE_DIM)
+        Feature matrix from :func:`df_to_vec`.
+    mode : str
+        One of ``"full"``, ``"scalar_only"``, ``"hist_only"``.
+
+    Returns
+    -------
+    filtered_feats : np.ndarray, shape (N, len(idx))
+    filtered_names : list[str]
+    """
+    if mode not in FEATURE_MODES:
+        raise ValueError(f"Unknown feature mode {mode!r}. Choose from {list(FEATURE_MODES)}")
+    idx = FEATURE_MODES[mode]
+    return feats[:, idx], [FEATURE_NAMES[i] for i in idx]
