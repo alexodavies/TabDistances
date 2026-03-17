@@ -513,8 +513,8 @@ def main():
     parser.add_argument(
         "--seeds",
         type=int,
-        default=3,
-        help="Number of random seeds per model (default: 3)",
+        default=1,
+        help="Number of random seeds per model (default: 1)",
     )
     parser.add_argument(
         "--max_context",
