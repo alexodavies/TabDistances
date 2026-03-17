@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabR &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TabM" href="tabm.html" />
+    <link rel="prev" title="TabPFN" href="tabpfn.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>TabR</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>TabR</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/tabr.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tabr">
+<h1><strong>TabR</strong><a class="headerlink" href="#tabr" title="Permalink to this heading"></a></h1>
+<p>A deep learning model that integrates a KNN component to enhance tabular data predictions through an efficient attention-like mechanism.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_initialize_embeddings</span><span class="p">(</span><span class="n">weight</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</pre></div>
+</div>
+<p>Initializes embedding weights with uniform distribution.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>weight</strong> <em>(Tensor)</em> - Weight tensor to initialize.</p></li>
+<li><p><strong>d</strong> <em>(Optional[int])</em> - Embedding dimension.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_trainable_vector</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span>
+</pre></div>
+</div>
+<p>Creates a trainable parameter vector with proper initialization.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d</strong> <em>(int)</em> - Vector dimension.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Parameter</strong> - Trainable parameter vector.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CLSEmbedding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Adds a CLS token to the beginning of input sequences.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d_embedding</strong> <em>(int)</em> - Embedding dimension.</p></li>
+</ul>
+<p><strong>Input Shape:</strong></p>
+<p><cite>(*, seq_len, d_embedding)</cite></p>
+<p><strong>Output Shape:</strong></p>
+<p><cite>(*, seq_len + 1, d_embedding)</cite></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ResNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Residual network with customizable blocks and normalization.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d_in</strong> <em>(Optional[int])</em> - Input dimension.</p></li>
+<li><p><strong>d_out</strong> <em>(Optional[int])</em> - Output dimension.</p></li>
+<li><p><strong>n_blocks</strong> <em>(int)</em> - Number of residual blocks.</p></li>
+<li><p><strong>d_block</strong> <em>(int)</em> - Block dimension.</p></li>
+<li><p><strong>dropout</strong> <em>(float)</em> - Dropout rate.</p></li>
+<li><p><strong>d_hidden_multiplier</strong> <em>(float)</em> - Hidden dimension multiplier.</p></li>
+<li><p><strong>n_linear_layers_per_block</strong> <em>(int, optional, Default is 2)</em> - Number of linear layers per block.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘ReLU’)</em> - Activation function.</p></li>
+<li><p><strong>normalization</strong> <em>(str)</em> - Normalization type.</p></li>
+<li><p><strong>first_normalization</strong> <em>(bool)</em> - Whether to apply normalization first.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Linear embeddings for continuous features.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>d_embedding</strong> <em>(int)</em> - Embedding dimension.</p></li>
+<li><p><strong>bias</strong> <em>(bool, optional, Default is True)</em> - Whether to use bias.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PeriodicEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Periodic embeddings using frequency-based encoding.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>n_frequencies</strong> <em>(int)</em> - Number of frequencies.</p></li>
+<li><p><strong>frequency_scale</strong> <em>(float)</em> - Frequency scaling factor.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NLinear</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Feature-wise linear layer.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>d_in</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>d_out</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>bias</strong> <em>(bool, optional, Default is True)</em> - Whether to use bias.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LREmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Linear + ReLU embeddings.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>d_embedding</strong> <em>(int)</em> - Embedding dimension.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PLREmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Periodic + Linear + ReLU embeddings.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>n_frequencies</strong> <em>(int)</em> - Number of frequencies.</p></li>
+<li><p><strong>frequency_scale</strong> <em>(float)</em> - Frequency scaling factor.</p></li>
+<li><p><strong>d_embedding</strong> <em>(int)</em> - Embedding dimension.</p></li>
+<li><p><strong>lite</strong> <em>(bool)</em> - Whether to use lite version.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PBLDEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Periodic + BatchNorm + Linear + Dropout embeddings.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_features</strong> <em>(int)</em> - Number of features.</p></li>
+<li><p><strong>n_frequencies</strong> <em>(int)</em> - Number of frequencies.</p></li>
+<li><p><strong>frequency_scale</strong> <em>(float)</em> - Frequency scaling factor.</p></li>
+<li><p><strong>d_embedding</strong> <em>(int)</em> - Embedding dimension.</p></li>
+<li><p><strong>lite</strong> <em>(bool)</em> - Whether to use lite version.</p></li>
+<li><p><strong>plr_act_name</strong> <em>(str, optional, Default is ‘relu’)</em> - Activation function name.</p></li>
+<li><p><strong>plr_use_densenet</strong> <em>(bool, optional, Default is True)</em> - Whether to use dense connections.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MLP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Multi-layer perceptron with SELU activation.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d_in</strong> <em>(Optional[int])</em> - Input dimension.</p></li>
+<li><p><strong>d_out</strong> <em>(Optional[int])</em> - Output dimension.</p></li>
+<li><p><strong>n_blocks</strong> <em>(int)</em> - Number of blocks.</p></li>
+<li><p><strong>d_block</strong> <em>(int)</em> - Block dimension.</p></li>
+<li><p><strong>dropout</strong> <em>(float)</em> - Dropout rate.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘SELU’)</em> - Activation function.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_module</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span>
+</pre></div>
+</div>
+<p>Creates a module based on specification.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>spec</strong> - Module specification.</p></li>
+<li><p><strong>args</strong> - Positional arguments.</p></li>
+<li><p><strong>kwargs</strong> - Keyword arguments.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>nn.Module</strong> - Created module.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_module1</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span>
+</pre></div>
+</div>
+<p>Creates a module of specified type.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>type</strong> <em>(str)</em> - Module type.</p></li>
+<li><p><strong>args</strong> - Positional arguments.</p></li>
+<li><p><strong>kwargs</strong> - Keyword arguments.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>nn.Module</strong> - Created module.</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Yury Gorishniy, Ivan Rubachev, Nikolay Kartashev, Daniil Shlenskii, Akim Kotelnikov, and Artem Babenko. <strong>TabR: Tabular Deep Learning Meets Nearest Neighbors in 2023</strong>. arXiv:2307.14338 [cs.LG], 2023. <a class="reference external" href="https://arxiv.org/abs/2307.14338">https://arxiv.org/abs/2307.14338</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tabpfn.html" class="btn btn-neutral float-left" title="TabPFN" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tabm.html" class="btn btn-neutral float-right" title="TabM" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

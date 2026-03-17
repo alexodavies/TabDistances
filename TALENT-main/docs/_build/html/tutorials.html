@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use TALENT &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Methods in TALENT" href="methods.html" />
+    <link rel="prev" title="TALENT: A Tabular Analytics and Learning Toolbox" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use TALENT</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/tutorials.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-to-use-talent">
+<h1>How to Use TALENT<a class="headerlink" href="#how-to-use-talent" title="Permalink to this heading"></a></h1>
+<p>This guide will walk you through how to set up and use the TALENT toolbox for benchmarking models on tabular data, running experiments, and adding new methods.</p>
+</section>
+<section id="cloning-the-repository">
+<h1>1. Cloning the Repository<a class="headerlink" href="#cloning-the-repository" title="Permalink to this heading"></a></h1>
+<p>To get started, clone the TALENT repository from GitHub:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/qile2000/LAMDA-TALENT
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> LAMDA-TALENT/LAMDA-TALENT
+</pre></div>
+</div>
+<p>Make sure you have the required dependencies installed. Refer to the <cite>dependencies</cite> section for more details on how to install them.</p>
+</section>
+<section id="running-experiments">
+<h1>2. Running Experiments<a class="headerlink" href="#running-experiments" title="Permalink to this heading"></a></h1>
+<p>TALENT supports running experiments for both deep learning methods and classical machine learning models. You can easily configure and run experiments by following these steps:</p>
+<ol class="arabic">
+<li><p><strong>Configure the experiment settings</strong>:</p>
+<ul class="simple">
+<li><p>Edit the configuration files located in <cite>configs/default/[MODEL_NAME].json</cite> and <cite>configs/opt_space/[MODEL_NAME].json</cite> to customize global settings and hyperparameters for the model you wish to train.</p></li>
+</ul>
+</li>
+<li><p><strong>Run the experiment</strong>:</p>
+<p>To run an experiment for deep learning methods, use the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python train_model_deep.py --model_type <span class="o">[</span>MODEL_NAME<span class="o">]</span>
+</pre></div>
+</div>
+<p>For classical machine learning methods, use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python train_model_classical.py --model_type <span class="o">[</span>MODEL_NAME<span class="o">]</span>
+</pre></div>
+</div>
+<p>Replace <cite>[MODEL_NAME]</cite> with the name of the model you wish to run (e.g., <cite>MLP</cite>, <cite>ResNet</cite>, <cite>XGBoost</cite>, etc.).</p>
+</li>
+</ol>
+</section>
+<section id="adding-new-methods">
+<h1>3. Adding New Methods<a class="headerlink" href="#adding-new-methods" title="Permalink to this heading"></a></h1>
+<p>TALENT is designed to be easily extendable. You can add new models by following these steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Create the model</strong>:</p>
+<ul class="simple">
+<li><p>Add the model class to the <cite>model/models/</cite> directory. You can use one of the existing models as a template.</p></li>
+</ul>
+</li>
+<li><p><strong>Override the base class</strong>:</p>
+<ul class="simple">
+<li><p>Inherit from the base class located at <cite>model/methods/base.py</cite>, and override the <cite>construct_model()</cite> method in the new class to define the architecture of your model.</p></li>
+</ul>
+</li>
+<li><p><strong>Register the method</strong>:</p>
+<ul class="simple">
+<li><p>Add the method name to the <cite>get_method</cite> function in <cite>model/utils.py</cite>.</p></li>
+</ul>
+</li>
+<li><p><strong>Update configuration files</strong>:</p>
+<ul class="simple">
+<li><p>Add the parameter settings for your new method in <cite>configs/default/[MODEL_NAME].json</cite> and <cite>configs/opt_space/[MODEL_NAME].json</cite>.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="configuring-hyperparameters">
+<h1>4. Configuring Hyperparameters<a class="headerlink" href="#configuring-hyperparameters" title="Permalink to this heading"></a></h1>
+<p>TALENT allows you to fine-tune models through configuration files. These files are located in the <cite>configs/default/</cite> and <cite>configs/opt_space/</cite> directories.</p>
+<ul class="simple">
+<li><p><strong>`configs/default/`</strong>: Contains global settings and default parameters for each method.</p></li>
+<li><p><strong>`configs/opt_space/`</strong>: Defines the hyperparameter optimization space for each method.</p></li>
+</ul>
+<p>To modify the hyperparameters:</p>
+<ol class="arabic simple">
+<li><p>Open the appropriate <cite>.json</cite> configuration file.</p></li>
+<li><p>Edit the values for parameters such as learning rate, batch size, number of layers, etc.</p></li>
+<li><p>Save the changes and run the experiment again using the <cite>train_model_deep.py</cite> or <cite>train_model_classical.py</cite> script.</p></li>
+</ol>
+<p>You can customize the logging behavior by modifying the configuration files.</p>
+</section>
+<section id="troubleshooting">
+<h1>5. Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h1>
+<p>If you encounter any issues while using TALENT, try the following steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Check the logs</strong>: Review the logs in the <cite>logs/</cite> directory for any error messages.</p></li>
+<li><p><strong>Verify dependencies</strong>: Ensure that all required dependencies are installed. Refer to the <cite>dependencies.rst</cite> for more information.</p></li>
+<li><p><strong>Configuration issues</strong>: Double-check your configuration files to ensure the paths, dataset names, and hyperparameters are correct.</p></li>
+<li><p><strong>Contact</strong>: If you’re unable to resolve the issue, feel free to open an issue on GitHub or contact the developers.</p></li>
+</ol>
+</section>
+<section id="conclusion">
+<h1>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading"></a></h1>
+<p>TALENT provides a flexible and powerful platform for experimenting with both classical and deep learning models on tabular data. By following the steps in this guide, you can quickly set up and run experiments, fine-tune models, and even add your own methods to the toolbox. For any further assistance, refer to the documentation or reach out to the development team.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="TALENT: A Tabular Analytics and Learning Toolbox" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="methods.html" class="btn btn-neutral float-right" title="Methods in TALENT" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Method Base &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Classical Methods" href="classical_methods.html" />
+    <link rel="prev" title="Data" href="data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="core.html">Core Components</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="core.html#core-component-categories">Core Component Categories</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="core.html#utility-functions-and-classes">Utility Functions and Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#data-processing-pipeline">Data Processing Pipeline</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="core.html#method-infrastructure">Method Infrastructure</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="data.html">Data</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Method Base</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="core.html">Core Components</a> &raquo;</li>
+      <li>Method Base</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/method_base.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-TALENT.model.methods.base">
+<span id="method-base"></span><h1>Method Base<a class="headerlink" href="#module-TALENT.model.methods.base" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.methods.base.</span></span><span class="sig-name descname"><span class="pre">Method</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – argparse object</p></li>
+<li><p><strong>is_regression</strong> – bool, whether the task is regression or not</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.data_format">
+<span class="sig-name descname"><span class="pre">data_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.data_format" title="Permalink to this definition"></a></dt>
+<dd><p>Format the data for training or testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>is_train</strong> – bool, whether the data is for training or testing</p></li>
+<li><p><strong>N</strong> – dict, numerical data</p></li>
+<li><p><strong>C</strong> – dict, categorical data</p></li>
+<li><p><strong>y</strong> – dict, labels</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.fit" title="Permalink to this definition"></a></dt>
+<dd><p>Fit the method to the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – tuple, (N, C, y)</p></li>
+<li><p><strong>info</strong> – dict, information about the data</p></li>
+<li><p><strong>train</strong> – bool, whether to train the method</p></li>
+<li><p><strong>config</strong> – dict, configuration for the method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float, time cost</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.metric">
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.metric" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the evaluation metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predictions</strong> – np.ndarray, predictions</p></li>
+<li><p><strong>labels</strong> – np.ndarray, labels</p></li>
+<li><p><strong>y_info</strong> – dict, information about the labels</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple, (metric, metric_name)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Predict the results of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – tuple, (N, C, y)</p></li>
+<li><p><strong>info</strong> – dict, information about the data</p></li>
+<li><p><strong>model_name</strong> – str, name of the model</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple, (loss, metric, metric_name, predictions)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.reset_stats_withconfig">
+<span class="sig-name descname"><span class="pre">reset_stats_withconfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.reset_stats_withconfig" title="Permalink to this definition"></a></dt>
+<dd><p>Reset the training statistics with a new configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> – dict, new configuration</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.train_epoch">
+<span class="sig-name descname"><span class="pre">train_epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.train_epoch" title="Permalink to this definition"></a></dt>
+<dd><p>Train the model for one epoch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>epoch</strong> – int, the current epoch</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.Method.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.Method.validate" title="Permalink to this definition"></a></dt>
+<dd><p>Validate the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>epoch</strong> – int, the current epoch</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="TALENT.model.methods.base.check_softmax">
+<span class="sig-prename descclassname"><span class="pre">TALENT.model.methods.base.</span></span><span class="sig-name descname"><span class="pre">check_softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.methods.base.check_softmax" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the logits are already probabilities, and if not, convert them to probabilities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logits</strong> – np.ndarray of shape (N, C) with logits</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>np.ndarray of shape (N, C) with probabilities</p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="utility-functions">
+<h2>Utility Functions<a class="headerlink" href="#utility-functions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">TALENT.model.methods.base.</span></span><span class="sig-name descname"><span class="pre">check_softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Check if the logits are already probabilities, and if not, convert them to probabilities.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>logits</strong> (<em>np.ndarray</em>) – Array of shape (N, C) with logits</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>np.ndarray</strong> – Array of shape (N, C) with probabilities</p></li>
+</ul>
+<p><strong>Note:</strong></p>
+<p>This function checks if the input values are already in the [0, 1] range and sum to 1.
+If not, it applies softmax transformation with numerical stability (subtracting max before exp).</p>
+</dd></dl>
+
+</section>
+<section id="core-method-class">
+<h2>Core Method Class<a class="headerlink" href="#core-method-class" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.methods.base.</span></span><span class="sig-name descname"><span class="pre">Method</span></span></dt>
+<dd><p>Abstract base class for all machine learning methods in TALENT.</p>
+<p>This class provides a unified interface for training, validation, and prediction
+across all deep learning and classical machine learning models in TALENT.</p>
+<p><strong>Attributes:</strong></p>
+<ul class="simple">
+<li><p><strong>args</strong> (<em>argparse.Namespace</em>) – Command line arguments and configuration</p></li>
+<li><p><strong>is_regression</strong> (<em>bool</em>) – Whether the task is regression</p></li>
+<li><p><strong>D</strong> (<em>Dataset</em>) – Dataset object containing features and labels</p></li>
+<li><p><strong>train_step</strong> (<em>int</em>) – Current training step counter</p></li>
+<li><p><strong>val_count</strong> (<em>int</em>) – Counter for validation without improvement</p></li>
+<li><p><strong>continue_training</strong> (<em>bool</em>) – Whether to continue training</p></li>
+<li><p><strong>timer</strong> (<em>Timer</em>) – Timer for tracking training time</p></li>
+<li><p><strong>trlog</strong> (<em>dict</em>) – Training log containing loss, best results, etc.</p></li>
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The neural network model (to be implemented by subclasses)</p></li>
+<li><p><strong>optimizer</strong> (<em>torch.optim.Optimizer</em>) – Optimizer for training</p></li>
+<li><p><strong>criterion</strong> (<em>callable</em>) – Loss function</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Initialize the method with arguments and task type.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>args</strong> (<em>argparse.Namespace</em>) – Command line arguments and configuration</p></li>
+<li><p><strong>is_regression</strong> (<em>bool</em>) – Whether the task is regression</p></li>
+</ul>
+<p><strong>Initialization:</strong></p>
+<ul class="simple">
+<li><p>Sets up training statistics and logging</p></li>
+<li><p>Initializes device (CPU/GPU)</p></li>
+<li><p>Sets up training log with appropriate best result tracking</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">reset_stats_withconfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Reset training statistics with a new configuration.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – New configuration dictionary</p></li>
+</ul>
+<p><strong>Actions:</strong></p>
+<ul class="simple">
+<li><p>Resets random seeds for reproducibility</p></li>
+<li><p>Clears training step counter and validation counter</p></li>
+<li><p>Resets training log with new configuration</p></li>
+<li><p>Reinitializes timer</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">data_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Format and preprocess data for training or testing.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>is_train</strong> (<em>bool, optional</em>) – Whether data is for training. Defaults to True.</p></li>
+<li><p><strong>N</strong> (<em>dict, optional</em>) – Numerical features dictionary. Defaults to None.</p></li>
+<li><p><strong>C</strong> (<em>dict, optional</em>) – Categorical features dictionary. Defaults to None.</p></li>
+<li><p><strong>y</strong> (<em>dict, optional</em>) – Target labels dictionary. Defaults to None.</p></li>
+</ul>
+<p><strong>Processing Pipeline:</strong></p>
+<ul class="simple">
+<li><p><strong>Training Mode:</strong>
+* Handle missing values (NaN processing)
+* Process labels (standardization for regression, encoding for classification)
+* Apply numerical feature encoding (PLE, Unary, etc.)
+* Apply categorical feature encoding (ordinal, one-hot, etc.)
+* Apply normalization to numerical features
+* Create DataLoaders for training and validation
+* Set up loss function</p></li>
+<li><p><strong>Testing Mode:</strong>
+* Apply same preprocessing using fitted encoders and normalizers
+* Create DataLoader for testing
+* Prepare test data tensors</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Fit the method to the training data.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> (<em>tuple</em>) – Tuple of (N, C, y) where N=numerical, C=categorical, y=labels</p></li>
+<li><p><strong>info</strong> (<em>dict</em>) – Dataset information including task type and feature counts</p></li>
+<li><p><strong>train</strong> (<em>bool, optional</em>) – Whether to train the model. Defaults to True.</p></li>
+<li><p><strong>config</strong> (<em>dict, optional</em>) – Configuration dictionary. Defaults to None.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>float</strong> – Total training time in seconds</p></li>
+</ul>
+<p><strong>Training Process:</strong></p>
+<ul class="simple">
+<li><p>Initialize dataset and extract features</p></li>
+<li><p>Format data for training</p></li>
+<li><p>Construct model (implemented by subclasses)</p></li>
+<li><p>Set up optimizer (AdamW)</p></li>
+<li><p>Train for specified number of epochs</p></li>
+<li><p>Save best model and training log</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Make predictions on test data.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> (<em>tuple</em>) – Tuple of (N, C, y) test data</p></li>
+<li><p><strong>info</strong> (<em>dict</em>) – Dataset information</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Name of the saved model file</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>tuple</strong> – (loss, metrics, metric_names, predictions) where:
+* loss: Test loss value
+* metrics: List of evaluation metrics
+* metric_names: Names of the metrics
+* predictions: Model predictions</p></li>
+</ul>
+<p><strong>Prediction Process:</strong></p>
+<ul class="simple">
+<li><p>Load trained model weights</p></li>
+<li><p>Format test data using fitted preprocessors</p></li>
+<li><p>Run inference on test set</p></li>
+<li><p>Compute evaluation metrics</p></li>
+<li><p>Return results</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">train_epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Train the model for one epoch.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – Current epoch number</p></li>
+</ul>
+<p><strong>Training Loop:</strong></p>
+<ul class="simple">
+<li><p>Set model to training mode</p></li>
+<li><p>Iterate through training batches</p></li>
+<li><p>Forward pass and compute loss</p></li>
+<li><p>Backward pass and update weights</p></li>
+<li><p>Log training progress</p></li>
+<li><p>Update training statistics</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Validate the model on validation set.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – Current epoch number</p></li>
+</ul>
+<p><strong>Validation Process:</strong></p>
+<ul class="simple">
+<li><p>Set model to evaluation mode</p></li>
+<li><p>Run inference on validation set</p></li>
+<li><p>Compute validation metrics</p></li>
+<li><p>Check for improvement</p></li>
+<li><p>Save best model if improved</p></li>
+<li><p>Implement early stopping (20 epochs without improvement)</p></li>
+<li><p>Save training log</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_info</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Compute evaluation metrics based on task type.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>predictions</strong> (<em>np.ndarray</em>) – Model predictions</p></li>
+<li><p><strong>labels</strong> (<em>np.ndarray</em>) – Ground truth labels</p></li>
+<li><p><strong>y_info</strong> (<em>dict</em>) – Label information including processing policy</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>tuple</strong> – (metrics, metric_names) where:
+* metrics: List of computed metric values
+* metric_names: Names of the metrics</p></li>
+</ul>
+<p><strong>Metrics by Task Type:</strong></p>
+<ul class="simple">
+<li><p><strong>Regression:</strong>
+* MAE (Mean Absolute Error)
+* R² (Coefficient of determination)
+* RMSE (Root Mean Squared Error)</p></li>
+<li><p><strong>Binary Classification:</strong>
+* Accuracy
+* Balanced Recall
+* Macro Precision
+* F1 Score
+* Log Loss
+* AUC (Area Under ROC Curve)</p></li>
+<li><p><strong>Multi-class Classification:</strong>
+* Accuracy
+* Balanced Recall
+* Macro Precision
+* Macro F1 Score
+* Log Loss
+* Macro AUC (One-vs-Rest)</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="abstract-methods">
+<h2>Abstract Methods<a class="headerlink" href="#abstract-methods" title="Permalink to this heading"></a></h2>
+<p>The following methods must be implemented by subclasses:</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">TALENT.model.methods.base.</span></span><span class="sig-name descname"><span class="pre">construct_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dd><p>Construct the neural network model architecture.</p>
+<p><strong>Implementation Required:</strong></p>
+<p>Subclasses must implement this method to create their specific model architecture.
+The model should be assigned to <cite>self.model</cite> and should accept numerical and categorical
+features as separate inputs.</p>
+<p><strong>Expected Model Interface:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_num</span><span class="p">,</span> <span class="n">X_cat</span><span class="p">):</span>
+    <span class="c1"># X_num: numerical features tensor or None</span>
+    <span class="c1"># X_cat: categorical features tensor or None</span>
+    <span class="c1"># Return: predictions tensor</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="usage-example">
+<h2>Usage Example<a class="headerlink" href="#usage-example" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">TALENT.model.methods.base</span> <span class="kn">import</span> <span class="n">Method</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">Method</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">construct_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Define your model architecture</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">d_in</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_out</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<span class="c1"># Usage</span>
+<span class="n">method</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">is_regression</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">time_cost</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+<span class="n">loss</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">metric_names</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="s1">&#39;best-val&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data.html" class="btn btn-neutral float-left" title="Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="classical_methods.html" class="btn btn-neutral float-right" title="Classical Methods" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

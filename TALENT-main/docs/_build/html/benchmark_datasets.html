@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benchmark Datasets &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Experimental Results" href="experimental_results.html" />
+    <link rel="prev" title="Dependencies" href="dependencies.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Benchmark Datasets</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/benchmark_datasets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="benchmark-datasets">
+<h1>Benchmark Datasets<a class="headerlink" href="#benchmark-datasets" title="Permalink to this heading"></a></h1>
+<p>TALENT includes a collection of benchmark datasets designed to cover a wide range of tasks, domains, and dataset sizes. These datasets are essential for evaluating the performance of various machine learning models provided in TALENT.</p>
+</section>
+<section id="available-datasets">
+<h1>Available Datasets<a class="headerlink" href="#available-datasets" title="Permalink to this heading"></a></h1>
+<p>TALENT supports over <strong>300 datasets</strong> across various task types, including:</p>
+<ul class="simple">
+<li><p>Binary classification</p></li>
+<li><p>Multi-class classification</p></li>
+<li><p>Regression</p></li>
+</ul>
+<p>These datasets span different domains and sizes, ensuring comprehensive benchmarking of models on tabular data.</p>
+</section>
+<section id="downloading-datasets">
+<h1>Downloading Datasets<a class="headerlink" href="#downloading-datasets" title="Permalink to this heading"></a></h1>
+<p>You can download the benchmark datasets from the following link:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://drive.google.com/drive/folders/1j1zt3zQIo8dO6vkO-K-WE6pSrl71bf0z?usp=drive_link">Download Datasets from Google Drive</a></p></li>
+</ul>
+<p>Once downloaded, place the datasets in the appropriate directory as described below.</p>
+</section>
+<section id="dataset-structure">
+<h1>Dataset Structure<a class="headerlink" href="#dataset-structure" title="Permalink to this heading"></a></h1>
+<p>Each dataset consists of the following files:</p>
+<ol class="arabic">
+<li><p><strong>Numeric features</strong>: <cite>N_train.npy</cite>, <cite>N_val.npy</cite>, <cite>N_test.npy</cite> (can be omitted if there are no numeric features).</p></li>
+<li><p><strong>Categorical features</strong>: <cite>C_train.npy</cite>, <cite>C_val.npy</cite>, <cite>C_test.npy</cite> (can be omitted if there are no categorical features).</p></li>
+<li><p><strong>Labels</strong>: <cite>y_train.npy</cite>, <cite>y_val.npy</cite>, <cite>y_test.npy</cite>.</p></li>
+<li><p><strong>Dataset metadata</strong>: <cite>info.json</cite>, which must include the following fields:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;task_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;regression&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="nt">&quot;n_num_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"></span>
+<span class="nt">&quot;n_cat_features&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p><strong>Note:</strong> task_type can be “regression”, “multiclass”, or “binclass”</p>
+</li>
+</ol>
+</section>
+<section id="placing-datasets">
+<h1>Placing Datasets<a class="headerlink" href="#placing-datasets" title="Permalink to this heading"></a></h1>
+<p>To correctly set up the datasets for use with TALENT, follow these steps:</p>
+<ol class="arabic">
+<li><p>Place the downloaded datasets in the root directory of your project. The directory structure should follow this format:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>LAMDA-TALENT/
+├── args.dataset_path/
+   ├── dataset1/
+   ├── dataset2/
+   └── ...
+</pre></div>
+</div>
+</li>
+<li><p>Update the <cite>args.dataset_path</cite> parameter in your configuration files to point to the correct location of the datasets.</p></li>
+</ol>
+<p>For each dataset, <cite>args.dataset_path</cite> should point to the root folder containing the data, and <cite>args.dataset</cite> should specify the exact folder for the dataset being used.</p>
+</section>
+<section id="using-datasets">
+<h1>Using Datasets<a class="headerlink" href="#using-datasets" title="Permalink to this heading"></a></h1>
+<p>To use a dataset for training or evaluation, follow these steps:</p>
+<ol class="arabic">
+<li><p>Update the dataset path in your experiment configuration file (for example, <cite>configs/default/[MODEL_NAME].json</cite>).</p></li>
+<li><p>Ensure the paths in the configuration file are correct:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="nt">&quot;dataset_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./args.dataset_path&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="nt">&quot;dataset&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dataset1&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+<li><p>Run your experiment with the appropriate dataset by specifying the correct configuration file.</p></li>
+</ol>
+</section>
+<section id="custom-datasets">
+<h1>Custom Datasets<a class="headerlink" href="#custom-datasets" title="Permalink to this heading"></a></h1>
+<p>You can easily add new datasets to TALENT by following the same structure as the benchmark datasets. Ensure that:</p>
+<ol class="arabic simple">
+<li><p>The dataset is stored in <cite>args.dataset_path</cite>.</p></li>
+<li><p>The dataset follows the format with numeric and categorical features, as well as labels.</p></li>
+<li><p>The <cite>info.json</cite> file is correctly structured with <cite>task_type</cite>, <cite>n_num_features</cite>, and <cite>n_cat_features</cite>.</p></li>
+</ol>
+<p>Once your dataset is ready, you can update the experiment configuration to include the new dataset, and TALENT will automatically handle it.</p>
+</section>
+<section id="task-types">
+<h1>Task Types<a class="headerlink" href="#task-types" title="Permalink to this heading"></a></h1>
+<p>TALENT supports the following task types:</p>
+<ul class="simple">
+<li><p><strong>Binary Classification</strong>: A task where there are two possible labels for each instance.</p></li>
+<li><p><strong>Multi-class Classification</strong>: A task where there are more than two possible labels for each instance.</p></li>
+<li><p><strong>Regression</strong>: A task where the goal is to predict a continuous value.</p></li>
+</ul>
+<p>Ensure that the <cite>info.json</cite> file for each dataset correctly specifies the task type.</p>
+</section>
+<section id="conclusion">
+<h1>Conclusion<a class="headerlink" href="#conclusion" title="Permalink to this heading"></a></h1>
+<p>The benchmark datasets in TALENT offer a comprehensive set of challenges for evaluating models on tabular data. You can easily add, modify, and use datasets in TALENT by following the structure and instructions provided above. For any additional datasets, follow the same format and place them in the correct directory.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dependencies.html" class="btn btn-neutral float-left" title="Dependencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="experimental_results.html" class="btn btn-neutral float-right" title="Experimental Results" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

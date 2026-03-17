@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Components &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TData" href="lib/TData.html" />
+    <link rel="prev" title="Methods" href="methods.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Library Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-features">Common Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#available-components">Available Components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lib/TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="lib/dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Library Components</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/lib.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="library-components">
+<h1>Library Components<a class="headerlink" href="#library-components" title="Permalink to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>The library components module provides specialized implementations and utilities for various deep learning models in TALENT. These components include attention mechanisms, feature transformers, model-specific optimizations, and data processing utilities.</p>
+</section>
+<section id="common-features">
+<h2>Common Features<a class="headerlink" href="#common-features" title="Permalink to this heading"></a></h2>
+<p>All library components in TALENT share the following features:</p>
+<ul class="simple">
+<li><p>PyTorch integration for deep learning models</p></li>
+<li><p>Efficient data processing and memory optimization</p></li>
+<li><p>Modular design for easy integration</p></li>
+<li><p>Support for both numerical and categorical features</p></li>
+<li><p>Configurable hyperparameters and architectures</p></li>
+<li><p>GPU acceleration support</p></li>
+</ul>
+</section>
+<section id="available-components">
+<h2>Available Components<a class="headerlink" href="#available-components" title="Permalink to this heading"></a></h2>
+<p><strong>Core Utilities:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="lib/data.html"><span class="doc">Data</span></a>: Functions for loading, preprocessing, and preparing tabular data for machine learning tasks, including handling missing values, encoding features, and creating data loaders.</p></li>
+<li><p><a class="reference internal" href="lib/TData.html"><span class="doc">TData</span></a>: Optimized data structure for efficient tabular data handling</p></li>
+<li><p><a class="reference internal" href="lib/num_embeddings.html"><span class="doc">num_embeddings</span></a>: Advanced numerical feature embedding techniques</p></li>
+</ul>
+<p><strong>Library Components:</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="lib/tabnet.html"><span class="doc">TabNet</span></a>: Interpretable deep learning for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/tabpfn.html"><span class="doc">TabPFN</span></a>: Prior-data fitted networks</p></li>
+<li><p><a class="reference internal" href="lib/tabr.html"><span class="doc">TabR</span></a>: Tabular representation learning</p></li>
+<li><p><a class="reference internal" href="lib/tabm.html"><span class="doc">TabM</span></a>: Tabular modeling with transformers</p></li>
+<li><p><a class="reference internal" href="lib/realmlp.html"><span class="doc">RealMLP</span></a>: Real-valued MLP for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/bishop.html"><span class="doc">BiSHop</span></a>: Bidirectional hierarchical attention</p></li>
+<li><p><a class="reference internal" href="lib/node.html"><span class="doc">NODE</span></a>: Neural oblivious decision ensembles</p></li>
+<li><p><a class="reference internal" href="lib/hyperfast.html"><span class="doc">HyperFast</span></a>: Fast hyperparameter optimization</p></li>
+<li><p><a class="reference internal" href="lib/excelformer.html"><span class="doc">ExcelFormer</span></a>: Transformer for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/danets.html"><span class="doc">DANets</span></a>: Deep attention networks</p></li>
+<li><p><a class="reference internal" href="lib/tabcaps.html"><span class="doc">TabCaps</span></a>: Capsule networks for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/tabicl.html"><span class="doc">TabICL</span></a>: In-context learning for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/periodic_tab_dl.html"><span class="doc">Periodic Tabular DL</span></a>: Periodic embeddings for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/trompt.html"><span class="doc">TROMPT</span></a>: Tabular prompting mechanisms</p></li>
+<li><p><a class="reference internal" href="lib/ptarl.html"><span class="doc">PTARL</span></a>: Policy gradient methods for tabular RL</p></li>
+<li><p><a class="reference internal" href="lib/amformer.html"><span class="doc">AmFormer</span></a>: Attention mechanisms for transformers</p></li>
+<li><p><a class="reference internal" href="lib/tabptm.html"><span class="doc">TabPTM</span></a>: Pre-trained models for tabular data</p></li>
+<li><p><a class="reference internal" href="lib/dnnr.html"><span class="doc">DNNR</span></a>: Deep nearest neighbor regression</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Library Components:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lib/TData.html"><strong>TData</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/TData.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/data.html"><strong>Data</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/data.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/num_embeddings.html"><strong>num_embeddings</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/num_embeddings.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabnet.html"><strong>TabNet</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabnet.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabpfn.html"><strong>TabPFN</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabpfn.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabr.html"><strong>TabR</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabr.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabm.html"><strong>TabM</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabm.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/realmlp.html"><strong>RealMLP</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/realmlp.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/bishop.html"><strong>BiSHop</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/bishop.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/node.html"><strong>NODE</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/node.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/hyperfast.html"><strong>HyperFast</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/hyperfast.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/excelformer.html"><strong>ExcelFormer</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/excelformer.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/danets.html"><strong>DANet</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/danets.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabcaps.html"><strong>TabCaps</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabcaps.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabicl.html"><strong>TabICL</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabicl.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/periodic_tab_dl.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/trompt.html"><strong>Trompt</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/trompt.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/ptarl.html"><strong>PTaRL</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/ptarl.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/amformer.html"><strong>AMFormer</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/amformer.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/tabptm.html"><strong>TabPTM</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/tabptm.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/dnnr.html"><strong>DNNR</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lib/dnnr.html#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="methods.html" class="btn btn-neutral float-left" title="Methods" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lib/TData.html" class="btn btn-neutral float-right" title="TData" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

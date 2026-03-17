@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PFN v2 &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><strong>PFN v2</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/pfn_v2.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pfn-v2">
+<h1><strong>PFN v2</strong><a class="headerlink" href="#pfn-v2" title="Permalink to this heading"></a></h1>
+<p>PFN v2 (Prior-Free Neural Networks) provides TabPFN classifier and regressor implementations for tabular data.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabPFNClassifier</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabPFN classifier for tabular data classification.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int, optional, Default is 4)</em> - Number of estimators for ensemble.</p></li>
+<li><p><strong>categorical_features_indices</strong> <em>(Sequence[int] | None, optional, Default is None)</em> - Indices of categorical features.</p></li>
+<li><p><strong>softmax_temperature</strong> <em>(float, optional, Default is 0.9)</em> - Temperature for softmax function.</p></li>
+<li><p><strong>balance_probabilities</strong> <em>(bool, optional, Default is False)</em> - Whether to balance probabilities.</p></li>
+<li><p><strong>average_before_softmax</strong> <em>(bool, optional, Default is False)</em> - Whether to average before softmax.</p></li>
+<li><p><strong>model_path</strong> <em>(str | Path | Literal[“auto”], optional, Default is “auto”)</em> - Path to model checkpoint.</p></li>
+<li><p><strong>device</strong> <em>(str | torch.device | Literal[“auto”], optional, Default is “auto”)</em> - Device for computation.</p></li>
+<li><p><strong>ignore_pretraining_limits</strong> <em>(bool, optional, Default is False)</em> - Whether to ignore pretraining limits.</p></li>
+<li><p><strong>inference_precision</strong> <em>(dtype | Literal[“autocast”, “auto”], optional, Default is “auto”)</em> - Inference precision.</p></li>
+<li><p><strong>fit_mode</strong> <em>(Literal[“low_memory”, “fit_preprocessors”, “fit_with_cache”], optional, Default is “fit_preprocessors”)</em> - Fit mode.</p></li>
+<li><p><strong>memory_saving_mode</strong> <em>(bool | Literal[“auto”] | float | int, optional, Default is “auto”)</em> - Memory saving mode.</p></li>
+<li><p><strong>random_state</strong> <em>(int | np.random.RandomState | np.random.Generator | None, optional, Default is 0)</em> - Random seed.</p></li>
+<li><p><strong>n_jobs</strong> <em>(int, optional, Default is -1)</em> - Number of jobs for parallel processing.</p></li>
+<li><p><strong>inference_config</strong> <em>(dict | ModelInterfaceConfig | None, optional, Default is None)</em> - Inference configuration.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>fit(self, X, y)</strong> - Fit the classifier.</p></li>
+<li><p><strong>predict(self, X)</strong> - Predict class labels.</p></li>
+<li><p><strong>predict_proba(self, X)</strong> - Predict class probabilities.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabPFNRegressor</span><span class="p">(</span><span class="n">RegressorMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabPFN regressor for tabular data regression.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int, optional, Default is 4)</em> - Number of estimators for ensemble.</p></li>
+<li><p><strong>categorical_features_indices</strong> <em>(Sequence[int] | None, optional, Default is None)</em> - Indices of categorical features.</p></li>
+<li><p><strong>model_path</strong> <em>(str | Path | Literal[“auto”], optional, Default is “auto”)</em> - Path to model checkpoint.</p></li>
+<li><p><strong>device</strong> <em>(str | torch.device | Literal[“auto”], optional, Default is “auto”)</em> - Device for computation.</p></li>
+<li><p><strong>ignore_pretraining_limits</strong> <em>(bool, optional, Default is False)</em> - Whether to ignore pretraining limits.</p></li>
+<li><p><strong>inference_precision</strong> <em>(dtype | Literal[“autocast”, “auto”], optional, Default is “auto”)</em> - Inference precision.</p></li>
+<li><p><strong>fit_mode</strong> <em>(Literal[“low_memory”, “fit_preprocessors”, “fit_with_cache”], optional, Default is “fit_preprocessors”)</em> - Fit mode.</p></li>
+<li><p><strong>memory_saving_mode</strong> <em>(bool | Literal[“auto”] | float | int, optional, Default is “auto”)</em> - Memory saving mode.</p></li>
+<li><p><strong>random_state</strong> <em>(int | np.random.RandomState | np.random.Generator | None, optional, Default is 0)</em> - Random seed.</p></li>
+<li><p><strong>n_jobs</strong> <em>(int, optional, Default is -1)</em> - Number of jobs for parallel processing.</p></li>
+<li><p><strong>inference_config</strong> <em>(dict | ModelInterfaceConfig | None, optional, Default is None)</em> - Inference configuration.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>fit(self, X, y)</strong> - Fit the regressor.</p></li>
+<li><p><strong>predict(self, X)</strong> - Predict target values.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InferenceEngine</span>
+</pre></div>
+</div>
+<p>Inference engine for TabPFN models.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model</strong> - TabPFN model.</p></li>
+<li><p><strong>config</strong> - Inference configuration.</p></li>
+<li><p><strong>device</strong> <em>(torch.device)</em> - Device for computation.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>predict(self, X)</strong> - Make predictions.</p></li>
+<li><p><strong>predict_proba(self, X)</strong> - Predict probabilities.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EnsembleConfig</span>
+</pre></div>
+</div>
+<p>Configuration for ensemble models.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int)</em> - Number of estimators.</p></li>
+<li><p><strong>categorical_features_indices</strong> <em>(List[int])</em> - Indices of categorical features.</p></li>
+<li><p><strong>softmax_temperature</strong> <em>(float)</em> - Softmax temperature.</p></li>
+<li><p><strong>balance_probabilities</strong> <em>(bool)</em> - Whether to balance probabilities.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ClassifierEnsembleConfig</span><span class="p">(</span><span class="n">EnsembleConfig</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Configuration for classifier ensemble.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int)</em> - Number of estimators.</p></li>
+<li><p><strong>categorical_features_indices</strong> <em>(List[int])</em> - Indices of categorical features.</p></li>
+<li><p><strong>softmax_temperature</strong> <em>(float)</em> - Softmax temperature.</p></li>
+<li><p><strong>balance_probabilities</strong> <em>(bool)</em> - Whether to balance probabilities.</p></li>
+<li><p><strong>average_before_softmax</strong> <em>(bool)</em> - Whether to average before softmax.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">create_inference_engine</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Creates an inference engine for TabPFN models.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model_path</strong> <em>(str | Path)</em> - Path to model checkpoint.</p></li>
+<li><p><strong>device</strong> <em>(torch.device)</em> - Device for computation.</p></li>
+<li><p><strong>config</strong> - Model configuration.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>InferenceEngine</strong> - Created inference engine.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">initialize_tabpfn_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Initializes a TabPFN model.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model_path</strong> <em>(str | Path)</em> - Path to model checkpoint.</p></li>
+<li><p><strong>device</strong> <em>(torch.device)</em> - Device for computation.</p></li>
+<li><p><strong>config</strong> - Model configuration.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>TabPFNModel</strong> - Initialized model.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">determine_precision</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">inference_precision</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Determines the precision for inference.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>device</strong> <em>(torch.device)</em> - Device for computation.</p></li>
+<li><p><strong>inference_precision</strong> <em>(dtype | str)</em> - Inference precision specification.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>dtype</strong> - Determined precision.</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Hollmann, N., Muller, S., Purucker, L. et al. Accurate predictions on small data with a tabular foundation model. Nature 637, 319-326 (2025). <a class="reference external" href="https://doi.org/10.1038/s41586-024-08328-6">https://doi.org/10.1038/s41586-024-08328-6</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

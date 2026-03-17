@@ -1,0 +1,80 @@
+====================================
+Core Components
+====================================
+
+This section contains the core infrastructure components of TALENT that provide the foundation for all TALENT functionality. These components work together to provide a consistent and robust framework for tabular machine learning.
+
+The core components are organized into three main categories:
+
+**Essential Infrastructure:**
+
+- **Utils**: Essential utilities for training, evaluation, configuration management, and system operations
+- **Data**: Comprehensive data loading, preprocessing, transformation, and handling capabilities  
+- **Method Base**: The foundational base class that all model implementations inherit from, providing unified interfaces
+
+**Key Features:**
+
+* **Unified Interface**: All components follow consistent APIs and patterns
+* **Extensibility**: Easy to extend and customize for specific use cases
+* **Robustness**: Comprehensive error handling and validation
+* **Performance**: Optimized for efficiency in tabular data processing
+* **Reproducibility**: Built-in support for deterministic operations
+
+**Component Interactions:**
+
+The core components are designed to work seamlessly together:
+
+1. **Data Component** handles all data-related operations (loading, preprocessing, validation)
+2. **Utils Component** provides supporting utilities (metrics, configuration, device management)
+3. **Method Base** orchestrates the entire training/evaluation pipeline using Data and Utils
+
+**Design Principles:**
+
+* **Separation of Concerns**: Each component has well-defined responsibilities
+* **Composition over Inheritance**: Components are composed rather than deeply inherited
+* **Configuration-Driven**: Behavior is controlled through configuration rather than code changes
+* **Type Safety**: Comprehensive type annotations and validation
+* **Performance Optimization**: Efficient memory usage and computational patterns
+
+Core Component Categories
+-------------------------
+
+Utility Functions and Classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The utils module provides essential infrastructure for:
+
+* **Training Infrastructure**: Optimizers, schedulers, and training loops
+* **Evaluation Metrics**: Comprehensive metric computation for all task types
+* **Configuration Management**: Loading, validation, and management of configurations
+* **System Utilities**: Device management, path operations, and environment setup
+* **Reproducibility**: Seed management and deterministic operations
+
+Data Processing Pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The data module implements a complete data processing pipeline:
+
+* **Data Loading**: Support for multiple formats and sources
+* **Preprocessing**: NaN handling, encoding, normalization, and feature engineering
+* **Validation**: Data integrity checks and format validation
+* **Transformation**: Feature transformations and augmentations
+* **DataLoader Creation**: Efficient batch loading for training and inference
+
+Method Infrastructure
+~~~~~~~~~~~~~~~~~~~~~
+
+The method base provides the foundational infrastructure:
+
+* **Abstract Base Classes**: Common interfaces for all model implementations
+* **Training Orchestration**: Complete training loop management
+* **Evaluation Framework**: Standardized evaluation and metric computation
+* **Checkpoint Management**: Model saving, loading, and resuming
+* **Configuration Integration**: Seamless integration with configuration system
+
+.. toctree::
+   :maxdepth: 2
+
+   utils
+   data
+   method_base 

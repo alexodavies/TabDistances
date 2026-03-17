@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Methods in TALENT &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Dependencies" href="dependencies.html" />
+    <link rel="prev" title="How to Use TALENT" href="tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Methods in TALENT</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/methods.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="methods-in-talent">
+<h1>Methods in TALENT<a class="headerlink" href="#methods-in-talent" title="Permalink to this heading"></a></h1>
+<p>TALENT integrates an extensive array of 30+ deep learning architectures and classical methods for tabular data. Below is a summary of these methods, organized by type.</p>
+</section>
+<section id="deep-learning-methods">
+<h1>Deep Learning Methods<a class="headerlink" href="#deep-learning-methods" title="Permalink to this heading"></a></h1>
+<p>TALENT offers the following deep learning models, specifically designed to enhance performance on tabular data:</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://arxiv.org/abs/2106.11959">MLP</a> : A multi-layer neural network implemented according to RTDL.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2106.11959">ResNet</a> : A DNN that uses skip connections across many layers.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/1706.02515">SNN</a> : A self-normalizing network that uses the SELU activation, enabling deeper network training.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2112.02962">DANets</a> : Groups correlated features to enhance tabular data processing while reducing computational complexity.</p></li>
+<li><p><a class="reference external" href="https://openreview.net/pdf?id=OgbtSLESnI">TabCaps</a> : A capsule network that encapsulates feature values into vectorial representations.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2008.13535">DCNv2</a>: Combines an MLP module with a feature crossing module using linear layers and multiplications.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/1909.06312">NODE</a>: Generalizes oblivious decision trees, blending gradient-based optimization and hierarchical representation learning.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2002.07971">GrowNet</a> : A gradient boosting method utilizing shallow neural networks as weak learners.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/1908.07442">TabNet</a> : Sequential attention-based method for tabular data, enhancing feature selection and providing interpretability.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2307.14338">TabR</a> : A model integrating KNN and attention mechanisms to improve prediction accuracy.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2407.03257">ModernNCA</a> : Inspired by traditional NCA, this model makes predictions using relationships with neighbors in a learned embedding space.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2205.08434">DNNR</a> : Enhances KNN using local gradients and Taylor approximations for better predictions.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/1810.11921">AutoInt</a> : Uses multi-head self-attention to automatically learn high-order feature interactions.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2106.01342">Saint</a> : A token-based model that applies row and column attention mechanisms to tabular data.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2012.06678">TabTransformer</a> : Enhances tabular data modeling by transforming categorical features into contextual embeddings.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2106.11959">FT-Transformer</a> : A feature transformation-based method using attention mechanisms on tabular data.</p></li>
+<li><p><a class="reference external" href="https://openreview.net/pdf?id=n6H86gW8u0d">TANGOS</a> : A regularization-based method encouraging neuron specialization for tabular data.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2401.02013">SwitchTab</a> : A self-supervised method improving representation learning through an encoder-decoder framework.</p></li>
+<li><p><a class="reference external" href="https://openreview.net/pdf?id=G32oY4Vnm8">PTaRL</a> : Enhances prediction by constructing a prototype-based space for regularization.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2207.01848">TabPFN</a> : A pre-trained model that generalizes across diverse tabular tasks.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2402.14335">HyperFast</a> : A meta-trained hypernetwork that generates task-specific neural networks for tabular data.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2311.00055">TabPTM</a> : Standardizes heterogeneous datasets using meta-representations for tabular data.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2404.03830">BiSHop</a> : A sparse Hopfield model for tabular learning with column-wise and row-wise modules.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2306.12330">ProtoGate</a> : A prototype-based model for feature selection in HDLSS biomedical data.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2407.04491">RealMLP</a> : An improved multilayer perceptron (MLP) with better efficiency.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2203.05556">MLP_PLR</a> : An enhanced MLP that uses periodic activations to improve performance.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2301.02819">Excelformer</a> : A model featuring semi-permeable attention modules for tabular data, addressing rotational invariance.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2309.17130">GRANDE</a> : A tree-mimic model using gradient descent for axis-aligned decision trees.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2402.02334">AMFormer</a> : A transformer-based method for tabular data, with attention mechanisms based on feature interactions.</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2305.18446">Trompt</a> : A prompt-based neural network for separating intrinsic column features and sample-specific feature importance.</p></li>
+</ol>
+</section>
+<section id="classical-methods">
+<h1>Classical Methods<a class="headerlink" href="#classical-methods" title="Permalink to this heading"></a></h1>
+<p>TALENT integrates the following classical machine learning methods, which serve as strong baselines for tabular data tasks:</p>
+<ol class="arabic simple">
+<li><p><strong>CatBoost</strong>: A gradient boosting algorithm that excels at handling categorical features and performing well on tabular datasets.</p></li>
+<li><p><strong>Dummy Classifier</strong>: A simple baseline method that outputs the most frequent class or mean value, used to benchmark against random or naïve predictions.</p></li>
+<li><p><strong>K-Nearest Neighbors (KNN)</strong>: A classic instance-based learning algorithm that makes predictions based on the closest training samples.</p></li>
+<li><p><strong>LightGBM</strong>: A highly efficient gradient boosting framework that uses decision tree algorithms to reduce memory usage and improve speed.</p></li>
+<li><p><strong>Logistic Regression (LogReg)</strong>: A basic classification method that models the probability of a binary outcome based on input features.</p></li>
+<li><p><strong>Linear Regression (LR)</strong>: A regression method that models the relationship between a dependent variable and one or more independent variables.</p></li>
+<li><p><strong>Naive Bayes</strong>: A probabilistic classifier based on Bayes’ theorem, particularly useful for categorical data with strong independence assumptions.</p></li>
+<li><p><strong>Nearest Class Mean (NCM)</strong>: A classifier that assigns a sample to the class whose mean is closest to the sample, based on a distance metric.</p></li>
+<li><p><strong>Random Forest</strong>: An ensemble learning method that constructs multiple decision trees and merges them to improve the accuracy and robustness of predictions.</p></li>
+<li><p><strong>Support Vector Machine (SVM)</strong>: A powerful classification method that finds the hyperplane best separating different classes of data.</p></li>
+<li><p><strong>XGBoost</strong>: An advanced gradient boosting algorithm that is particularly effective for structured/tabular data and provides robust performance in competition settings.</p></li>
+</ol>
+</section>
+<section id="methodology-summary">
+<h1>Methodology Summary<a class="headerlink" href="#methodology-summary" title="Permalink to this heading"></a></h1>
+<p>TALENT provides a comprehensive toolkit for tabular data analysis, integrating both deep learning and classical machine learning models. These methods offer flexibility, customizability, and ease of integration into various tabular data tasks, making TALENT a powerful resource for researchers and practitioners alike.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorials.html" class="btn btn-neutral float-left" title="How to Use TALENT" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dependencies.html" class="btn btn-neutral float-right" title="Dependencies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
