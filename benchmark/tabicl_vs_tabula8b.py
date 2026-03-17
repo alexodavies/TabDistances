@@ -42,6 +42,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 
 warnings.filterwarnings("ignore")
 
@@ -547,9 +548,12 @@ def main():
         t_load = time.time()
         tabula_tokenizer = AutoTokenizer.from_pretrained("mlfoundations/tabula-8b")
         tabula_model = AutoModelForCausalLM.from_pretrained(
-            "mlfoundations/tabula-8b", device_map="auto"
+            "mlfoundations/tabula-8b",
+            torch_dtype=torch.float16,
+            device_map="auto",
         )
         tabula_serializer = BasicSerializerV2(SerializerConfig())
+        tabula_model.generation_config.max_length = None
         tabula_load_time = time.time() - t_load
         print(f"tabula-8b loaded in {tabula_load_time:.1f}s")
 
@@ -654,6 +658,8 @@ def main():
                 )
             except Exception as e:
                 print(f"  [ERROR] tabula-8b: {e}")
+            finally:
+                torch.cuda.empty_cache()
 
     out_file.close()
     print(f"\nResults saved to: {args.output}")
