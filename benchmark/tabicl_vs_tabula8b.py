@@ -447,13 +447,11 @@ def _log_wandb_summary(run, dataset, model_name, seed_results):
 
 
 def _compute_and_write_rankings(
-    writer, out_file, dataset, dataset_idx, model_scores, rank_metric, wb_run, wb_table
+    writer, out_file, dataset, model_scores, rank_metric, wb_run, wb_ranking_rows, wb_table
 ):
     """Rank all models by mean rank_metric (desc) and write ranking rows to CSV/wandb."""
-    # model_scores: {model_name: mean_score}
     ranked = sorted(model_scores.items(), key=lambda x: x[1], reverse=True)
-    wb_log = {"dataset_idx": dataset_idx}
-    for rank, (model_name, _) in enumerate(ranked, start=1):
+    for rank, (model_name, score) in enumerate(ranked, start=1):
         row = {
             "dataset": dataset,
             "model": model_name,
@@ -466,10 +464,14 @@ def _compute_and_write_rankings(
         writer.writerow(row)
         if wb_table is not None:
             wb_table.add_data(*[row[k] for k in wb_table.columns])
-        wb_log[f"ranking/{model_name}"] = rank
-    if wb_run is not None:
-        wb_run.log(wb_log, step=dataset_idx)
+        if wb_ranking_rows is not None:
+            wb_ranking_rows.append((dataset, model_name, rank, round(score, 4)))
     out_file.flush()
+
+    # Log just the tabicl rank live to wandb
+    if wb_run is not None and "tabicl" in model_scores:
+        tabicl_rank = next(r for r, (m, _) in enumerate(ranked, 1) if m == "tabicl")
+        wb_run.log({"ranking/tabicl": tabicl_rank})
 
     # Print the ranking table
     print(f"  Rankings on {dataset} (by {rank_metric}):")
@@ -563,6 +565,7 @@ def main():
     # ── W&B setup ────────────────────────────────────────────────────────────
     wb_run = None
     wb_table = None
+    wb_ranking_rows = None
     if args.wandb_project:
         import wandb
         wb_run = wandb.init(
@@ -579,6 +582,7 @@ def main():
         wb_table = wandb.Table(columns=[
             "dataset", "model", "seed", "metric", "value", "fit_time", "inference_time"
         ])
+        wb_ranking_rows = []
 
     # Load tabula-8b once (expensive: ~16 GB GPU RAM, several minutes)
     tabula_model = tabula_tokenizer = tabula_serializer = None
@@ -625,7 +629,7 @@ def main():
         if wb_run is not None:
             wb_run.summary["tabula8b/model_load_time"] = tabula_load_time
 
-    for dataset_idx, dataset_name in enumerate(dataset_names):
+    for dataset_name in dataset_names:
         print(f"\n{'=' * 60}\nDataset: {dataset_name}")
         try:
             train_val_data, test_data, info = get_dataset(
@@ -654,8 +658,6 @@ def main():
                     classical_model, dataset_name, train_val_data, test_data, info, args.seeds
                 )
                 _write_results(writer, out_file, dataset_name, classical_model, res, wb_table)
-                if wb_run is not None:
-                    _log_wandb_summary(wb_run, dataset_name, classical_model, res)
                 acc = [r.get("Accuracy", float("nan")) for r in res]
                 scores = [r.get(args.rank_metric, float("nan")) for r in res]
                 mean_score = float(np.nanmean(scores))
@@ -672,8 +674,6 @@ def main():
                     dataset_name, train_val_data, test_data, info, args.seeds
                 )
                 _write_results(writer, out_file, dataset_name, "tabicl", res, wb_table)
-                if wb_run is not None:
-                    _log_wandb_summary(wb_run, dataset_name, "tabicl", res)
                 acc = [r.get("Accuracy", float("nan")) for r in res]
                 scores = [r.get(args.rank_metric, float("nan")) for r in res]
                 mean_score = float(np.nanmean(scores))
@@ -685,7 +685,7 @@ def main():
 
         if len(dataset_scores) > 1:
             _compute_and_write_rankings(
-                writer, out_file, dataset_name, dataset_idx, dataset_scores, args.rank_metric, wb_run, wb_table
+                writer, out_file, dataset_name, dataset_scores, args.rank_metric, wb_run, wb_ranking_rows, wb_table
             )
 
         if "tabula8b" in args.models:
@@ -724,7 +724,14 @@ def main():
     print(f"\nResults saved to: {args.output}")
 
     if wb_run is not None:
+        import wandb
         wb_run.log({"results": wb_table})
+        if wb_ranking_rows:
+            ranking_table = wandb.Table(
+                columns=["dataset", "model", "rank", args.rank_metric],
+                data=wb_ranking_rows,
+            )
+            wb_run.log({"ranking": ranking_table})
         wb_run.finish()
         print(f"W&B run: {wb_run.url}")
 
