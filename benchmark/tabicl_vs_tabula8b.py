@@ -132,6 +132,72 @@ def run_tabicl(dataset_name, train_val_data, test_data, info, n_seeds):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# XGBoost helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+_CLASSICAL_MODELS = ["xgboost", "catboost", "lightgbm", "RandomForest", "LogReg", "svm", "knn"]
+
+
+def _make_classical_args(model_type: str, seed: int, dataset: str) -> argparse.Namespace:
+    """Build a minimal args namespace accepted by any TALENT classical method."""
+    import importlib.resources as pkg_resources
+    import TALENT
+
+    with pkg_resources.files(TALENT).joinpath(f"configs/default/{model_type}.json").open("r") as f:
+        default_para = json.load(f)
+
+    config = default_para[model_type]
+    config.setdefault("fit", {})["n_bins"] = 2
+
+    save_dir = str(_ROOT / f"results_model/{dataset}-{model_type}-seed{seed}")
+    os.makedirs(save_dir, exist_ok=True)
+
+    return argparse.Namespace(
+        model_type=model_type,
+        dataset=dataset,
+        dataset_path="",
+        seed=seed,
+        normalization="quantile",
+        num_nan_policy="mean",
+        cat_nan_policy="new",
+        cat_policy="ordinal",   # all classical_methods assert cat_policy != 'indices'
+        num_policy="none",
+        n_bins=2,
+        cat_min_frequency=0.0,
+        tune=False,
+        retune=False,
+        evaluate_option="best-val",
+        model_path=str(_ROOT / "results_model"),
+        save_path=save_dir,
+        config=config,
+    )
+
+
+def run_classical(model_type, dataset_name, train_val_data, test_data, info, n_seeds):
+    """Run any TALENT classical method for n_seeds seeds; return per-seed metric dicts."""
+    results = []
+    for seed in range(n_seeds):
+        set_seeds(seed)
+        args = _make_classical_args(model_type, seed, dataset_name)
+        method = get_method(model_type)(args, is_regression=False)
+
+        t0 = time.time()
+        method.fit(train_val_data, info)
+        fit_time = time.time() - t0
+
+        t1 = time.time()
+        vres, metric_name, _ = method.predict(test_data, info, model_name="best-val")
+        inference_time = time.time() - t1
+
+        row = {"seed": seed, "fit_time": fit_time, "inference_time": inference_time}
+        for name, val in zip(metric_name, vres):
+            row[name] = float(val)
+        results.append(row)
+
+    return results
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # tabula-8b helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -156,10 +222,11 @@ def _talent_to_df(N, C, split: str) -> pd.DataFrame:
 def _build_class_map(unique_labels, info):
     """Return {raw_label -> string_name} using info['target_intro'] if available."""
     target_intro = info.get("target_intro", {})
-    return {
-        lbl: target_intro.get(str(int(lbl)), f"class_{int(lbl)}")
-        for lbl in unique_labels
-    }
+    result = {}
+    for i, lbl in enumerate(unique_labels):
+        key = str(lbl)
+        result[lbl] = target_intro.get(key, f"class_{i}")
+    return result
 
 
 def _sample_context(train_df, y_train_raw, class_map, max_context, rng):
@@ -429,9 +496,9 @@ def main():
     parser.add_argument(
         "--models",
         nargs="+",
-        default=["tabicl", "tabula8b"],
-        choices=["tabicl", "tabula8b"],
-        help="Which models to benchmark (default: both)",
+        default=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
+        choices=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
+        help="Which models to benchmark (default: all)",
     )
     parser.add_argument(
         "--wandb_project",
@@ -527,6 +594,22 @@ def main():
 
         n_test = len(test_data[2]["test"])
         print(f"  task={task_type}, test_size={n_test}")
+
+        for classical_model in _CLASSICAL_MODELS:
+            if classical_model not in args.models:
+                continue
+            print(f"  Running {classical_model}...")
+            try:
+                res = run_classical(
+                    classical_model, dataset_name, train_val_data, test_data, info, args.seeds
+                )
+                _write_results(writer, out_file, dataset_name, classical_model, res, wb_table)
+                if wb_run is not None:
+                    _log_wandb_summary(wb_run, dataset_name, classical_model, res)
+                acc = [r.get("Accuracy", float("nan")) for r in res]
+                print(f"  {classical_model} Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}")
+            except Exception as e:
+                print(f"  [ERROR] {classical_model}: {e}")
 
         if "tabicl" in args.models:
             print("  Running TabICL...")
