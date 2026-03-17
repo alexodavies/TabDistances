@@ -248,14 +248,13 @@ def _sample_context(train_df, y_train_raw, class_map, max_context, rng):
     )
 
 
-def _build_tabula8b_prompt(serializer, context_df, query_row_df, target_col, choice_names):
-    """Build a few-shot prompt for tabula-8b without using rtfm.inference_utils."""
+def _build_context_str(serializer, context_df, target_col, choice_names):
+    """Serialize the labeled context examples into a single reusable string."""
     from rtfm.special_tokens import EOC_TOKEN, QA_SEP_TOKEN
 
     prefix = f"Predict the {target_col}"
     suffix = f"What is the value of {target_col}?"
     parts = []
-
     for _, row in context_df.iterrows():
         label = str(row[target_col])
         features = row.drop(labels=[target_col])
@@ -263,53 +262,55 @@ def _build_tabula8b_prompt(serializer, context_df, query_row_df, target_col, cho
             features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
         )
         parts.append(f"{serialized} {QA_SEP_TOKEN} {label} {EOC_TOKEN}")
-
-    query_features = query_row_df.iloc[0].drop(labels=[target_col], errors="ignore")
-    serialized = serializer(
-        query_features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
-    )
-    parts.append(f"{serialized} {QA_SEP_TOKEN}")
-
     return " ".join(parts)
 
 
-def _infer_tabula8b(model, tokenizer, serializer, context_df, query_row_df,
-                    target_col, choice_names, max_new_tokens=16):
-    """Inference for a single query row, using only tableshift-free rtfm modules."""
-    import torch
-    from rtfm.generation_utils import KeywordsStoppingCriteria, parse_generated_text
-    from rtfm.special_tokens import EOC_TOKEN
+def _infer_tabula8b_batch(model, tokenizer, serializer, context_str,
+                          query_df, target_col, choice_names,
+                          batch_size=8, max_new_tokens=16):
+    """Batched inference over query_df rows; returns list of predicted strings."""
+    from rtfm.generation_utils import parse_generated_text
+    from rtfm.special_tokens import QA_SEP_TOKEN
 
-    prompt = _build_tabula8b_prompt(
-        serializer, context_df, query_row_df, target_col, choice_names
-    )
+    prefix = f"Predict the {target_col}"
+    suffix = f"What is the value of {target_col}?"
+
+    tokenizer.padding_side = "left"
     tokenizer.truncation_side = "left"
-    inputs = tokenizer(
-        prompt, return_tensors="pt",
-        truncation=True, max_length=tokenizer.model_max_length,
-    ).to(model.device)
 
-    stopping_criterion = KeywordsStoppingCriteria(
-        keywords=[EOC_TOKEN],
-        tokenizer=tokenizer,
-        input_ids=inputs["input_ids"],
-    )
+    predictions = []
+    for start in range(0, len(query_df), batch_size):
+        batch = query_df.iloc[start:start + batch_size]
+        prompts = []
+        for _, row in batch.iterrows():
+            features = row.drop(labels=[target_col], errors="ignore")
+            serialized = serializer(
+                features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
+            )
+            prompts.append(f"{context_str} {serialized} {QA_SEP_TOKEN}")
 
-    with torch.no_grad():
-        output = model.generate(
-            inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_new_tokens=max_new_tokens,
-            stopping_criteria=[stopping_criterion],
-            do_sample=False,
-        )
+        inputs = tokenizer(
+            prompts, return_tensors="pt", padding=True,
+            truncation=True, max_length=tokenizer.model_max_length,
+        ).to(model.device)
 
-    decoded = tokenizer.decode(output[0], skip_special_tokens=False)
-    try:
-        prediction, _ = parse_generated_text(decoded)
-    except ValueError:
-        prediction = choice_names[0]
-    return prediction.strip()
+        with torch.no_grad():
+            outputs = model.generate(
+                inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+            )
+
+        for output in outputs:
+            decoded = tokenizer.decode(output, skip_special_tokens=False)
+            try:
+                pred, _ = parse_generated_text(decoded)
+            except ValueError:
+                pred = choice_names[0]
+            predictions.append(pred.strip())
+
+    return predictions
 
 
 def run_tabula8b(
@@ -323,6 +324,7 @@ def run_tabula8b(
     model,
     tokenizer,
     serializer,
+    batch_size=8,
 ):
     """Run tabula-8b inference; return list of per-seed metric dicts."""
     import sklearn.metrics as skm
@@ -336,7 +338,7 @@ def run_tabula8b(
     y_train_raw = np.array(y_tv["train"])
     y_test_raw = np.array(y_te["test"])
 
-    # Optionally cap test set size (tabula-8b inference is slow: ~1–2s per sample)
+    # Optionally cap test set size (tabula-8b inference is slow)
     if max_test_samples is not None and len(test_df) > max_test_samples:
         rng0 = np.random.default_rng(0)
         sel = rng0.choice(len(test_df), size=max_test_samples, replace=False)
@@ -349,33 +351,32 @@ def run_tabula8b(
     choice_names = [class_map[lbl] for lbl in sorted(class_map)]
     inv_map = {v: k for k, v in class_map.items()}
 
+    # Add dummy target column to test_df for serializer compatibility
+    test_df = test_df.copy()
+    test_df["__target__"] = choice_names[0]
+
     results = []
     for seed in range(n_seeds):
         rng = np.random.default_rng(seed)
         ctx = _sample_context(train_df, y_train_raw, class_map, max_context, rng)
+        context_str = _build_context_str(serializer, ctx, "__target__", choice_names)
 
-        pred_labels = []
         t0 = time.time()
-        for i in range(len(test_df)):
-            query_row = test_df.iloc[[i]]
-            try:
-                pred_str = _infer_tabula8b(
-                    model=model,
-                    tokenizer=tokenizer,
-                    serializer=serializer,
-                    context_df=ctx,
-                    query_row_df=query_row,
-                    target_col="__target__",
-                    choice_names=choice_names,
-                    max_new_tokens=16,
-                )
-            except Exception:
-                pred_str = choice_names[0]
+        pred_strs = _infer_tabula8b_batch(
+            model=model,
+            tokenizer=tokenizer,
+            serializer=serializer,
+            context_str=context_str,
+            query_df=test_df,
+            target_col="__target__",
+            choice_names=choice_names,
+            batch_size=batch_size,
+            max_new_tokens=16,
+        )
 
-            pred_labels.append(inv_map.get(pred_str, unique_labels[0]))
+        pred_labels = np.array([inv_map.get(p, unique_labels[0]) for p in pred_strs])
 
         inference_time = time.time() - t0
-        pred_labels = np.array(pred_labels)
 
         accuracy = skm.accuracy_score(y_test_raw, pred_labels)
         avg_recall = skm.balanced_accuracy_score(y_test_raw, pred_labels)
@@ -500,6 +501,12 @@ def main():
         default=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
         choices=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
         help="Which models to benchmark (default: all)",
+    )
+    parser.add_argument(
+        "--tabula_batch_size",
+        type=int,
+        default=8,
+        help="Batch size for tabula-8b inference (default: 8)",
     )
     parser.add_argument(
         "--wandb_project",
@@ -634,6 +641,7 @@ def main():
         if "tabula8b" in args.models:
             print(
                 f"  Running tabula-8b (context={args.max_context}, "
+                f"batch={args.tabula_batch_size}, "
                 f"max_test={args.max_test_samples or 'all'})..."
             )
             try:
@@ -648,6 +656,7 @@ def main():
                     tabula_model,
                     tabula_tokenizer,
                     tabula_serializer,
+                    batch_size=args.tabula_batch_size,
                 )
                 _write_results(writer, out_file, dataset_name, "tabula8b", res, wb_table)
                 if wb_run is not None:
