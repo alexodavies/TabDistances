@@ -446,6 +446,35 @@ def _log_wandb_summary(run, dataset, model_name, seed_results):
         })
 
 
+def _compute_and_write_rankings(
+    writer, out_file, dataset, model_scores, rank_metric, wb_run, wb_table
+):
+    """Rank all models by mean rank_metric (desc) and write ranking rows to CSV/wandb."""
+    # model_scores: {model_name: mean_score}
+    ranked = sorted(model_scores.items(), key=lambda x: x[1], reverse=True)
+    for rank, (model_name, _) in enumerate(ranked, start=1):
+        row = {
+            "dataset": dataset,
+            "model": model_name,
+            "seed": -1,
+            "metric": "ranking",
+            "value": rank,
+            "fit_time": float("nan"),
+            "inference_time": float("nan"),
+        }
+        writer.writerow(row)
+        if wb_table is not None:
+            wb_table.add_data(*[row[k] for k in wb_table.columns])
+        if wb_run is not None:
+            wb_run.log({f"ranking/{dataset}_{model_name}": rank})
+    out_file.flush()
+
+    # Print the ranking table
+    print(f"  Rankings on {dataset} (by {rank_metric}):")
+    for rank, (model_name, score) in enumerate(ranked, start=1):
+        print(f"    {rank}. {model_name:20s} {rank_metric}={score:.4f}")
+
+
 def _discover_datasets(dataset_path: str):
     root = Path(dataset_path)
     return sorted(
@@ -498,7 +527,7 @@ def main():
     parser.add_argument(
         "--models",
         nargs="+",
-        default=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
+        default=["tabicl"] + _CLASSICAL_MODELS,
         choices=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
         help="Which models to benchmark (default: all)",
     )
@@ -507,6 +536,12 @@ def main():
         type=int,
         default=8,
         help="Batch size for tabula-8b inference (default: 8)",
+    )
+    parser.add_argument(
+        "--rank_metric",
+        default="F1",
+        choices=["Accuracy", "F1", "AUC", "Avg_Recall", "Avg_Precision"],
+        help="Metric to use for inter-model ranking (default: F1)",
     )
     parser.add_argument(
         "--wandb_project",
@@ -606,6 +641,8 @@ def main():
         n_test = len(test_data[2]["test"])
         print(f"  task={task_type}, test_size={n_test}")
 
+        dataset_scores = {}  # model_name -> mean rank_metric score
+
         for classical_model in _CLASSICAL_MODELS:
             if classical_model not in args.models:
                 continue
@@ -618,6 +655,10 @@ def main():
                 if wb_run is not None:
                     _log_wandb_summary(wb_run, dataset_name, classical_model, res)
                 acc = [r.get("Accuracy", float("nan")) for r in res]
+                scores = [r.get(args.rank_metric, float("nan")) for r in res]
+                mean_score = float(np.nanmean(scores))
+                if not np.isnan(mean_score):
+                    dataset_scores[classical_model] = mean_score
                 print(f"  {classical_model} Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}")
             except Exception as e:
                 print(f"  [ERROR] {classical_model}: {e}")
@@ -632,11 +673,18 @@ def main():
                 if wb_run is not None:
                     _log_wandb_summary(wb_run, dataset_name, "tabicl", res)
                 acc = [r.get("Accuracy", float("nan")) for r in res]
-                print(
-                    f"  TabICL Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}"
-                )
+                scores = [r.get(args.rank_metric, float("nan")) for r in res]
+                mean_score = float(np.nanmean(scores))
+                if not np.isnan(mean_score):
+                    dataset_scores["tabicl"] = mean_score
+                print(f"  TabICL Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}")
             except Exception as e:
                 print(f"  [ERROR] TabICL: {e}")
+
+        if len(dataset_scores) > 1:
+            _compute_and_write_rankings(
+                writer, out_file, dataset_name, dataset_scores, args.rank_metric, wb_run, wb_table
+            )
 
         if "tabula8b" in args.models:
             print(
