@@ -45,9 +45,13 @@ import pandas as pd
 
 warnings.filterwarnings("ignore")
 
-# ── Make TALENT importable ────────────────────────────────────────────────────
+# ── Make TALENT and rtfm importable ──────────────────────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "TALENT-main"))
+# rtfm is used as a source checkout (pip install may not expose the module)
+_RTFM_SRC = _ROOT / "rtfm-src"
+if _RTFM_SRC.exists():
+    sys.path.insert(0, str(_RTFM_SRC))
 
 from TALENT.model.utils import get_method, set_seeds
 from TALENT.model.lib.data import get_dataset
@@ -403,13 +407,14 @@ def main():
         print("\nLoading tabula-8b from HuggingFace (this may take a while)...")
         from transformers import AutoTokenizer, AutoModelForCausalLM
         from rtfm.serialization.serializers import BasicSerializerV2
+        from rtfm.configs import SerializerConfig
 
         t_load = time.time()
         tabula_tokenizer = AutoTokenizer.from_pretrained("mlfoundations/tabula-8b")
         tabula_model = AutoModelForCausalLM.from_pretrained(
             "mlfoundations/tabula-8b", device_map="auto"
         )
-        tabula_serializer = BasicSerializerV2()
+        tabula_serializer = BasicSerializerV2(SerializerConfig())
         tabula_load_time = time.time() - t_load
         print(f"tabula-8b loaded in {tabula_load_time:.1f}s")
 
