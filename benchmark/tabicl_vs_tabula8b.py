@@ -447,11 +447,12 @@ def _log_wandb_summary(run, dataset, model_name, seed_results):
 
 
 def _compute_and_write_rankings(
-    writer, out_file, dataset, model_scores, rank_metric, wb_run, wb_table
+    writer, out_file, dataset, dataset_idx, model_scores, rank_metric, wb_run, wb_table
 ):
     """Rank all models by mean rank_metric (desc) and write ranking rows to CSV/wandb."""
     # model_scores: {model_name: mean_score}
     ranked = sorted(model_scores.items(), key=lambda x: x[1], reverse=True)
+    wb_log = {"dataset_idx": dataset_idx}
     for rank, (model_name, _) in enumerate(ranked, start=1):
         row = {
             "dataset": dataset,
@@ -465,8 +466,9 @@ def _compute_and_write_rankings(
         writer.writerow(row)
         if wb_table is not None:
             wb_table.add_data(*[row[k] for k in wb_table.columns])
-        if wb_run is not None:
-            wb_run.log({f"ranking/{dataset}_{model_name}": rank})
+        wb_log[f"ranking/{model_name}"] = rank
+    if wb_run is not None:
+        wb_run.log(wb_log, step=dataset_idx)
     out_file.flush()
 
     # Print the ranking table
@@ -623,7 +625,7 @@ def main():
         if wb_run is not None:
             wb_run.summary["tabula8b/model_load_time"] = tabula_load_time
 
-    for dataset_name in dataset_names:
+    for dataset_idx, dataset_name in enumerate(dataset_names):
         print(f"\n{'=' * 60}\nDataset: {dataset_name}")
         try:
             train_val_data, test_data, info = get_dataset(
@@ -683,7 +685,7 @@ def main():
 
         if len(dataset_scores) > 1:
             _compute_and_write_rankings(
-                writer, out_file, dataset_name, dataset_scores, args.rank_metric, wb_run, wb_table
+                writer, out_file, dataset_name, dataset_idx, dataset_scores, args.rank_metric, wb_run, wb_table
             )
 
         if "tabula8b" in args.models:
