@@ -1,0 +1,3 @@
+rtfm
+transformers>=4.40
+accelerate
