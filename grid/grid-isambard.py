@@ -371,9 +371,9 @@ def evaluate(
     seed: int,
     running_mean: float = 0.0,
 ) -> tuple[float, float, float, float]:
-    """Return (score, real_by_synth, synth_by_real, discriminator_auc).
+    """Return (score, recall, precision, discriminator_auc).
 
-    score = combined_score(fwd_cov, rev_cov, auc) in [0, 1]; MAXIMISE.
+    score = combined_score(recall, precision, auc) in [0, 1]; MAXIMISE.
     On generation failure or timeout, returns (running_mean, 0, 0, 0.5).
     """
     rng = np.random.default_rng(seed)
@@ -399,11 +399,11 @@ def evaluate(
     real_m,  _ = select_features(real_sample, FEATURE_MODE)
     synth_m, _ = select_features(synth_feats, FEATURE_MODE)
 
-    fwd_cov = _knn_coverage(real_m,  synth_m)
-    rev_cov = _knn_coverage(synth_m, real_m)
-    auc     = _discriminator_auc(real_m, synth_m, seed)
-    score   = combined_score(fwd_cov, rev_cov, auc)
-    return score, fwd_cov, rev_cov, auc
+    recall    = _knn_coverage(real_m,  synth_m)
+    precision = _knn_coverage(synth_m, real_m)
+    auc       = _discriminator_auc(real_m, synth_m, seed)
+    score     = combined_score(recall, precision, auc)
+    return score, recall, precision, auc
 
 
 # ------------------------------------------------------------------
@@ -609,30 +609,28 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
             i, params = futures[fut]
             running_mean = running_sum / done if done else 0.0
             try:
-                score, fwd_cov, rev_cov, auc = fut.result()
+                score, recall, precision, auc = fut.result()
             except FutTimeoutError:
                 print(f"  (trial {i:5d}) TIMEOUT after {TRIAL_TIMEOUT}s — using running mean", flush=True)
-                score, fwd_cov, rev_cov, auc = running_mean, 0.0, 0.0, 0.5
+                score, recall, precision, auc = running_mean, 0.0, 0.0, 0.5
             except Exception as exc:
                 print(f"  (trial {i:5d}) ERROR: {exc} — using running mean", flush=True)
-                score, fwd_cov, rev_cov, auc = running_mean, 0.0, 0.0, 0.5
-            cov_col_ab = f"Coverage {source_name}->tabicl"
-            cov_col_ba = f"Coverage tabicl->{source_name}"
+                score, recall, precision, auc = running_mean, 0.0, 0.0, 0.5
             records[i - 1] = {"A": source_name, "B": "tabicl", **params, "score": score,
-                               "cov_A_to_B": fwd_cov, "cov_B_to_A": rev_cov,
+                               "recall": recall, "precision": precision,
                                "discriminator_auc": auc}
-            _live_points.append([fwd_cov, rev_cov, auc])
+            _live_points.append([recall, precision, auc])
             done += 1
             running_sum += score
             if score > best_score:
                 best_score = score
             print(f"  [{done:5d}/{n_total}] (trial {i:5d}) "
-                  f"score={score:.4f}  {cov_col_ab}={fwd_cov:.4f}  "
-                  f"{cov_col_ba}={rev_cov:.4f}  auc={auc:.4f}  best={best_score:.4f}", flush=True)
+                  f"score={score:.4f}  Recall={recall:.4f}  "
+                  f"Precision={precision:.4f}  auc={auc:.4f}  best={best_score:.4f}", flush=True)
             if run is not None:
                 scatter_table = wandb.Table(
                     data=_live_points,
-                    columns=[cov_col_ab, cov_col_ba, "AUC"],
+                    columns=["Recall", "Precision", "AUC"],
                 )
                 run.log({
                     "trial":                         i,
@@ -640,12 +638,12 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
                     "B":                             "tabicl",
                     f"{source_name}/score":          score,
                     f"{source_name}/best_score":     best_score,
-                    cov_col_ab:                      fwd_cov,
-                    cov_col_ba:                      rev_cov,
+                    f"{source_name}/recall":         recall,
+                    f"{source_name}/precision":      precision,
                     f"{source_name}/discriminator_auc": auc,
                     f"{source_name}/coverage_scatter": wandb.plot.scatter(
-                        scatter_table, cov_col_ab, cov_col_ba,
-                        title=f"Coverage scatter — {source_name}",
+                        scatter_table, "Recall", "Precision",
+                        title=f"Recall/Precision scatter — {source_name}",
                     ),
                     **{f"{source_name}/{k}": v for k, v in params.items()},
                 })
@@ -658,8 +656,8 @@ def run_grid_search(source_name: str, real_feats: np.ndarray) -> pd.DataFrame:
     # Summary table + plots
     if run is not None:
         run.log({f"{source_name}/results_table": wandb.Table(dataframe=df_results.rename(columns={
-            "cov_A_to_B": f"Coverage {source_name}->tabicl",
-            "cov_B_to_A": f"Coverage tabicl->{source_name}",
+            "recall":    "Recall",
+            "precision": "Precision",
         }))})
 
     print(f"  Generating summary plots ...", flush=True)
@@ -706,7 +704,7 @@ if __name__ == "__main__":
     print(f"{'#'*60}", flush=True)
     for source_name, df_res in all_results.items():
         top10 = df_res.nlargest(10, "score")[
-            ["score", "cov_A_to_B", "cov_B_to_A", "discriminator_auc"]
+            ["score", "recall", "precision", "discriminator_auc"]
             + list(PARAM_SPACE.keys())
         ]
         print(f"\n  [{source_name}]", flush=True)

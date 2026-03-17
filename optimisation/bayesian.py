@@ -5,7 +5,7 @@ Each restart starts from a fresh random position in parameter space so the
 optimiser can escape local optima.  Results are persisted to disk after
 every restart, so the script can be interrupted safely.
 
-Objective: maximise combined_score(coverage_A→B, coverage_B→A, AUC)
+Objective: maximise combined_score(recall, precision, AUC)
   = Euclidean distance from origin toward the ideal (1, 1, 1) point,
     normalised to [0, 1].
 
@@ -231,7 +231,7 @@ def evaluate(
     seed: int,
     running_mean: float = 0.0,
 ) -> tuple:
-    """Return (score, coverage_real_by_synth, coverage_synth_by_real, discriminator_auc).
+    """Return (score, recall, precision, discriminator_auc).
 
     score = combined_score(...) in [0, 1]; MAXIMISE.
     On generation failure, returns (running_mean, 0, 0, 0.5).
@@ -257,11 +257,11 @@ def evaluate(
     real_m,  _ = select_features(real_sample, FEATURE_MODE)
     synth_m, _ = select_features(synth_feats, FEATURE_MODE)
 
-    fwd_cov = _knn_coverage(real_m,  synth_m)
-    rev_cov = _knn_coverage(synth_m, real_m)
-    auc     = _discriminator_auc(real_m, synth_m, seed)
-    score   = combined_score(fwd_cov, rev_cov, auc)
-    return score, fwd_cov, rev_cov, auc
+    recall    = _knn_coverage(real_m,  synth_m)
+    precision = _knn_coverage(synth_m, real_m)
+    auc       = _discriminator_auc(real_m, synth_m, seed)
+    score     = combined_score(recall, precision, auc)
+    return score, recall, precision, auc
 
 
 # ------------------------------------------------------------------
@@ -290,22 +290,22 @@ def run_single_restart(
         rm = running_sum[0] / running_count[0] if running_count[0] > 0 else 0.0
         params = make_params(trial)
         trial_seed = seed + trial.number
-        score, fwd_cov, rev_cov, auc = evaluate(params, real_feats, trial_seed, rm)
+        score, recall, precision, auc = evaluate(params, real_feats, trial_seed, rm)
 
         running_sum[0]   += score
         running_count[0] += 1
-        _live_points.append([fwd_cov, rev_cov, auc])
+        _live_points.append([recall, precision, auc])
 
         print(f"  [r{restart_idx+1:03d}|t{trial.number:03d}] "
-              f"score={score:.4f}  fwd={fwd_cov:.4f}  rev={rev_cov:.4f}  auc={auc:.4f}")
+              f"score={score:.4f}  Recall={recall:.4f}  Precision={precision:.4f}  auc={auc:.4f}")
 
         # Live append to CSV
         row = {
             "restart":          restart_idx,
             "trial":            trial.number,
             "score":            score,
-            "real_by_synth":    fwd_cov,
-            "synth_by_real":    rev_cov,
+            "recall":           recall,
+            "precision":        precision,
             "discriminator_auc": auc,
             **{k: (1 if v is True else 0 if v is False else v)
                for k, v in params.items()},
@@ -319,17 +319,17 @@ def run_single_restart(
                           for k, v in params.items()}
             scatter_table = wandb.Table(
                 data=_live_points,
-                columns=["real_by_synth", "synth_by_real", "discriminator_auc"],
+                columns=["Recall", "Precision", "discriminator_auc"],
             )
             run.log({
                 f"{source_name}/r{restart_idx}/score":            score,
-                f"{source_name}/r{restart_idx}/real_by_synth":    fwd_cov,
-                f"{source_name}/r{restart_idx}/synth_by_real":    rev_cov,
+                f"{source_name}/r{restart_idx}/recall":           recall,
+                f"{source_name}/r{restart_idx}/precision":        precision,
                 f"{source_name}/r{restart_idx}/discriminator_auc": auc,
                 f"{source_name}/r{restart_idx}/trial":            trial.number,
                 f"{source_name}/r{restart_idx}/coverage_scatter": wandb.plot.scatter(
-                    scatter_table, "real_by_synth", "synth_by_real",
-                    title=f"Coverage scatter r{restart_idx} — {source_name}",
+                    scatter_table, "Recall", "Precision",
+                    title=f"Recall/Precision scatter r{restart_idx} — {source_name}",
                 ),
                 **{f"{source_name}/r{restart_idx}/param/{k}": v for k, v in log_params.items()},
             })

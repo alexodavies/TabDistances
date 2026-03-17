@@ -211,9 +211,9 @@ def generate_synthetic_dataframes(params: dict, n: int) -> list:
 # ------------------------------------------------------------------
 
 def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]:
-    """Return (score, coverage_real_by_synth, coverage_synth_by_real).
+    """Return (score, recall, precision).
 
-    score = coverage_real_by_synth - (1 - coverage_synth_by_real), range [-1, 1].
+    score = recall - (1 - precision), range [-1, 1].
     """
     try:
         synth_dfs = generate_synthetic_dataframes(params, N_EVAL)
@@ -231,10 +231,10 @@ def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]
 
     fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
-    coverage_real_by_synth = float(1.0 - fwd["uncovered_fraction"])
-    coverage_synth_by_real = float(1.0 - rev["uncovered_fraction"])
-    score = coverage_real_by_synth - (1.0 - coverage_synth_by_real)
-    return score, coverage_real_by_synth, coverage_synth_by_real
+    recall    = float(1.0 - fwd["uncovered_fraction"])
+    precision = float(1.0 - rev["uncovered_fraction"])
+    score = recall - (1.0 - precision)
+    return score, recall, precision
 
 
 # ------------------------------------------------------------------
@@ -275,11 +275,11 @@ def run_ga(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, fl
             if fitnesses[idx] is not None:
                 continue
             print(f"\n  Individual {idx + 1}/{POP_SIZE}: {ind}")
-            score, fwd_cov, rev_cov = evaluate({**ind, **fixed_params}, real_feats)
+            score, recall, precision = evaluate({**ind, **fixed_params}, real_feats)
             fitnesses[idx] = score
             eval_count += 1
             print(f"  → score={score:.4f}  "
-                  f"real_by_synth={fwd_cov:.4f}  synth_by_real={rev_cov:.4f}")
+                  f"Recall={recall:.4f}  Precision={precision:.4f}")
 
             if score > best_coverage:
                 best_coverage = score
@@ -289,8 +289,8 @@ def run_ga(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, fl
                 run.log({
                     f"{source_name}/score":              score,
                     f"{source_name}/best_score":         best_coverage,
-                    f"{source_name}/real_by_synth":      fwd_cov,
-                    f"{source_name}/synth_by_real":      rev_cov,
+                    f"{source_name}/recall":             recall,
+                    f"{source_name}/precision":          precision,
                     f"{source_name}/eval":               eval_count,
                     f"{source_name}/generation":         gen + 1,
                     **{f"{source_name}/param/{k}": (1 if v is True else 0 if v is False else v)

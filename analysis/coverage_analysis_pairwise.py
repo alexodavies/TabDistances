@@ -269,10 +269,8 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", None, tag)
 
-        d0 = mode_data[modes_ordered[0]]["cov"]
-        fwd_title = f"{d0['label_ref']} covered by {d0['label_cand']}"
-        d0r = mode_data[modes_ordered[0]]["cov_rev"]
-        rev_title = f"{d0r['label_ref']} covered by {d0r['label_cand']}"
+        fwd_title = "Recall"
+        rev_title = "Precision"
 
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
@@ -307,7 +305,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             ax_fwd.axvline(d["threshold"], color=_MODE_COLORS[mode],
                            linestyle="--", linewidth=0.6, alpha=0.7)
         ax_fwd.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax_fwd.set_ylabel(f"CDF of {d0['label_ref']} samples")
+        ax_fwd.set_ylabel("CDF (Recall)")
         ax_fwd.set_title(fwd_title)
         ax_fwd.legend()
 
@@ -319,7 +317,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             ax_rev.axvline(d["threshold"], color=_MODE_COLORS[mode],
                            linestyle="--", linewidth=0.6, alpha=0.7)
         ax_rev.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax_rev.set_ylabel(f"CDF of {d0r['label_ref']} samples")
+        ax_rev.set_ylabel("CDF (Precision)")
         ax_rev.set_title(rev_title)
         ax_rev.legend()
 
@@ -418,9 +416,9 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run) -> None:
 
             axes[0, col_i].set_title(_MODE_LABELS[feat_mode])
             axes[0, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-            axes[0, col_i].set_ylabel("CDF (A covered by B)")
+            axes[0, col_i].set_ylabel("CDF (Recall)")
             axes[1, col_i].set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-            axes[1, col_i].set_ylabel("CDF (B covered by A)")
+            axes[1, col_i].set_ylabel("CDF (Precision)")
         _collect_legend_below(fig, axes)
         _save_and_log(fig, "xpair_coverage_curves", summary_run, tag)
 

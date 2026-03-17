@@ -10,19 +10,19 @@ import math
 
 
 def combined_score(
-    coverage_real_by_synth: float,
-    coverage_synth_by_real: float,
+    recall: float,
+    precision: float,
     discriminator_auc: float,
 ) -> float:
     """Euclidean quality score for synthetic data, normalised to [0, 1].
 
     All three components are quality scores in [0, 1] (higher = better):
 
-      cov_fwd     = coverage_real_by_synth
-                    Recall: what fraction of real data is covered by synthetic.
+      recall      = fraction of B's (real) points whose nearest neighbour in A
+                    (synth) falls within A's 95th-percentile k-NN radius.
 
-      cov_rev     = coverage_synth_by_real
-                    Precision: what fraction of synthetic is close to real.
+      precision   = fraction of A's (synth) points whose nearest neighbour in B
+                    (real) falls within B's 95th-percentile k-NN radius.
 
       auc_quality = (1 - discriminator_auc) * 2
                     Realism: normalised from [0.5, 1] → [1, 0].
@@ -33,12 +33,12 @@ def combined_score(
     -------
     float
         Score in [0, 1].  MAXIMISE toward 1.0.
-        score = sqrt(cov_fwd^2 + cov_rev^2 + auc_quality^2) / sqrt(3)
+        score = sqrt(recall^2 + precision^2 + auc_quality^2) / sqrt(3)
     """
     _NORM = math.sqrt(3.0)
     auc_quality = (1.0 - discriminator_auc) * 2.0
     return math.sqrt(
-        coverage_real_by_synth ** 2
-        + coverage_synth_by_real ** 2
+        recall ** 2
+        + precision ** 2
         + auc_quality ** 2
     ) / _NORM

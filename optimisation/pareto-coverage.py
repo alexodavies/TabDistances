@@ -1,16 +1,12 @@
 """Multi-objective Pareto-front analysis of TabICL prior parameters.
 
-Runs N_RESTARTS_PARETO independent NSGA-II studies (merged afterward) and
-N_RESTARTS_SINGLE independent single-objective TPE studies.  Results from
-every restart are appended to disk immediately so the script can be
-interrupted safely.
+Runs N_RESTARTS_PARETO independent NSGA-II studies (merged afterward).
+Results from every restart are appended to disk immediately so the script
+can be interrupted safely.
 
 Objectives:
-  coverage_real_by_synth  (recall)    — how much of real is spanned by synth
-  coverage_synth_by_real  (precision) — how realistic/focused the synth is
-
-Single-objective also tracks:
-  combined_score = Euclidean quality score in [0, 1] (maximise)
+  Coverage A->B  (recall)    — how much of real is spanned by synth
+  Coverage B->A  (precision) — how realistic/focused the synth is
 
 Usage
 -----
@@ -62,18 +58,17 @@ REAL_SOURCES = {
     "t4":    Path("tables-t4/parquet"),
 }
 
-N_EVAL          = 500    # synthetic tables generated per evaluation
-N_REAL_CACHE    = 10000  # real tables to pre-featurize and cache
-MAX_ROWS        = 512
-BATCH_SIZE      = 1
-RANDOM_STATE    = 42
-N_TRIALS        = 1000   # trials per restart (NSGA-II and TPE)
-N_RESTARTS_PARETO  = 100   # independent NSGA-II restarts (merged for global Pareto front)
-N_RESTARTS_SINGLE  = 100   # independent single-objective TPE restarts
-FEATURE_MODE    = "full"
-CACHE_DIR       = Path("feature-cache")
-OUT_DIR         = Path("pareto-results")
-WANDB_PROJECT   = "tabicl-coverage-pareto"
+N_EVAL             = 500    # synthetic tables generated per evaluation
+N_REAL_CACHE       = 10000  # real tables to pre-featurize and cache
+MAX_ROWS           = 512
+BATCH_SIZE         = 1
+RANDOM_STATE       = 42
+N_TRIALS           = 1000   # trials per NSGA-II restart
+N_RESTARTS_PARETO  = 100    # independent NSGA-II restarts (merged for global Pareto front)
+FEATURE_MODE       = "full"
+CACHE_DIR          = Path("feature-cache")
+OUT_DIR            = Path("pareto-results")
+WANDB_PROJECT      = "tabicl-coverage-pareto"
 
 # Coverage k-NN settings
 _KNN_K      = 5
@@ -191,6 +186,7 @@ def generate_synthetic_dataframes(params: dict, target_col_counts: list) -> list
 # ------------------------------------------------------------------
 
 def _knn_coverage(ref_m: np.ndarray, cand_m: np.ndarray) -> float:
+    """Fraction of ref covered by cand (1 - uncovered_fraction)."""
     lo = np.minimum(ref_m.min(0), cand_m.min(0))
     hi = np.maximum(ref_m.max(0), cand_m.max(0))
     rng = hi - lo
@@ -226,7 +222,7 @@ def evaluate(
     real_feats: np.ndarray,
     seed: int,
 ) -> tuple:
-    """Return (fwd_cov, rev_cov, auc).  On generation failure returns (0, 0, 0.5)."""
+    """Return (recall, precision, auc).  On generation failure returns (0, 0, 0.5)."""
     rng = np.random.default_rng(seed)
     all_col_counts = real_feats[:, 0].astype(int)
     target_col_counts = rng.choice(all_col_counts, size=N_EVAL, replace=True).tolist()
@@ -244,10 +240,10 @@ def evaluate(
     real_m,  _ = select_features(real_sample, FEATURE_MODE)
     synth_m, _ = select_features(synth_feats, FEATURE_MODE)
 
-    fwd_cov = _knn_coverage(real_m,  synth_m)
-    rev_cov = _knn_coverage(synth_m, real_m)
-    auc     = compute_discriminator_auc(real_m, synth_m, seed)
-    return fwd_cov, rev_cov, auc
+    recall    = _knn_coverage(real_m,  synth_m)
+    precision = _knn_coverage(synth_m, real_m)
+    auc       = compute_discriminator_auc(real_m, synth_m, seed)
+    return recall, precision, auc
 
 
 # ------------------------------------------------------------------
@@ -266,117 +262,6 @@ def _pareto_mask(fwd: np.ndarray, rev: np.ndarray) -> np.ndarray:
 
 
 # ------------------------------------------------------------------
-# Single-objective study (combined_score, multi-restart)
-# ------------------------------------------------------------------
-
-def run_single_restart(
-    source_name: str,
-    real_feats: np.ndarray,
-    restart_idx: int,
-    out_csv: Path,
-    run=None,
-) -> tuple:
-    """One TPE restart maximising combined_score."""
-    seed = RANDOM_STATE + restart_idx * 1000
-    running_sum   = [0.0]
-    running_count = [0]
-    _live_points: list = []
-
-    def objective(trial: optuna.Trial) -> float:
-        rm = running_sum[0] / running_count[0] if running_count[0] > 0 else 0.0
-        params = make_params(trial)
-        trial_seed = seed + trial.number
-        fwd_cov, rev_cov, auc = evaluate(params, real_feats, trial_seed)
-        score = combined_score(fwd_cov, rev_cov, auc)
-
-        running_sum[0]   += score
-        running_count[0] += 1
-        _live_points.append([fwd_cov, rev_cov, auc])
-
-        cov_col_ab = f"Coverage {source_name}->tabicl"
-        cov_col_ba = f"Coverage tabicl->{source_name}"
-        print(f"  [single r{restart_idx+1:03d}|t{trial.number:03d}] "
-              f"score={score:.4f}  {cov_col_ab}={fwd_cov:.4f}  {cov_col_ba}={rev_cov:.4f}  auc={auc:.4f}")
-
-        row = {
-            "restart": restart_idx, "trial": trial.number,
-            "A": source_name, "B": "tabicl",
-            "cov_A_to_B": fwd_cov, "cov_B_to_A": rev_cov,
-            "discriminator_auc": auc, "score": score,
-            **{k: (1 if v is True else 0 if v is False else v) for k, v in params.items()},
-        }
-        pd.DataFrame([row]).to_csv(
-            out_csv, mode="a", header=not out_csv.exists(), index=False
-        )
-
-        if run is not None:
-            scatter_table = wandb.Table(
-                data=_live_points, columns=[cov_col_ab, cov_col_ba, "AUC"]
-            )
-            run.log({
-                "restart":                          restart_idx,
-                "A":                                source_name,
-                "B":                                "tabicl",
-                f"{source_name}_single/score":      score,
-                f"{source_name}_single/discriminator_auc": auc,
-                cov_col_ab:                         fwd_cov,
-                cov_col_ba:                         rev_cov,
-                f"{source_name}_single/coverage_scatter": wandb.plot.scatter(
-                    scatter_table, cov_col_ab, cov_col_ba,
-                    title=f"Single-obj — {source_name}",
-                ),
-            })
-        return score
-
-    study = optuna.create_study(
-        direction="maximize",
-        sampler=optuna.samplers.TPESampler(seed=seed),
-    )
-    study.optimize(objective, n_trials=N_TRIALS)
-    best_trial  = study.best_trial
-    best_params = best_trial.user_attrs["params"]
-    print(f"  Single restart {restart_idx+1} done: best_score={best_trial.value:.4f}")
-    return best_params, best_trial.value
-
-
-def run_single_objective_study(
-    source_name: str,
-    real_feats: np.ndarray,
-    run=None,
-) -> pd.DataFrame:
-    """N_RESTARTS_SINGLE independent TPE studies.  Returns full trial DataFrame."""
-    print(f"\n{'#'*60}")
-    print(f"  Single-objective (combined_score) study: tabicl vs {source_name}")
-    print(f"  {N_RESTARTS_SINGLE} restarts × {N_TRIALS} trials")
-    print(f"{'#'*60}")
-
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_csv = OUT_DIR / f"single_results_{source_name}.csv"
-    if out_csv.exists():
-        out_csv.unlink()
-    print(f"  Live results -> {out_csv}")
-
-    all_results = []
-    for r in range(N_RESTARTS_SINGLE):
-        print(f"\n  -- Single restart {r+1}/{N_RESTARTS_SINGLE} --")
-        best_params, best_score = run_single_restart(
-            source_name, real_feats, r, out_csv, run=run
-        )
-        all_results.append((best_params, best_score))
-        if run is not None:
-            run.log({f"{source_name}_single/restart_best": best_score,
-                     f"{source_name}_single/restart": r})
-
-    best_r, (_, best_score) = max(enumerate(all_results), key=lambda x: x[1][1])
-    print(f"\n  Single-obj global best: restart={best_r+1}  score={best_score:.4f}")
-    if run is not None:
-        run.summary[f"{source_name}_single/best_score"]   = best_score
-        run.summary[f"{source_name}_single/best_restart"] = best_r + 1
-
-    return pd.read_csv(out_csv)
-
-
-# ------------------------------------------------------------------
 # Multi-objective Pareto study (multi-restart NSGA-II)
 # ------------------------------------------------------------------
 
@@ -390,23 +275,20 @@ def run_pareto_restart(
     """One NSGA-II restart.  Appends all trials to *out_csv* immediately."""
     seed = RANDOM_STATE + restart_idx * 1000
     _live_points: list = []
-
     def objective(trial: optuna.Trial) -> tuple:
         params = make_params(trial)
         trial_seed = seed + trial.number
-        fwd_cov, rev_cov, auc = evaluate(params, real_feats, trial_seed)
-        score = combined_score(fwd_cov, rev_cov, auc)
-        _live_points.append([fwd_cov, rev_cov, auc])
+        recall, precision, auc = evaluate(params, real_feats, trial_seed)
+        score = combined_score(recall, precision, auc)
+        _live_points.append([recall, precision, auc])
 
-        cov_col_ab = f"Coverage {source_name}->tabicl"
-        cov_col_ba = f"Coverage tabicl->{source_name}"
-        print(f"  [pareto r{restart_idx+1:03d}|t{trial.number:03d}] "
-              f"{cov_col_ab}={fwd_cov:.4f}  {cov_col_ba}={rev_cov:.4f}  auc={auc:.4f}  score={score:.4f}")
+        print(f"  [r{restart_idx+1:03d}|t{trial.number:03d}] "
+              f"Recall={recall:.4f}  Precision={precision:.4f}  auc={auc:.4f}  score={score:.4f}")
 
         row = {
             "restart": restart_idx, "trial": trial.number,
             "A": source_name, "B": "tabicl",
-            "cov_A_to_B": fwd_cov, "cov_B_to_A": rev_cov,
+            "recall": recall, "precision": precision,
             "discriminator_auc": auc, "score": score,
             **{k: (1 if v is True else 0 if v is False else v) for k, v in params.items()},
         }
@@ -416,30 +298,29 @@ def run_pareto_restart(
 
         if run is not None:
             scatter_table = wandb.Table(
-                data=_live_points, columns=[cov_col_ab, cov_col_ba, "AUC"]
+                data=_live_points, columns=["Recall", "Precision", "AUC"]
             )
             run.log({
-                "restart":                      restart_idx,
-                "A":                            source_name,
-                "B":                            "tabicl",
-                f"{source_name}/score":         score,
+                "restart":                         restart_idx,
+                "A":                               source_name,
+                "B":                               "tabicl",
+                f"{source_name}/score":            score,
                 f"{source_name}/discriminator_auc": auc,
-                cov_col_ab:                     fwd_cov,
-                cov_col_ba:                     rev_cov,
+                f"{source_name}/recall":           recall,
+                f"{source_name}/precision":        precision,
                 f"{source_name}/coverage_scatter": wandb.plot.scatter(
-                    scatter_table, cov_col_ab, cov_col_ba,
+                    scatter_table, "Recall", "Precision",
                     title=f"Pareto — {source_name}",
                 ),
             })
-        return fwd_cov, rev_cov
+        return recall, precision
 
     study = optuna.create_study(
         directions=["maximize", "maximize"],
         sampler=optuna.samplers.NSGAIISampler(seed=seed),
     )
     study.optimize(objective, n_trials=N_TRIALS)
-    print(f"  Pareto restart {restart_idx+1} done.")
-    # Return DataFrame for this restart (read back from CSV for consistency)
+    print(f"  Restart {restart_idx+1} done.")
     return pd.read_csv(out_csv).query(f"restart == {restart_idx}")
 
 
@@ -461,16 +342,16 @@ def run_pareto_study(
     print(f"  Live results -> {out_csv}")
 
     for r in range(N_RESTARTS_PARETO):
-        print(f"\n  ===== Pareto restart {r+1}/{N_RESTARTS_PARETO} =====")
+        print(f"\n  ===== Restart {r+1}/{N_RESTARTS_PARETO} =====")
         run_pareto_restart(source_name, real_feats, r, out_csv, run=run)
 
     # Load full results and compute global Pareto front
     df = pd.read_csv(out_csv)
-    df["is_pareto"] = _pareto_mask(df["cov_A_to_B"].values, df["cov_B_to_A"].values)
+    df["is_pareto"] = _pareto_mask(df["recall"].values, df["precision"].values)
 
-    front = df[df["is_pareto"]].sort_values("cov_A_to_B", ascending=False)
+    front = df[df["is_pareto"]].sort_values("recall", ascending=False)
     print(f"\n  Global Pareto front ({len(front)} points) across {N_RESTARTS_PARETO} restarts:")
-    print(front[["restart", "trial", "A", "B", "cov_A_to_B", "cov_B_to_A",
+    print(front[["restart", "trial", "A", "B", "recall", "precision",
                  "discriminator_auc", "score"]].to_string(index=False))
     return df
 
@@ -479,14 +360,14 @@ def run_pareto_study(
 # Plots
 # ------------------------------------------------------------------
 
-def _fig_pareto_scatter(df: pd.DataFrame, source_name: str, df_single: pd.DataFrame | None = None) -> plt.Figure:
+def _fig_pareto_scatter(df: pd.DataFrame, source_name: str) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7, 7))
-    fwd    = df["cov_A_to_B"].values
-    rev    = df["cov_B_to_A"].values
+    fwd    = df["recall"].values
+    rev    = df["precision"].values
     pareto = df["is_pareto"].values
     auc    = df["discriminator_auc"].values if "discriminator_auc" in df.columns else np.full(len(df), 0.75)
-    xlabel = f"Coverage {source_name}->tabicl  (recall)"
-    ylabel = f"Coverage tabicl->{source_name}  (precision)"
+    xlabel = "Recall"
+    ylabel = "Precision"
 
     norm = mcolors.Normalize(vmin=0.5, vmax=1.0)
     cmap = cm.RdYlGn_r
@@ -496,18 +377,9 @@ def _fig_pareto_scatter(df: pd.DataFrame, source_name: str, df_single: pd.DataFr
     ax.scatter(fwd[pareto], rev[pareto], c=auc[pareto], cmap=cmap, norm=norm,
                s=80, zorder=5, marker="*", edgecolors="k", linewidths=0.4,
                label=f"Global Pareto front ({pareto.sum()} pts)")
-    pf = df[pareto].sort_values("cov_A_to_B")
-    ax.step(pf["cov_A_to_B"].values, pf["cov_B_to_A"].values,
+    pf = df[pareto].sort_values("recall")
+    ax.step(pf["recall"].values, pf["precision"].values,
             where="post", color="k", linewidth=1.4, zorder=4, alpha=0.5)
-
-    if df_single is not None and len(df_single):
-        auc_s = (df_single["discriminator_auc"].values
-                 if "discriminator_auc" in df_single.columns
-                 else np.full(len(df_single), 0.75))
-        ax.scatter(df_single["cov_A_to_B"].values, df_single["cov_B_to_A"].values,
-                   c=auc_s, cmap=cmap, norm=norm, s=15, alpha=0.4, zorder=3, marker="^",
-                   edgecolors="k", linewidths=0.2,
-                   label=f"Single-obj TPE ({len(df_single)} trials)")
 
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
@@ -527,25 +399,25 @@ def _fig_pareto_scatter(df: pd.DataFrame, source_name: str, df_single: pd.DataFr
 
 def _fig_pareto_correlation(df: pd.DataFrame, source_name: str) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(5, 5))
-    fwd = df["cov_A_to_B"].values
-    rev = df["cov_B_to_A"].values
+    fwd = df["recall"].values
+    rev = df["precision"].values
     ax.scatter(fwd, rev, alpha=0.2, s=8, color="#4C72B0")
     slope, intercept, r, p, _ = stats.linregress(fwd, rev)
     xs = np.linspace(fwd.min(), fwd.max(), 100)
     ax.plot(xs, slope * xs + intercept, color="red", linewidth=1.5,
             label=f"r = {r:.3f}  (p={p:.2e})")
-    ax.set_xlabel(f"Coverage {source_name}->tabicl  (recall)")
-    ax.set_ylabel(f"Coverage tabicl->{source_name}  (precision)")
-    ax.set_title(f"Coverage correlation — {source_name}")
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
+    ax.set_title(f"Recall/Precision correlation — {source_name}")
     ax.legend(fontsize=8)
     fig.tight_layout()
     return fig
 
 
-def log_plots(df: pd.DataFrame, source_name: str, run, df_single: pd.DataFrame | None = None) -> None:
+def log_plots(df: pd.DataFrame, source_name: str, run) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     plots = {
-        "pareto_scatter":     _fig_pareto_scatter(df, source_name, df_single=df_single),
+        "pareto_scatter":     _fig_pareto_scatter(df, source_name),
         "pareto_correlation": _fig_pareto_correlation(df, source_name),
     }
     for name, fig in plots.items():
@@ -582,35 +454,28 @@ if __name__ == "__main__":
                 project=WANDB_PROJECT,
                 name=f"pareto_{source_name}",
                 config={
-                    "source":              source_name,
-                    "n_eval":              N_EVAL,
-                    "n_real":              len(real_feats),
-                    "n_trials":            N_TRIALS,
-                    "n_restarts_pareto":   N_RESTARTS_PARETO,
-                    "n_restarts_single":   N_RESTARTS_SINGLE,
-                    "feature_mode":        FEATURE_MODE,
-                    "sampler_multi":       "NSGA-II",
-                    "sampler_single":      "TPE",
-                    "score_formula":       "sqrt(fwd^2 + rev^2 + ((1-auc)*2)^2) / sqrt(3)",
+                    "source":            source_name,
+                    "n_eval":            N_EVAL,
+                    "n_real":            len(real_feats),
+                    "n_trials":          N_TRIALS,
+                    "n_restarts_pareto": N_RESTARTS_PARETO,
+                    "feature_mode":      FEATURE_MODE,
+                    "sampler":           "NSGA-II",
+                    "score_formula":     "sqrt(fwd^2 + rev^2 + ((1-auc)*2)^2) / sqrt(3)",
                 },
                 reinit=True,
             )
 
-        df_single = run_single_objective_study(source_name, real_feats, run=run)
-        df        = run_pareto_study(source_name, real_feats, run=run)
+        df = run_pareto_study(source_name, real_feats, run=run)
 
         if run is not None:
-            rename = {"cov_A_to_B": f"Coverage {source_name}->tabicl",
-                      "cov_B_to_A": f"Coverage tabicl->{source_name}"}
-            run.log({
-                f"{source_name}/results_table":        wandb.Table(dataframe=df.rename(columns=rename)),
-                f"{source_name}_single/results_table": wandb.Table(dataframe=df_single.rename(columns=rename)),
-            })
-
-        log_plots(df, source_name, run, df_single=df_single)
-
-        if run is not None:
+            rename = {"recall": "Recall", "precision": "Precision"}
+            run.log({f"{source_name}/results_table": wandb.Table(dataframe=df.rename(columns=rename))})
             run.summary[f"{source_name}/n_pareto"] = int(df["is_pareto"].sum())
+
+        log_plots(df, source_name, run)
+
+        if run is not None:
             run.finish()
 
     print("\nDone.")
