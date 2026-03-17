@@ -333,7 +333,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], label_ref=d["label_ref"])
+                                 d["covered_fraction"], label_ref=d["label_ref"])
             axes[0, col_i].set_title(_MODE_LABELS[mode])
             axes[1, col_i].set_title("")
         _collect_legend_below(fig, axes)
@@ -345,7 +345,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], label_ref=d["label_ref"])
+                                 d["covered_fraction"], label_ref=d["label_ref"])
             axes[0, col_i].set_title(_MODE_LABELS[mode])
             axes[1, col_i].set_title("")
         _collect_legend_below(fig, axes)
@@ -432,7 +432,7 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run, pairs=None) ->
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], label_ref=d["label_ref"])
+                                 d["covered_fraction"], label_ref=d["label_ref"])
             axes[0, col_i].set_title(pairs_display[pk])
             axes[1, col_i].set_title("")
         _collect_legend_below(fig, axes)
@@ -444,7 +444,7 @@ def _plot_combined_across_pairs(all_pair_data: dict, summary_run, pairs=None) ->
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], label_ref=d["label_ref"])
+                                 d["covered_fraction"], label_ref=d["label_ref"])
             axes[0, col_i].set_title(pairs_display[pk])
             axes[1, col_i].set_title("")
         _collect_legend_below(fig, axes)
@@ -603,7 +603,7 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str],
             if _WANDB_AVAILABLE and wandb_project:
                 run = wandb.init(
                     project=wandb_project,
-                    name=f"coverage_{pair_key}_{mode}",
+                    name=f"{pair_key}_{mode}",
                     config={"pair": pair_key, "A": eff_a, "B": b_name,
                             "match_icl_cols": match_icl_cols,
                             "feature_mode": mode, "n_features": a_m.shape[1],

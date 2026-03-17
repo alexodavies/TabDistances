@@ -231,8 +231,8 @@ def evaluate(params: dict, real_feats: np.ndarray) -> tuple[float, float, float]
 
     fwd, _ = analyse_coverage(real_m, synth_m, None, "", label_ref="real",  label_cand="synth")
     rev, _ = analyse_coverage(synth_m, real_m, None, "", label_ref="synth", label_cand="real")
-    recall    = float(1.0 - fwd["uncovered_fraction"])
-    precision = float(1.0 - rev["uncovered_fraction"])
+    recall    = float(fwd["covered_fraction"])
+    precision = float(rev["covered_fraction"])
     score = recall - (1.0 - precision)
     return score, recall, precision
 

@@ -187,7 +187,7 @@ def generate_synthetic_dataframes(params: dict, target_col_counts: list) -> list
 # ------------------------------------------------------------------
 
 def _knn_coverage(ref_m: np.ndarray, cand_m: np.ndarray) -> float:
-    """Fraction of ref covered by cand (1 - uncovered_fraction)."""
+    """Fraction of ref points covered by cand."""
     lo = np.minimum(ref_m.min(0), cand_m.min(0))
     hi = np.maximum(ref_m.max(0), cand_m.max(0))
     rng = hi - lo

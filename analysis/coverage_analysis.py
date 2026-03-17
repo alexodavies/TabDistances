@@ -220,12 +220,12 @@ def _draw_coverage_dists(ax, real_to_synth: np.ndarray, synth_internal: np.ndarr
 
 
 def _draw_coverage_curve(ax, real_to_synth: np.ndarray, threshold: float,
-                         uncovered: float, title_suffix: str = "",
+                         covered_fraction: float, title_suffix: str = "",
                          label_ref: str = "real") -> None:
     ax.plot(np.sort(real_to_synth), np.linspace(0, 1, len(real_to_synth)), color="salmon")
     ax.axvline(threshold, color="black", linestyle="--", label=f"threshold: {threshold:.3f}")
-    ax.axhline(1 - uncovered, color="steelblue", linestyle=":",
-               label=f"covered fraction: {1-uncovered:.3f}")
+    ax.axhline(covered_fraction, color="steelblue", linestyle=":",
+               label=f"covered fraction: {covered_fraction:.3f}")
     ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
     ax.set_ylabel(f"Cumulative fraction of {label_ref} samples")
     title = "Coverage curve"
@@ -352,7 +352,7 @@ def analyse_bootstrap_auc(real: np.ndarray, synth: np.ndarray, run,
 def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
                      tag: str = "",
                      label_ref: str = "real", label_cand: str = "synthetic",
-                     log_prefix: str = "coverage"
+                     log_prefix: str = "recall"
                      ) -> tuple[dict, dict]:
     print(f"\n── Coverage analysis  (k={KNN_K}) ──")
 
@@ -372,25 +372,25 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
     dists_rs, _ = nn_rs.kneighbors(real_n)
     real_to_synth = dists_rs.mean(axis=1)
 
-    uncovered = (real_to_synth > threshold).mean()
+    covered_fraction = 1.0 - (real_to_synth > threshold).mean()
     print(f"  Coverage threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f} within-{label_cand}): {threshold:.4f}")
-    print(f"  Fraction of {label_ref} samples uncovered: {uncovered:.3f}")
+    print(f"  Fraction of {label_ref} samples covered: {covered_fraction:.3f}")
     print(f"  Median {label_ref}→{label_cand} distance: {np.median(real_to_synth):.4f}")
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     _draw_coverage_dists(axes[0], real_to_synth, synth_internal, threshold, tag,
                          label_ref=label_ref, label_cand=label_cand)
-    _draw_coverage_curve(axes[1], real_to_synth, threshold, uncovered, tag,
+    _draw_coverage_curve(axes[1], real_to_synth, threshold, covered_fraction, tag,
                          label_ref=label_ref)
     plt.tight_layout()
     _save_and_log(fig, "coverage", run, tag)
 
-    result = {"threshold": threshold, "uncovered_fraction": uncovered,
+    result = {"threshold": threshold, "covered_fraction": covered_fraction,
               "median_real_to_synth_dist": float(np.median(real_to_synth))}
     if run is not None:
         run.log({f"{log_prefix}/{k}": v for k, v in result.items()})
     return result, {"real_to_synth": real_to_synth, "synth_internal": synth_internal,
-                    "threshold": threshold, "uncovered": uncovered,
+                    "threshold": threshold, "covered_fraction": covered_fraction,
                     "label_ref": label_ref, "label_cand": label_cand}
 
 
@@ -502,63 +502,61 @@ def plot_combined_all(rank: int, mode_data: dict, tag_base: str, cfg: dict) -> N
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", summary_run, tag_base)
 
-        # ── coverage forward  (2 rows × 3 cols: row 0 = dists, row 1 = curve) ──
+        # ── recall  (2 rows × 3 cols: row 0 = dists, row 1 = curve) ──
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
-            d = mode_data[mode]["cov"]
+            d = mode_data[mode]["recall"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], mode,
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode, label_ref=d["label_ref"])
-        fig.suptitle(f"Coverage ({_LABEL_REAL} covered by {_LABEL_SYNTH}) — rank {rank+1}",
-                     fontsize=9)
+                                 d["covered_fraction"], mode, label_ref=d["label_ref"])
+        fig.suptitle(f"Recall — rank {rank+1}", fontsize=9)
         plt.tight_layout()
-        _save_and_log(fig, "combined_coverage", summary_run, tag_base)
+        _save_and_log(fig, "combined_recall", summary_run, tag_base)
 
-        # ── coverage reverse  (2 rows × 3 cols) ──────────────────────
+        # ── precision  (2 rows × 3 cols) ─────────────────────────────
         fig, axes = plt.subplots(2, 3, figsize=(6.5, 4.0))
         for col_i, mode in enumerate(modes_ordered):
-            d = mode_data[mode]["cov_rev"]
+            d = mode_data[mode]["precision"]
             _draw_coverage_dists(axes[0, col_i], d["real_to_synth"], d["synth_internal"],
                                  d["threshold"], mode,
                                  label_ref=d["label_ref"], label_cand=d["label_cand"])
             _draw_coverage_curve(axes[1, col_i], d["real_to_synth"], d["threshold"],
-                                 d["uncovered"], mode, label_ref=d["label_ref"])
-        fig.suptitle(f"Coverage ({_LABEL_SYNTH} covered by {_LABEL_REAL}) — rank {rank+1}",
-                     fontsize=9)
+                                 d["covered_fraction"], mode, label_ref=d["label_ref"])
+        fig.suptitle(f"Precision — rank {rank+1}", fontsize=9)
         plt.tight_layout()
-        _save_and_log(fig, "combined_coverage_rev", summary_run, tag_base)
+        _save_and_log(fig, "combined_precision", summary_run, tag_base)
 
-        # ── overlaid coverage curves  (1×2: forward | reverse) ──────
+        # ── overlaid recall/precision curves  (1×2: recall | precision) ──
         fig, (ax_fwd, ax_rev) = plt.subplots(1, 2, figsize=(6.5, 2.4))
         for mode in modes_ordered:
-            d = mode_data[mode]["cov"]
+            d = mode_data[mode]["recall"]
             sorted_d = np.sort(d["real_to_synth"])
             ax_fwd.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
                         color=_COLORS[mode], label=mode, linewidth=0.9)
             ax_fwd.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
                            linewidth=0.6, alpha=0.7)
         ax_fwd.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax_fwd.set_ylabel(f"CDF of {_LABEL_REAL} samples")
-        ax_fwd.set_title(f"{_LABEL_REAL} covered by {_LABEL_SYNTH}")
+        ax_fwd.set_ylabel("CDF (Recall)")
+        ax_fwd.set_title("Recall")
         ax_fwd.legend()
 
         for mode in modes_ordered:
-            d = mode_data[mode]["cov_rev"]
+            d = mode_data[mode]["precision"]
             sorted_d = np.sort(d["real_to_synth"])
             ax_rev.plot(sorted_d, np.linspace(0, 1, len(sorted_d)),
                         color=_COLORS[mode], label=mode, linewidth=0.9)
             ax_rev.axvline(d["threshold"], color=_COLORS[mode], linestyle="--",
                            linewidth=0.6, alpha=0.7)
         ax_rev.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
-        ax_rev.set_ylabel(f"CDF of {_LABEL_SYNTH} samples")
-        ax_rev.set_title(f"{_LABEL_SYNTH} covered by {_LABEL_REAL}")
+        ax_rev.set_ylabel("CDF (Precision)")
+        ax_rev.set_title("Precision")
         ax_rev.legend()
 
-        fig.suptitle(f"Coverage curves — rank {rank+1}", fontsize=9)
+        fig.suptitle(f"Recall/Precision curves — rank {rank+1}", fontsize=9)
         plt.tight_layout()
-        _save_and_log(fig, "combined_coverage_curves", summary_run, tag_base)
+        _save_and_log(fig, "combined_recall_precision_curves", summary_run, tag_base)
 
         # ── feature_importance  (1 row × 3 cols) ─────────────────────
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
@@ -672,24 +670,24 @@ def main(results_csv: str, modes: list[str]) -> None:
             _, ks_data      = analyse_per_feature(real_m, synth_m, run, tag, fnames)
             _, imp_data     = analyse_feature_importance(real_m, synth_m, run, tag, fnames)
             _, boot_data    = analyse_bootstrap_auc(real_m, synth_m, run, tag)
-            _, cov_data     = analyse_coverage(real_m, synth_m, run, tag,
-                                               label_ref=_LABEL_REAL,
-                                               label_cand=_LABEL_SYNTH)
-            _, cov_rev_data = analyse_coverage(synth_m, real_m, run, tag + "_rev",
-                                               label_ref=_LABEL_SYNTH,
-                                               label_cand=_LABEL_REAL,
-                                               log_prefix="coverage_rev")
+            _, recall_data    = analyse_coverage(real_m, synth_m, run, tag,
+                                                label_ref=_LABEL_REAL,
+                                                label_cand=_LABEL_SYNTH)
+            _, precision_data = analyse_coverage(synth_m, real_m, run, tag + "_precision",
+                                                 label_ref=_LABEL_SYNTH,
+                                                 label_cand=_LABEL_REAL,
+                                                 log_prefix="precision")
             _, pca_data     = analyse_pca(real_m, synth_m, run, tag,
                                           label_ref=_LABEL_REAL,
                                           label_cand=_LABEL_SYNTH)
 
             mode_data[mode] = {
-                "ks":      ks_data,
-                "imp":     imp_data,
-                "boot":    boot_data,
-                "cov":     cov_data,
-                "cov_rev": cov_rev_data,
-                "pca":     pca_data,
+                "ks":        ks_data,
+                "imp":       imp_data,
+                "boot":      boot_data,
+                "recall":    recall_data,
+                "precision": precision_data,
+                "pca":       pca_data,
             }
 
             if run is not None:
