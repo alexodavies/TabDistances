@@ -50,6 +50,12 @@ from sklearn.neighbors import BallTree
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
+try:
+    import wandb
+    _WANDB_AVAILABLE = True
+except ImportError:
+    _WANDB_AVAILABLE = False
+
 from tabdistances.discriminator.features import (
     df_to_vec,
     select_features,
@@ -63,6 +69,7 @@ _ROOT        = Path(__file__).resolve().parent.parent   # project root
 
 TABICL_DIR   = _ROOT / "tables-tabicl/parquet"
 ICL_CACHE    = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
+FM_CACHE     = _ROOT / "cache/real_feats_tabfm_5000_512.npz"
 RANKINGS_CSV = _ROOT / "results/tabicl-rankings.csv"
 TALENT_DIR   = _ROOT / "data"
 
@@ -71,7 +78,8 @@ N_ICL        = 25000
 FEATURE_MODE = "full"
 KNN_K        = 5
 OUTPUT_DIR   = _ROOT / "results/rank-coverage"
-RANDOM_STATE = 42
+RANDOM_STATE  = 42
+WANDB_PROJECT = "tabicl-rank-coverage"
 
 _PAPER_RC = {
     "font.size":       8,
@@ -226,49 +234,62 @@ def compute_nn_distances(
 # ------------------------------------------------------------------
 
 def plot_histogram_with_rank(
-    nn_dists: np.ndarray,
+    nn_dists_icl: np.ndarray,
     ranks: np.ndarray,
     output_dir: Path,
-    n_bins: int = 15,
+    run=None,
+    n_bins: int = 30,
+    nn_dists_t4: np.ndarray | None = None,
 ) -> None:
-    """NN-distance histogram (left y) with mean tabICL rank ± 1 SD per bin (right y)."""
-    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
-    bin_idx = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
-    bin_centers = (bins[:-1] + bins[1:]) / 2
-    bar_width = (bins[1] - bins[0]) * 0.85
+    """NN-distance histogram (left y) with mean tabICL rank ± 1 SD per bin (right y).
 
-    bin_counts = np.array([(bin_idx == i).sum() for i in range(n_bins)])
+    If nn_dists_t4 is provided, both ICL and T4 distance distributions are
+    overlaid on the left axis.
+    """
+    all_dists = np.concatenate([nn_dists_icl] + ([nn_dists_t4] if nn_dists_t4 is not None else []))
+    bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
+    bar_width = (bins[1] - bins[0]) * 0.4   # narrower bars so both fit side-by-side
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+
+    icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
+    icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
     bin_means  = np.array([
-        ranks[bin_idx == i].mean() if (bin_idx == i).sum() > 0 else np.nan
+        ranks[icl_idx == i].mean() if (icl_idx == i).sum() > 0 else np.nan
         for i in range(n_bins)
     ])
     bin_stds   = np.array([
-        ranks[bin_idx == i].std()  if (bin_idx == i).sum() > 1 else 0.0
+        ranks[icl_idx == i].std()  if (icl_idx == i).sum() > 1 else 0.0
         for i in range(n_bins)
     ])
 
     with mpl.rc_context(_PAPER_RC):
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
 
-        ax1.bar(bin_centers, bin_counts, width=bar_width,
-                color=_BLUE, alpha=0.55, label="Dataset count")
-        ax1.set_xlabel("Mean k-NN distance to TabICL distribution (normalised)")
-        ax1.set_ylabel("Number of TALENT datasets", color=_BLUE)
-        ax1.tick_params(axis="y", labelcolor=_BLUE)
+        ax1.bar(bin_centers - bar_width / 2, icl_counts, width=bar_width,
+                color=_BLUE, alpha=0.7, label="TALENT datasets")
+
+        if nn_dists_t4 is not None:
+            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
+            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
+            ax1.bar(bin_centers + bar_width / 2, t4_counts, width=bar_width,
+                    color=_ORANGE, alpha=0.7, label="Curated (FM) tables")
+
+        ax1.set_xlabel("Mean k-NN distance (normalised)")
+        ax1.set_ylabel("Number of TALENT datasets")
 
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
         ax2.plot(bin_centers[mask], bin_means[mask],
-                 color=_ORANGE, lw=1.5, marker="o", ms=4, label="Mean rank")
+                 color=_GREEN, lw=1.5, marker="o", ms=4, label="Mean rank (Synthetic)")
         ax2.fill_between(
             bin_centers[mask],
             (bin_means - bin_stds)[mask],
             (bin_means + bin_stds)[mask],
-            color=_ORANGE, alpha=0.25,
+            color=_GREEN, alpha=0.25,
         )
         ax2.invert_yaxis()   # rank 1 (best) shown highest
-        ax2.set_ylabel("TabICL mean rank (lower = better)", color=_ORANGE)
-        ax2.tick_params(axis="y", labelcolor=_ORANGE)
+        ax2.set_ylabel("TabICL mean rank (lower = better)", color=_GREEN)
+        ax2.tick_params(axis="y", labelcolor=_GREEN)
 
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
@@ -278,6 +299,8 @@ def plot_histogram_with_rank(
         plt.tight_layout()
         out = output_dir / "rank_vs_nndist_histogram.pdf"
         fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({"rank_vs_nndist_histogram": wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -290,6 +313,7 @@ def plot_rank_vs_distance(
     nn_dists: np.ndarray,
     ranks: np.ndarray,
     output_dir: Path,
+    run=None,
 ) -> dict:
     """Scatter: tabICL rank vs NN distance, with Pearson r and Spearman ρ."""
     r_p, p_p = stats.pearsonr(nn_dists, ranks)
@@ -314,6 +338,8 @@ def plot_rank_vs_distance(
         plt.tight_layout()
         out = output_dir / "rank_vs_nndist_scatter.pdf"
         fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({"rank_vs_nndist_scatter": wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -328,6 +354,7 @@ def plot_rank_prediction(
     nn_dists: np.ndarray,
     ranks: np.ndarray,
     output_dir: Path,
+    run=None,
 ) -> dict:
     """Linear regression of rank ~ NN distance with actual-vs-predicted and residuals."""
     X = nn_dists.reshape(-1, 1)
@@ -361,6 +388,8 @@ def plot_rank_prediction(
         plt.tight_layout()
         out = output_dir / "rank_prediction.pdf"
         fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({"rank_prediction": wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -410,12 +439,21 @@ def main(
     icl_feats = load_icl_feats(ICL_CACHE, tabicl_dir, N_ICL, rng)
     print(f"  Using {len(icl_feats)} TabICL feature vectors  shape={icl_feats.shape}")
 
+    # ── FM feature vectors ─────────────────────────────────────────
+    fm_feats = None
+    if FM_CACHE.exists():
+        fm_feats = np.load(FM_CACHE)["feats"]
+        print(f"  Loaded {len(fm_feats)} FM feature vectors from cache")
+    else:
+        print(f"  FM cache not found at {FM_CACHE}, skipping FM distances")
+
     # ── NN distances ───────────────────────────────────────────────
     print(f"\n=== Computing {k}-NN distances (mode={mode}) ===")
     nn_dists = compute_nn_distances(talent_feats, icl_feats, mode, k)
+    nn_dists_t4 = compute_nn_distances(fm_feats, icl_feats, mode, k) if fm_feats is not None else None
 
     # ── Merge with ranks ───────────────────────────────────────────
-    df = pd.DataFrame({"dataset": talent_names, "nn_dist": nn_dists})
+    df = pd.DataFrame({"dataset": talent_names, "nn_dist_icl": nn_dists})
     df = df.merge(tabicl_ranks, on="dataset", how="inner")
     print(f"  Matched {len(df)} datasets to rankings")
 
@@ -423,14 +461,29 @@ def main(
     df.to_csv(csv_path, index=False)
     print(f"  Saved {csv_path}")
 
+    # ── wandb ──────────────────────────────────────────────────────
+    run = None
+    if _WANDB_AVAILABLE and WANDB_PROJECT:
+        run = wandb.init(
+            project=WANDB_PROJECT,
+            name=f"rank_coverage_{mode}_k{k}",
+            config={
+                "mode": mode, "k": k, "n_bins": n_bins,
+                "n_talent": len(df), "n_icl": len(icl_feats),
+                "max_rows": MAX_ROWS,
+            },
+            reinit=True,
+        )
+
     # ── Plots ──────────────────────────────────────────────────────
     print("\n=== Generating figures ===")
-    nn = df["nn_dist"].values
+    nn = df["nn_dist_icl"].values
     rk = df["rank"].values
+    nn_t4 = nn_dists_t4
 
-    plot_histogram_with_rank(nn, rk, output_dir, n_bins)
-    corr = plot_rank_vs_distance(nn, rk, output_dir)
-    pred = plot_rank_prediction(nn, rk, output_dir)
+    plot_histogram_with_rank(nn, rk, output_dir, run, n_bins, nn_dists_t4=nn_t4)
+    corr = plot_rank_vs_distance(nn, rk, output_dir, run)
+    pred = plot_rank_prediction(nn, rk, output_dir, run)
 
     # ── Summary ────────────────────────────────────────────────────
     print("\n=== Results ===")
@@ -439,6 +492,18 @@ def main(
     print(f"  Spearman ρ       : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
     print(f"  Linear R²        : {pred['r2']:.3f}")
     print(f"  Linear coef      : {pred['coef']:.4f}  (intercept = {pred['intercept']:.4f})")
+
+    if run is not None:
+        run.log({
+            "pearson_r":   corr["pearson_r"],
+            "pearson_p":   corr["pearson_p"],
+            "spearman_r":  corr["spearman_r"],
+            "spearman_p":  corr["spearman_p"],
+            "linear_r2":   pred["r2"],
+            "linear_coef": pred["coef"],
+        })
+        run.finish()
+
     print(f"\nOutputs in: {output_dir}/")
 
 
@@ -454,7 +519,7 @@ if __name__ == "__main__":
                         help="Feature mode for NN distance (default: %(default)s)")
     parser.add_argument("--k", type=int, default=KNN_K,
                         help="Number of nearest neighbours (default: %(default)s)")
-    parser.add_argument("--n-bins", type=int, default=15,
+    parser.add_argument("--n-bins", type=int, default=30,
                         help="Histogram bins for plot 1 (default: %(default)s)")
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR,
                         help="Output directory for figures and CSV (default: %(default)s)")
