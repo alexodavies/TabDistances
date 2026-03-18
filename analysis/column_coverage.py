@@ -389,18 +389,16 @@ def _plot_metric_histogram(
     n_bins: int = 30,
     invert_y: bool = False,
     nn_dists_fm: np.ndarray | None = None,
-    nn_dists_t4: np.ndarray | None = None,
-    nn_dists_icl: np.ndarray | None = None,
+    nn_dists_icl_self: np.ndarray | None = None,
 ) -> None:
     """NN-distance density histogram (left y) with mean metric ± 1 SD per bin (right y).
 
-    Optionally overlays FM, T4, and ICL column distance distributions on the left axis.
-    nn_dists is the TALENT→reference distribution used for the metric binning.
+    Optionally overlays FM and ICL self-distance distributions on the left axis.
+    nn_dists is the TALENT→ICL distribution used for the metric binning.
     """
     all_parts = [nn_dists]
-    if nn_dists_fm  is not None: all_parts.append(nn_dists_fm)
-    if nn_dists_t4  is not None: all_parts.append(nn_dists_t4)
-    if nn_dists_icl is not None: all_parts.append(nn_dists_icl)
+    if nn_dists_fm       is not None: all_parts.append(nn_dists_fm)
+    if nn_dists_icl_self is not None: all_parts.append(nn_dists_icl_self)
     all_dists = np.concatenate(all_parts)
     bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -419,14 +417,10 @@ def _plot_metric_histogram(
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
             _stairs(ax1, fm_counts / (fm_counts.sum() * bin_w), bins, _ORANGE, _LABELS["fm"], alpha_fill=0.15)
-        if nn_dists_t4 is not None:
-            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
-            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, t4_counts / (t4_counts.sum() * bin_w), bins, _GREEN, _LABELS["t4"], alpha_fill=0.15)
-        if nn_dists_icl is not None:
-            icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
-            icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, icl_counts / (icl_counts.sum() * bin_w), bins, _PURPLE, _LABELS["icl"], alpha_fill=0.15)
+        if nn_dists_icl_self is not None:
+            si_idx = np.clip(np.digitize(nn_dists_icl_self, bins) - 1, 0, n_bins - 1)
+            si_counts = np.array([(si_idx == i).sum() for i in range(n_bins)])
+            _stairs(ax1, si_counts / (si_counts.sum() * bin_w), bins, _PURPLE, "TabICL Prior (self)", alpha_fill=0.15)
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
         ax2 = ax1.twinx()
@@ -674,23 +668,21 @@ def main(
         mask = np.array([ds in rank_map for ds in col_datasets])
         col_nn_masked = col_nn[mask]
 
-        fm_masked  = _fm[mask]  if _fm  is not None else None
-        t4_masked  = _t4[mask]  if _t4  is not None else None
-        icl_masked = _icl[mask] if _icl is not None else None
-        # For the histogram overlays, exclude whichever source is the primary axis
-        overlay_fm  = fm_masked  if col_nn is not _fm  else None
-        overlay_t4  = t4_masked  if col_nn is not _t4  else None
-        overlay_icl = icl_masked if col_nn is not _icl else None
+        fm_masked = _fm[mask] if _fm is not None else None
+
+        # ICL self-distances: split ICL columns in half to avoid self-match
+        icl_self_dists = None
+        if len(icl_hists) >= 2:
+            half = len(icl_hists) // 2
+            icl_self_dists = compute_nn_distances(icl_hists[:half], icl_hists[half:], k)
 
         _plot_metric_histogram(col_nn_masked, col_ranks, "rank (lower = better)",
                                "col_rank_vs_nndist_histogram.png", output_dir, run,
                                invert_y=True,
-                               nn_dists_fm=overlay_fm, nn_dists_t4=overlay_t4,
-                               nn_dists_icl=overlay_icl)
+                               nn_dists_fm=fm_masked, nn_dists_icl_self=icl_self_dists)
         _plot_metric_histogram(col_nn_masked, col_aucs, "AUC",
                                "col_auc_vs_nndist_histogram.png", output_dir, run,
-                               nn_dists_fm=overlay_fm, nn_dists_t4=overlay_t4,
-                               nn_dists_icl=overlay_icl)
+                               nn_dists_fm=fm_masked, nn_dists_icl_self=icl_self_dists)
         corr = _plot_metric_scatter(col_nn_masked, col_ranks, f"rank (TALENT→{ref_label})",
                                     "col_rank_vs_nndist_scatter.png", output_dir, run)
         _plot_metric_scatter(col_nn_masked, col_aucs, f"AUC (TALENT→{ref_label})",

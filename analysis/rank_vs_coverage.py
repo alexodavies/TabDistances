@@ -96,7 +96,8 @@ _PAPER_RC = {
 _BLUE   = "#2980b9"
 _ORANGE = "#e67e22"
 _GREEN  = "#27ae60"
-_RED  = "#ef0e0e"
+_PURPLE = "#8e44ad"
+_RED    = "#ef0e0e"
 
 
 def _stairs(ax, density, bins, color, label, alpha_fill=0.2, lw=1.5):
@@ -258,17 +259,17 @@ def plot_histogram_with_metric(
     run=None,
     n_bins: int = 30,
     nn_dists_fm: np.ndarray | None = None,
-    nn_dists_t4: np.ndarray | None = None,
+    nn_dists_icl_self: np.ndarray | None = None,
     invert_y: bool = False,
 ) -> None:
     """NN-distance histogram (left y) with mean metric ± 1 SD per bin (right y).
 
-    Optionally overlays FM and T4 table distances on the left axis.
+    Optionally overlays FM and ICL self-distances on the left axis.
     """
     all_dists = np.concatenate(
         [nn_dists_icl]
         + ([nn_dists_fm] if nn_dists_fm is not None else [])
-        + ([nn_dists_t4] if nn_dists_t4 is not None else [])
+        + ([nn_dists_icl_self] if nn_dists_icl_self is not None else [])
     )
     bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -298,11 +299,11 @@ def plot_histogram_with_metric(
             fm_density = fm_counts / (fm_counts.sum() * bin_w)
             _stairs(ax1, fm_density, bins, _ORANGE, "Curated (FM) tables")
 
-        if nn_dists_t4 is not None:
-            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
-            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
-            t4_density = t4_counts / (t4_counts.sum() * bin_w)
-            _stairs(ax1, t4_density, bins, _GREEN, "Web-Scraped (T4)")
+        if nn_dists_icl_self is not None:
+            si_idx = np.clip(np.digitize(nn_dists_icl_self, bins) - 1, 0, n_bins - 1)
+            si_counts = np.array([(si_idx == i).sum() for i in range(n_bins)])
+            si_density = si_counts / (si_counts.sum() * bin_w)
+            _stairs(ax1, si_density, bins, _PURPLE, "TabICL Prior (self)")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
@@ -489,15 +490,10 @@ def main(
     nn_dists = compute_nn_distances(talent_feats, icl_feats, mode, k)
     nn_dists_fm = compute_nn_distances(fm_feats, icl_feats, mode, k) if fm_feats is not None else None
 
-    t4_feats = None
-    if T4_CACHE.exists():
-        arr = np.load(T4_CACHE)["feats"]
-        idx = rng.choice(len(arr), size=min(N_ICL, len(arr)), replace=False)
-        t4_feats = arr[idx]
-        print(f"  Loaded {len(t4_feats)} T4 feature vectors from cache (of {len(arr)} total)")
-    else:
-        print(f"  T4 cache not found at {T4_CACHE}, skipping T4 distances")
-    nn_dists_t4 = compute_nn_distances(t4_feats, icl_feats, mode, k) if t4_feats is not None else None
+    # ICL self-distances: split in half to avoid self-match
+    half = len(icl_feats) // 2
+    nn_dists_icl_self = compute_nn_distances(icl_feats[:half], icl_feats[half:], mode, k)
+    print(f"  Computed ICL self-distances ({half} query vs {len(icl_feats) - half} ref)")
 
     # ── Merge with ranks ───────────────────────────────────────────
     df = pd.DataFrame({"dataset": talent_names, "nn_dist_icl": nn_dists})
@@ -529,10 +525,10 @@ def main(
     auc = df["AUC"].values.astype(float)
     plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
-                               nn_dists_t4=nn_dists_t4, invert_y=True)
+                               nn_dists_icl_self=nn_dists_icl_self, invert_y=True)
     plot_histogram_with_metric(nn, auc, "AUC", "auc_vs_nndist_histogram.png",
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
-                               nn_dists_t4=nn_dists_t4, invert_y=False)
+                               nn_dists_icl_self=nn_dists_icl_self, invert_y=False)
 
     corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
     plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
