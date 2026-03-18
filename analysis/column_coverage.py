@@ -86,6 +86,15 @@ _COLORS = {"talent": "#2980b9", "fm": "#e67e22", "t4": "#27ae60"}
 _LABELS = {"talent": "TALENT", "fm": "Curated (FM)", "t4": "Web-Scraped (T4)"}
 
 
+def _stairs(ax, density, bins, color, label, alpha_fill=0.2, lw=1.5):
+    """Step-filled histogram with opaque edge and transparent fill."""
+    patch = ax.stairs(density, bins, fill=True, label=label)
+    patch.set_facecolor((*mpl.colors.to_rgb(color), alpha_fill))
+    patch.set_edgecolor(color)
+    patch.set_linewidth(lw)
+    return patch
+
+
 # ------------------------------------------------------------------
 # TALENT column loader
 # ------------------------------------------------------------------
@@ -336,9 +345,7 @@ def plot_nn_distance_densities(
             idx = np.clip(np.digitize(dists, bins) - 1, 0, n_bins - 1)
             counts = np.array([(idx == i).sum() for i in range(n_bins)])
             density = counts / (counts.sum() * bin_w)
-            ax.stairs(density, bins, fill=True, alpha=0.2,
-                      color=pair_colors.get(key, "grey"),
-                      linewidth=2.0, label=pair_labels.get(key, key))
+            _stairs(ax, density, bins, pair_colors.get(key, "grey"), pair_labels.get(key, key))
         ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
         ax.set_ylabel("Density")
         ax.set_title("Column-level NN distances")
@@ -383,7 +390,7 @@ def _plot_metric_histogram(
 
     with mpl.rc_context(_PAPER_RC):
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
-        ax1.stairs(density, bins, fill=True, alpha=0.2, color=_BLUE, linewidth=2.0, label="TALENT columns")
+        _stairs(ax1, density, bins, _BLUE, "TALENT columns")
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
         ax2 = ax1.twinx()

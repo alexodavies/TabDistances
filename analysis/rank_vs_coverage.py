@@ -99,6 +99,15 @@ _GREEN  = "#27ae60"
 _RED  = "#ef0e0e"
 
 
+def _stairs(ax, density, bins, color, label, alpha_fill=0.2, lw=1.5):
+    """stairs() with opaque edges and transparent fill."""
+    patch = ax.stairs(density, bins, fill=True, label=label)
+    patch.set_facecolor((*mpl.colors.to_rgb(color), alpha_fill))
+    patch.set_edgecolor(color)
+    patch.set_linewidth(lw)
+    return patch
+
+
 # ------------------------------------------------------------------
 # TALENT dataset loader
 # ------------------------------------------------------------------
@@ -281,22 +290,19 @@ def plot_histogram_with_metric(
     with mpl.rc_context(_PAPER_RC):
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
 
-        ax1.stairs(icl_density, bins, fill=True, alpha=0.2,
-                   color=_BLUE, linewidth=4.0, linealpha=1,label="TALENT datasets")
+        _stairs(ax1, icl_density, bins, _BLUE, "TALENT datasets")
 
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
             fm_density = fm_counts / (fm_counts.sum() * bin_w)
-            ax1.stairs(fm_density, bins, fill=True, alpha=0.2,
-                       color=_ORANGE, linewidth=4.0, linealpha=1, label="Curated (FM) tables")
+            _stairs(ax1, fm_density, bins, _ORANGE, "Curated (FM) tables")
 
         if nn_dists_t4 is not None:
             t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
             t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
             t4_density = t4_counts / (t4_counts.sum() * bin_w)
-            ax1.stairs(t4_density, bins, fill=True, alpha=0.2,
-                       color=_GREEN, linewidth=4.0, linealpha=1, label="Web-Scraped (T4)")
+            _stairs(ax1, t4_density, bins, _GREEN, "Web-Scraped (T4)")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
