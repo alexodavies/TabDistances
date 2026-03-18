@@ -229,6 +229,8 @@ def compute_nn_distances(
     return dists.mean(axis=1)   # (n_query,)
 
 
+
+
 # ------------------------------------------------------------------
 # Plot 1 — histogram + dual-axis rank
 # ------------------------------------------------------------------
@@ -242,19 +244,29 @@ def plot_histogram_with_metric(
     run=None,
     n_bins: int = 30,
     nn_dists_fm: np.ndarray | None = None,
+    nn_dists_icl_internal: np.ndarray | None = None,
     invert_y: bool = False,
 ) -> None:
     """NN-distance histogram (left y) with mean metric ± 1 SD per bin (right y).
 
-    If nn_dists_fm is provided, FM table distances to ICL are overlaid on the left axis.
+    Optionally overlays FM table distances and within-ICL distances on the left axis.
     """
-    all_dists = np.concatenate([nn_dists_icl] + ([nn_dists_fm] if nn_dists_fm is not None else []))
+    all_dists = np.concatenate(
+        [nn_dists_icl]
+        + ([nn_dists_fm] if nn_dists_fm is not None else [])
+        + ([nn_dists_icl_internal] if nn_dists_icl_internal is not None else [])
+    )
     bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
     bar_width = (bins[1] - bins[0]) * 0.4
     bin_centers = (bins[:-1] + bins[1:]) / 2
 
+    bin_w = bins[1] - bins[0]
+    n_groups = 1 + (nn_dists_fm is not None) + (nn_dists_icl_internal is not None)
+    bar_width = (bin_w * 0.85) / n_groups
+
     icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
     icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
+    icl_density = icl_counts / (icl_counts.sum() * bin_w)
     bin_means  = np.array([
         y_vals[icl_idx == i].mean() if (icl_idx == i).sum() > 0 else np.nan
         for i in range(n_bins)
@@ -267,17 +279,28 @@ def plot_histogram_with_metric(
     with mpl.rc_context(_PAPER_RC):
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
 
-        ax1.bar(bin_centers - bar_width / 2, icl_counts, width=bar_width,
+        offsets = np.linspace(-(n_groups - 1) / 2, (n_groups - 1) / 2, n_groups) * bar_width
+        ax1.bar(bin_centers + offsets[0], icl_density, width=bar_width,
                 color=_BLUE, alpha=0.7, label="TALENT datasets")
 
+        offset_i = 1
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
-            ax1.bar(bin_centers + bar_width / 2, fm_counts, width=bar_width,
+            fm_density = fm_counts / (fm_counts.sum() * bin_w)
+            ax1.bar(bin_centers + offsets[offset_i], fm_density, width=bar_width,
                     color=_ORANGE, alpha=0.7, label="Curated (FM) tables")
+            offset_i += 1
+
+        if nn_dists_icl_internal is not None:
+            int_idx = np.clip(np.digitize(nn_dists_icl_internal, bins) - 1, 0, n_bins - 1)
+            int_counts = np.array([(int_idx == i).sum() for i in range(n_bins)])
+            int_density = int_counts / (int_counts.sum() * bin_w)
+            ax1.bar(bin_centers + offsets[offset_i], int_density, width=bar_width,
+                    color=_GREEN, alpha=0.7, label="Within Synthetic")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
-        ax1.set_ylabel("Number of TALENT datasets")
+        ax1.set_ylabel("Density")
 
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
@@ -458,6 +481,7 @@ def main(
     print(f"\n=== Computing {k}-NN distances (mode={mode}) ===")
     nn_dists = compute_nn_distances(talent_feats, icl_feats, mode, k)
     nn_dists_t4 = compute_nn_distances(fm_feats, icl_feats, mode, k) if fm_feats is not None else None
+    nn_dists_icl_internal = compute_nn_distances(icl_feats, icl_feats, mode, k)
 
     # ── Merge with ranks ───────────────────────────────────────────
     df = pd.DataFrame({"dataset": talent_names, "nn_dist_icl": nn_dists})
@@ -490,9 +514,11 @@ def main(
     nn_fm = nn_dists_t4   # FM distances (reuse variable)
 
     plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
-                               output_dir, run, n_bins, nn_dists_fm=nn_fm, invert_y=True)
+                               output_dir, run, n_bins, nn_dists_fm=nn_fm,
+                               nn_dists_icl_internal=nn_dists_icl_internal, invert_y=True)
     plot_histogram_with_metric(nn, auc, "AUC", "auc_vs_nndist_histogram.png",
-                               output_dir, run, n_bins, nn_dists_fm=nn_fm, invert_y=False)
+                               output_dir, run, n_bins, nn_dists_fm=nn_fm,
+                               nn_dists_icl_internal=nn_dists_icl_internal, invert_y=False)
 
     corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
     plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
