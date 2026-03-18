@@ -8,15 +8,15 @@ the TabICL prior's feature distribution (loaded from tables-tabicl/parquet/).
 
 Primary outputs
 ---------------
-1. rank_vs_nndist_histogram.pdf
+1. rank_vs_nndist_histogram.png
        NN-distance histogram (count, left y-axis) with a dual right y-axis
        showing TabICL's mean rank ± 1 SD within each distance bin.
 
-2. rank_vs_nndist_scatter.pdf
+2. rank_vs_nndist_scatter.png
        Scatter plot of rank vs NN distance with Pearson r, Spearman ρ, and
        a linear regression line.
 
-3. rank_prediction.pdf
+3. rank_prediction.png
        Linear regression diagnostics: actual-vs-predicted and residual plot.
 
 4. rank_vs_nndist.csv
@@ -297,7 +297,7 @@ def plot_histogram_with_rank(
 
         plt.title("NN Distance to TabICL Prior vs Benchmark Rank")
         plt.tight_layout()
-        out = output_dir / "rank_vs_nndist_histogram.pdf"
+        out = output_dir / "rank_vs_nndist_histogram.png"
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
             run.log({"rank_vs_nndist_histogram": wandb.Image(str(out))})
@@ -336,7 +336,7 @@ def plot_rank_vs_distance(
         )
         ax.legend()
         plt.tight_layout()
-        out = output_dir / "rank_vs_nndist_scatter.pdf"
+        out = output_dir / "rank_vs_nndist_scatter.png"
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
             run.log({"rank_vs_nndist_scatter": wandb.Image(str(out))})
@@ -386,7 +386,7 @@ def plot_rank_prediction(
         ax.set_title("Residuals")
 
         plt.tight_layout()
-        out = output_dir / "rank_prediction.pdf"
+        out = output_dir / "rank_prediction.png"
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
             run.log({"rank_prediction": wandb.Image(str(out))})
