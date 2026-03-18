@@ -221,6 +221,9 @@ def compute_nn_distances(
     q_m, _ = select_features(query_feats, mode)
     r_m, _ = select_features(ref_feats, mode)
 
+    q_m = np.nan_to_num(q_m, nan=0.0, posinf=0.0, neginf=0.0)
+    r_m = np.nan_to_num(r_m, nan=0.0, posinf=0.0, neginf=0.0)
+
     scaler = MinMaxScaler().fit(r_m)
     q_sc = scaler.transform(q_m)
     r_sc = scaler.transform(r_m)
