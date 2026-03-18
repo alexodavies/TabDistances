@@ -1,4 +1,4 @@
-"""Column-level coverage analysis: TALENT vs FM vs T4.
+"""Column-level coverage analysis: TALENT vs FM vs T4 vs ICL.
 
 Operates on individual numeric columns rather than whole tables.  The feature
 for each column is the 30-bin normalised cumulative histogram produced by
@@ -7,15 +7,15 @@ get_histogram().
 Workflow
 --------
 1. Load every numeric column from every TALENT dataset (train+val+test).
-2. Build a flat (file, col_name) index of all numeric columns in FM and T4.
-3. Sample exactly N_talent_cols uniformly from that index — genuinely random
+2. Build a flat (file, col_name) index of all numeric columns in FM, T4, ICL.
+3. Sample exactly N_talent_cols uniformly from each index — genuinely random
    across all available columns, not just random tables.
-4. Compute histograms for all three column pools.
+4. Compute histograms for all four column pools.
 5. Produce three outputs:
-     a. Mean ± SD histogram band plot (TALENT vs FM vs T4).
+     a. Mean ± SD histogram band plot (TALENT vs FM vs T4 vs ICL).
      b. PCA of all column histograms coloured by source.
-     c. Pairwise NN-distance density histograms (TALENT→FM, TALENT→T4,
-        FM→T4) using the same compute_nn_distances approach as
+     c. Pairwise NN-distance density histograms (TALENT→ICL, TALENT→FM,
+        TALENT→T4) using the same compute_nn_distances approach as
         rank_vs_coverage.py.
 
 Usage
@@ -23,6 +23,7 @@ Usage
     python analysis/column_coverage.py [--talent-dir data/]
                                        [--fm-dir tables-tabfm/parquet]
                                        [--t4-dir tables-t4/parquet]
+                                       [--icl-dir tables-tabicl/parquet]
 """
 
 import argparse
@@ -62,6 +63,7 @@ RANKINGS_CSV = _ROOT / "results/tabicl-rankings.csv"
 TALENT_DIR   = _ROOT / "data"
 FM_DIR       = _ROOT / "tables-tabfm/parquet"
 T4_DIR       = _ROOT / "tables-t4/parquet"
+ICL_DIR      = _ROOT / "tables-tabicl/parquet"
 
 CACHE_DIR    = _ROOT / "cache"
 OUTPUT_DIR   = _ROOT / "results/column-coverage"
@@ -82,8 +84,8 @@ _PAPER_RC = {
     "figure.dpi":      300,
 }
 
-_COLORS = {"talent": "#2980b9", "fm": "#e67e22", "t4": "#27ae60"}
-_LABELS = {"talent": "TALENT", "fm": "Curated (FM)", "t4": "Web-Scraped (T4)"}
+_COLORS = {"talent": "#2980b9", "fm": "#e67e22", "t4": "#27ae60", "icl": "#8e44ad"}
+_LABELS = {"talent": "TALENT", "fm": "Curated (FM)", "t4": "Web-Scraped (T4)", "icl": "TabICL Prior"}
 
 
 def _stairs(ax, density, bins, color, label, alpha_fill=0.2, lw=1.5):
@@ -324,14 +326,16 @@ def plot_nn_distance_densities(
 ) -> None:
     """Overlaid density histograms of pairwise NN distances."""
     pair_colors = {
-        "talent_to_fm": _COLORS["fm"],
-        "talent_to_t4": _COLORS["t4"],
-        "fm_to_t4":     "#8e44ad",
+        "talent_to_icl": _COLORS["icl"],
+        "talent_to_fm":  _COLORS["fm"],
+        "talent_to_t4":  _COLORS["t4"],
+        "fm_to_t4":      "#7f8c8d",
     }
     pair_labels = {
-        "talent_to_fm": f"TALENT → {_LABELS['fm']}",
-        "talent_to_t4": f"TALENT → {_LABELS['t4']}",
-        "fm_to_t4":     f"{_LABELS['fm']} → {_LABELS['t4']}",
+        "talent_to_icl": f"TALENT → {_LABELS['icl']}",
+        "talent_to_fm":  f"TALENT → {_LABELS['fm']}",
+        "talent_to_t4":  f"TALENT → {_LABELS['t4']}",
+        "fm_to_t4":      f"{_LABELS['fm']} → {_LABELS['t4']}",
     }
 
     with mpl.rc_context(_PAPER_RC):
@@ -366,6 +370,7 @@ def plot_nn_distance_densities(
 _BLUE   = "#2980b9"
 _ORANGE = "#e67e22"
 _GREEN  = "#27ae60"
+_PURPLE = "#8e44ad"
 
 
 def _plot_metric_histogram(
@@ -377,11 +382,24 @@ def _plot_metric_histogram(
     run=None,
     n_bins: int = 30,
     invert_y: bool = False,
+    nn_dists_fm: np.ndarray | None = None,
+    nn_dists_t4: np.ndarray | None = None,
+    nn_dists_icl: np.ndarray | None = None,
 ) -> None:
-    """NN-distance density histogram (left y) with mean metric ± 1 SD per bin (right y)."""
-    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    """NN-distance density histogram (left y) with mean metric ± 1 SD per bin (right y).
+
+    Optionally overlays FM, T4, and ICL column distance distributions on the left axis.
+    nn_dists is the TALENT→reference distribution used for the metric binning.
+    """
+    all_parts = [nn_dists]
+    if nn_dists_fm  is not None: all_parts.append(nn_dists_fm)
+    if nn_dists_t4  is not None: all_parts.append(nn_dists_t4)
+    if nn_dists_icl is not None: all_parts.append(nn_dists_icl)
+    all_dists = np.concatenate(all_parts)
+    bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
     bin_w = bins[1] - bins[0]
+
     idx = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
     counts = np.array([(idx == i).sum() for i in range(n_bins)])
     density = counts / (counts.sum() * bin_w)
@@ -391,6 +409,18 @@ def _plot_metric_histogram(
     with mpl.rc_context(_PAPER_RC):
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
         _stairs(ax1, density, bins, _BLUE, "TALENT columns")
+        if nn_dists_fm is not None:
+            fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
+            fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
+            _stairs(ax1, fm_counts / (fm_counts.sum() * bin_w), bins, _ORANGE, _LABELS["fm"])
+        if nn_dists_t4 is not None:
+            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
+            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
+            _stairs(ax1, t4_counts / (t4_counts.sum() * bin_w), bins, _GREEN, _LABELS["t4"])
+        if nn_dists_icl is not None:
+            icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
+            icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
+            _stairs(ax1, icl_counts / (icl_counts.sum() * bin_w), bins, _PURPLE, _LABELS["icl"])
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
         ax2 = ax1.twinx()
@@ -488,10 +518,62 @@ def _plot_metric_prediction(
     return {"r2": r2, "coef": float(model.coef_[0]), "intercept": float(model.intercept_)}
 
 
+# ------------------------------------------------------------------
+# Plot — example column histograms (4 sources × 6 examples)
+# ------------------------------------------------------------------
+
+def plot_example_histograms(
+    hists: dict[str, np.ndarray],
+    output_dir: Path,
+    run=None,
+    n_examples: int = 6,
+    seed: int = RANDOM_STATE,
+) -> None:
+    """4-column × n_examples-row grid of randomly sampled column histograms per source."""
+    sources = [k for k in ("talent", "fm", "t4", "icl") if k in hists and len(hists[k])]
+    n_cols = len(sources)
+    rng = np.random.default_rng(seed)
+    bins = np.arange(30)
+
+    with mpl.rc_context(_PAPER_RC):
+        fig, axes = plt.subplots(n_examples, n_cols, figsize=(2.0 * n_cols, 1.4 * n_examples),
+                                 sharex=True, sharey=True)
+        if n_cols == 1:
+            axes = axes[:, np.newaxis]
+
+        for col_i, src in enumerate(sources):
+            arr = hists[src]
+            chosen = rng.choice(len(arr), size=min(n_examples, len(arr)), replace=False)
+            color = _COLORS[src]
+            for row_i in range(n_examples):
+                ax = axes[row_i, col_i]
+                if row_i < len(chosen):
+                    ax.plot(bins, arr[chosen[row_i]], color=color, lw=0.9)
+                    ax.fill_between(bins, arr[chosen[row_i]], alpha=0.15, color=color)
+                else:
+                    ax.set_visible(False)
+                ax.set_ylim(0, 1)
+                if row_i == 0:
+                    ax.set_title(_LABELS[src], color=color)
+                ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+        fig.supxlabel("Bin index", fontsize=8)
+        fig.supylabel("Cumulative fraction", fontsize=8)
+        plt.suptitle("Example column histograms by source", fontsize=9)
+        plt.tight_layout()
+        out = output_dir / "column_examples.png"
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({"column_examples": wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+
+
 def main(
     talent_dir: Path,
     fm_dir: Path,
     t4_dir: Path,
+    icl_dir: Path,
     output_dir: Path,
     k: int,
 ) -> None:
@@ -525,7 +607,12 @@ def main(
     t4_cache = CACHE_DIR / f"t4_col_hists_{n_talent}.npz"
     t4_hists = load_parquet_col_hists(t4_dir, n_talent, rng, t4_cache) if t4_dir.exists() else np.zeros((0, 30))
 
-    hists = {"talent": talent_hists, "fm": fm_hists, "t4": t4_hists}
+    # ── ICL column histograms ──────────────────────────────────────
+    print(f"\n=== ICL columns (sampling {n_talent}) ===")
+    icl_cache = CACHE_DIR / f"icl_col_hists_{n_talent}.npz"
+    icl_hists = load_parquet_col_hists(icl_dir, n_talent, rng, icl_cache) if icl_dir.exists() else np.zeros((0, 30))
+
+    hists = {"talent": talent_hists, "fm": fm_hists, "t4": t4_hists, "icl": icl_hists}
     for key, arr in hists.items():
         print(f"  {_LABELS[key]}: {len(arr)} columns")
 
@@ -536,7 +623,7 @@ def main(
             project=WANDB_PROJECT,
             name=f"column_coverage_k{k}",
             config={"k": k, "n_talent": n_talent,
-                    "n_fm": len(fm_hists), "n_t4": len(t4_hists)},
+                    "n_fm": len(fm_hists), "n_t4": len(t4_hists), "n_icl": len(icl_hists)},
             reinit=True,
         )
 
@@ -544,9 +631,13 @@ def main(
     print("\n=== Generating figures ===")
     plot_histogram_bands(hists, output_dir, run)
     plot_pca(hists, output_dir, run)
+    plot_example_histograms(hists, output_dir, run)
 
     print("\n=== Computing NN distances ===")
     nn_pairs = {}
+    if len(icl_hists):
+        print("  TALENT → ICL")
+        nn_pairs["talent_to_icl"] = compute_nn_distances(talent_hists, icl_hists, k)
     if len(fm_hists):
         print("  TALENT → FM")
         nn_pairs["talent_to_fm"] = compute_nn_distances(talent_hists, fm_hists, k)
@@ -561,10 +652,12 @@ def main(
 
     # ── Rank / AUC analysis at column level ────────────────────────
     # Each column inherits its parent dataset's tabicl rank and AUC.
-    # Use TALENT→FM distances as the primary NN distance (fall back to T4).
-    _fm = nn_pairs.get("talent_to_fm")
-    _t4 = nn_pairs.get("talent_to_t4")
-    col_nn = _fm if _fm is not None else _t4
+    # Use TALENT→ICL distances as primary (fall back to FM, then T4).
+    _icl = nn_pairs.get("talent_to_icl")
+    _fm  = nn_pairs.get("talent_to_fm")
+    _t4  = nn_pairs.get("talent_to_t4")
+    col_nn = _icl if _icl is not None else (_fm if _fm is not None else _t4)
+    ref_label = "ICL" if _icl is not None else ("FM" if _fm is not None else "T4")
     if col_nn is not None:
         print("\n=== Rank / AUC analysis (column level) ===")
         col_ranks = np.array([rank_map[ds]["rank"] for ds in col_datasets
@@ -574,12 +667,23 @@ def main(
         mask = np.array([ds in rank_map for ds in col_datasets])
         col_nn_masked = col_nn[mask]
 
-        ref_label = "FM" if "talent_to_fm" in nn_pairs else "T4"
+        fm_masked  = _fm[mask]  if _fm  is not None else None
+        t4_masked  = _t4[mask]  if _t4  is not None else None
+        icl_masked = _icl[mask] if _icl is not None else None
+        # For the histogram overlays, exclude whichever source is the primary axis
+        overlay_fm  = fm_masked  if col_nn is not _fm  else None
+        overlay_t4  = t4_masked  if col_nn is not _t4  else None
+        overlay_icl = icl_masked if col_nn is not _icl else None
+
         _plot_metric_histogram(col_nn_masked, col_ranks, "rank (lower = better)",
                                "col_rank_vs_nndist_histogram.png", output_dir, run,
-                               invert_y=True)
+                               invert_y=True,
+                               nn_dists_fm=overlay_fm, nn_dists_t4=overlay_t4,
+                               nn_dists_icl=overlay_icl)
         _plot_metric_histogram(col_nn_masked, col_aucs, "AUC",
-                               "col_auc_vs_nndist_histogram.png", output_dir, run)
+                               "col_auc_vs_nndist_histogram.png", output_dir, run,
+                               nn_dists_fm=overlay_fm, nn_dists_t4=overlay_t4,
+                               nn_dists_icl=overlay_icl)
         corr = _plot_metric_scatter(col_nn_masked, col_ranks, f"rank (TALENT→{ref_label})",
                                     "col_rank_vs_nndist_scatter.png", output_dir, run)
         _plot_metric_scatter(col_nn_masked, col_aucs, f"AUC (TALENT→{ref_label})",
@@ -606,11 +710,12 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Column-level coverage analysis: TALENT vs FM vs T4."
+        description="Column-level coverage analysis: TALENT vs FM vs T4 vs ICL."
     )
     parser.add_argument("--talent-dir", type=Path, default=TALENT_DIR)
     parser.add_argument("--fm-dir",     type=Path, default=FM_DIR)
     parser.add_argument("--t4-dir",     type=Path, default=T4_DIR)
+    parser.add_argument("--icl-dir",    type=Path, default=ICL_DIR)
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
     parser.add_argument("--k",          type=int,  default=KNN_K)
     args = parser.parse_args()
@@ -619,6 +724,7 @@ if __name__ == "__main__":
         talent_dir=args.talent_dir,
         fm_dir=args.fm_dir,
         t4_dir=args.t4_dir,
+        icl_dir=args.icl_dir,
         output_dir=args.output_dir,
         k=args.k,
     )

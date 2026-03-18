@@ -47,3 +47,7 @@ data/
 results/rank-coverage/*.png
 results/rank-coverage/*.pdf
 results/rank-coverage/*.csv
+
+results/column-coverage/*.png
+results/column-coverage/*.pdf
+results/column-coverage/*.csv
