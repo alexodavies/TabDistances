@@ -134,9 +134,12 @@ def load_talent_col_hists(
             skipped_datasets += 1
             continue
         data = np.concatenate(parts, axis=0)[:MAX_ROWS]
+        n = len(data)
         for i in range(data.shape[1]):
-            hists.append(get_histogram(pd.Series(data[:, i])))
-            col_datasets.append(ds)
+            col = pd.Series(data[:, i]).dropna()
+            if n > 0 and col.nunique() / n >= 0.2:
+                hists.append(get_histogram(col))
+                col_datasets.append(ds)
 
     print(f"  Computed {len(hists)} TALENT column histograms ({skipped_datasets} datasets skipped)")
     hists_arr = np.array(hists)
@@ -158,9 +161,11 @@ def _build_col_index(parquet_dir: Path) -> list[tuple[Path, str]]:
     for p in tqdm(paths, desc=f"Indexing {parquet_dir.name}", leave=False):
         try:
             df = pd.read_parquet(p)
-            num_cols = df.select_dtypes(include=[float, int, "number"]).columns.tolist()
+            num_cols = df.select_dtypes(include=["float"]).columns.tolist()
+            n = len(df)
             for col in num_cols:
-                index.append((p, col))
+                if n > 0 and df[col].nunique() / n >= 0.2:
+                    index.append((p, col))
         except Exception:
             pass
     return index
@@ -371,6 +376,7 @@ _BLUE   = "#2980b9"
 _ORANGE = "#e67e22"
 _GREEN  = "#27ae60"
 _PURPLE = "#8e44ad"
+_RED    = "#ef0e0e"
 
 
 def _plot_metric_histogram(
@@ -407,34 +413,35 @@ def _plot_metric_histogram(
     bin_stds  = np.array([y_vals[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n_bins)])
 
     with mpl.rc_context(_PAPER_RC):
-        fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
-        _stairs(ax1, density, bins, _BLUE, "TALENT columns")
+        fig, ax1 = plt.subplots(figsize=(7.5, 3.5))
+        _stairs(ax1, density, bins, _BLUE, "TALENT columns", alpha_fill=0.15)
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, fm_counts / (fm_counts.sum() * bin_w), bins, _ORANGE, _LABELS["fm"])
+            _stairs(ax1, fm_counts / (fm_counts.sum() * bin_w), bins, _ORANGE, _LABELS["fm"], alpha_fill=0.15)
         if nn_dists_t4 is not None:
             t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
             t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, t4_counts / (t4_counts.sum() * bin_w), bins, _GREEN, _LABELS["t4"])
+            _stairs(ax1, t4_counts / (t4_counts.sum() * bin_w), bins, _GREEN, _LABELS["t4"], alpha_fill=0.15)
         if nn_dists_icl is not None:
             icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
             icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, icl_counts / (icl_counts.sum() * bin_w), bins, _PURPLE, _LABELS["icl"])
+            _stairs(ax1, icl_counts / (icl_counts.sum() * bin_w), bins, _PURPLE, _LABELS["icl"], alpha_fill=0.15)
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
-        ax2.plot(bin_centers[mask], bin_means[mask], color=_GREEN, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
+        ax2.plot(bin_centers[mask], bin_means[mask], color=_RED, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
         ax2.fill_between(bin_centers[mask], (bin_means - bin_stds)[mask], (bin_means + bin_stds)[mask],
-                         color=_GREEN, alpha=0.25)
+                         color=_RED, alpha=0.25)
         if invert_y:
             ax2.invert_yaxis()
-        ax2.set_ylabel(f"TabICL mean {y_label}", color=_GREEN)
-        ax2.tick_params(axis="y", labelcolor=_GREEN)
+        ax2.set_ylabel(f"TabICL mean {y_label}", color=_RED)
+        ax2.tick_params(axis="y", labelcolor=_RED)
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+        ax1.legend(lines1 + lines2, labels1 + labels2,
+                   loc="upper left", bbox_to_anchor=(1.12, 1), borderaxespad=0)
         plt.title(f"Column NN Distance vs {y_label}")
         plt.tight_layout()
         out = output_dir / filename
