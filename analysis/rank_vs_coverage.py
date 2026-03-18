@@ -475,8 +475,10 @@ def main(
     # ── FM feature vectors ─────────────────────────────────────────
     fm_feats = None
     if FM_CACHE.exists():
-        fm_feats = np.load(FM_CACHE)["feats"]
-        print(f"  Loaded {len(fm_feats)} FM feature vectors from cache")
+        arr = np.load(FM_CACHE)["feats"]
+        idx = rng.choice(len(arr), size=min(N_ICL, len(arr)), replace=False)
+        fm_feats = arr[idx]
+        print(f"  Loaded {len(fm_feats)} FM feature vectors from cache (of {len(arr)} total)")
     else:
         print(f"  FM cache not found at {FM_CACHE}, skipping FM distances")
 
@@ -487,8 +489,10 @@ def main(
 
     t4_feats = None
     if T4_CACHE.exists():
-        t4_feats = np.load(T4_CACHE)["feats"]
-        print(f"  Loaded {len(t4_feats)} T4 feature vectors from cache")
+        arr = np.load(T4_CACHE)["feats"]
+        idx = rng.choice(len(arr), size=min(N_ICL, len(arr)), replace=False)
+        t4_feats = arr[idx]
+        print(f"  Loaded {len(t4_feats)} T4 feature vectors from cache (of {len(arr)} total)")
     else:
         print(f"  T4 cache not found at {T4_CACHE}, skipping T4 distances")
     nn_dists_t4 = compute_nn_distances(t4_feats, icl_feats, mode, k) if t4_feats is not None else None
