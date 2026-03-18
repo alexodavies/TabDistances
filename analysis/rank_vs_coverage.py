@@ -70,6 +70,7 @@ _ROOT        = Path(__file__).resolve().parent.parent   # project root
 TABICL_DIR   = _ROOT / "tables-tabicl/parquet"
 ICL_CACHE    = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
 FM_CACHE     = _ROOT / "cache/real_feats_tabfm_5000_512.npz"
+T4_CACHE     = _ROOT / "cache/real_feats_t4_5000_512_v2.npz"
 RANKINGS_CSV = _ROOT / "results/tabicl-rankings.csv"
 TALENT_DIR   = _ROOT / "data"
 
@@ -244,24 +245,23 @@ def plot_histogram_with_metric(
     run=None,
     n_bins: int = 30,
     nn_dists_fm: np.ndarray | None = None,
-    nn_dists_icl_internal: np.ndarray | None = None,
+    nn_dists_t4: np.ndarray | None = None,
     invert_y: bool = False,
 ) -> None:
     """NN-distance histogram (left y) with mean metric ± 1 SD per bin (right y).
 
-    Optionally overlays FM table distances and within-ICL distances on the left axis.
+    Optionally overlays FM and T4 table distances on the left axis.
     """
     all_dists = np.concatenate(
         [nn_dists_icl]
         + ([nn_dists_fm] if nn_dists_fm is not None else [])
-        + ([nn_dists_icl_internal] if nn_dists_icl_internal is not None else [])
+        + ([nn_dists_t4] if nn_dists_t4 is not None else [])
     )
     bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
-    bar_width = (bins[1] - bins[0]) * 0.4
     bin_centers = (bins[:-1] + bins[1:]) / 2
 
     bin_w = bins[1] - bins[0]
-    n_groups = 1 + (nn_dists_fm is not None) + (nn_dists_icl_internal is not None)
+    n_groups = 1 + (nn_dists_fm is not None) + (nn_dists_t4 is not None)
     bar_width = (bin_w * 0.85) / n_groups
 
     icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
@@ -292,12 +292,12 @@ def plot_histogram_with_metric(
                     color=_ORANGE, alpha=0.7, label="Curated (FM) tables")
             offset_i += 1
 
-        if nn_dists_icl_internal is not None:
-            int_idx = np.clip(np.digitize(nn_dists_icl_internal, bins) - 1, 0, n_bins - 1)
-            int_counts = np.array([(int_idx == i).sum() for i in range(n_bins)])
-            int_density = int_counts / (int_counts.sum() * bin_w)
-            ax1.bar(bin_centers + offsets[offset_i], int_density, width=bar_width,
-                    color=_GREEN, alpha=0.7, label="Within Synthetic")
+        if nn_dists_t4 is not None:
+            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
+            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
+            t4_density = t4_counts / (t4_counts.sum() * bin_w)
+            ax1.bar(bin_centers + offsets[offset_i], t4_density, width=bar_width,
+                    color=_GREEN, alpha=0.7, label="Web-Scraped (T4)")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")
@@ -480,8 +480,15 @@ def main(
     # ── NN distances ───────────────────────────────────────────────
     print(f"\n=== Computing {k}-NN distances (mode={mode}) ===")
     nn_dists = compute_nn_distances(talent_feats, icl_feats, mode, k)
-    nn_dists_t4 = compute_nn_distances(fm_feats, icl_feats, mode, k) if fm_feats is not None else None
-    nn_dists_icl_internal = compute_nn_distances(icl_feats, icl_feats, mode, k)
+    nn_dists_fm = compute_nn_distances(fm_feats, icl_feats, mode, k) if fm_feats is not None else None
+
+    t4_feats = None
+    if T4_CACHE.exists():
+        t4_feats = np.load(T4_CACHE)["feats"]
+        print(f"  Loaded {len(t4_feats)} T4 feature vectors from cache")
+    else:
+        print(f"  T4 cache not found at {T4_CACHE}, skipping T4 distances")
+    nn_dists_t4 = compute_nn_distances(t4_feats, icl_feats, mode, k) if t4_feats is not None else None
 
     # ── Merge with ranks ───────────────────────────────────────────
     df = pd.DataFrame({"dataset": talent_names, "nn_dist_icl": nn_dists})
@@ -511,14 +518,12 @@ def main(
     nn = df["nn_dist_icl"].values
     rk = df["rank"].values.astype(float)
     auc = df["AUC"].values.astype(float)
-    nn_fm = nn_dists_t4   # FM distances (reuse variable)
-
     plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
-                               output_dir, run, n_bins, nn_dists_fm=nn_fm,
-                               nn_dists_icl_internal=nn_dists_icl_internal, invert_y=True)
+                               output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
+                               nn_dists_t4=nn_dists_t4, invert_y=True)
     plot_histogram_with_metric(nn, auc, "AUC", "auc_vs_nndist_histogram.png",
-                               output_dir, run, n_bins, nn_dists_fm=nn_fm,
-                               nn_dists_icl_internal=nn_dists_icl_internal, invert_y=False)
+                               output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
+                               nn_dists_t4=nn_dists_t4, invert_y=False)
 
     corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
     plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
