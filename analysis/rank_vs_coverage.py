@@ -59,16 +59,18 @@ from tabdistances.discriminator.features import (
 # ------------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------------
-TABICL_DIR   = Path("tables-tabicl/parquet")
-ICL_CACHE    = Path("cache/real_feats_icl_talent_25000_512.npz")
-RANKINGS_CSV = Path("results/tabicl-rankings.csv")
-TALENT_DIR   = Path("data")
+_ROOT        = Path(__file__).resolve().parent.parent   # project root
+
+TABICL_DIR   = _ROOT / "tables-tabicl/parquet"
+ICL_CACHE    = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
+RANKINGS_CSV = _ROOT / "results/tabicl-rankings.csv"
+TALENT_DIR   = _ROOT / "data"
 
 MAX_ROWS     = 512
 N_ICL        = 25000
 FEATURE_MODE = "full"
 KNN_K        = 5
-OUTPUT_DIR   = Path("results/rank-coverage")
+OUTPUT_DIR   = _ROOT / "results/rank-coverage"
 RANDOM_STATE = 42
 
 _PAPER_RC = {
@@ -380,7 +382,7 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(RANDOM_STATE)
 
-    talent_cache = Path(f"cache/talent_feats_{MAX_ROWS}.npz")
+    talent_cache = _ROOT / f"cache/talent_feats_{MAX_ROWS}.npz"
 
     # ── Rankings ───────────────────────────────────────────────────
     rankings = pd.read_csv(RANKINGS_CSV)
