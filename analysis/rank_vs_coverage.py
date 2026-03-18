@@ -233,32 +233,34 @@ def compute_nn_distances(
 # Plot 1 — histogram + dual-axis rank
 # ------------------------------------------------------------------
 
-def plot_histogram_with_rank(
+def plot_histogram_with_metric(
     nn_dists_icl: np.ndarray,
-    ranks: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
     output_dir: Path,
     run=None,
     n_bins: int = 30,
-    nn_dists_t4: np.ndarray | None = None,
+    nn_dists_fm: np.ndarray | None = None,
+    invert_y: bool = False,
 ) -> None:
-    """NN-distance histogram (left y) with mean tabICL rank ± 1 SD per bin (right y).
+    """NN-distance histogram (left y) with mean metric ± 1 SD per bin (right y).
 
-    If nn_dists_t4 is provided, both ICL and T4 distance distributions are
-    overlaid on the left axis.
+    If nn_dists_fm is provided, FM table distances to ICL are overlaid on the left axis.
     """
-    all_dists = np.concatenate([nn_dists_icl] + ([nn_dists_t4] if nn_dists_t4 is not None else []))
+    all_dists = np.concatenate([nn_dists_icl] + ([nn_dists_fm] if nn_dists_fm is not None else []))
     bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
-    bar_width = (bins[1] - bins[0]) * 0.4   # narrower bars so both fit side-by-side
+    bar_width = (bins[1] - bins[0]) * 0.4
     bin_centers = (bins[:-1] + bins[1:]) / 2
 
     icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
     icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
     bin_means  = np.array([
-        ranks[icl_idx == i].mean() if (icl_idx == i).sum() > 0 else np.nan
+        y_vals[icl_idx == i].mean() if (icl_idx == i).sum() > 0 else np.nan
         for i in range(n_bins)
     ])
     bin_stds   = np.array([
-        ranks[icl_idx == i].std()  if (icl_idx == i).sum() > 1 else 0.0
+        y_vals[icl_idx == i].std()  if (icl_idx == i).sum() > 1 else 0.0
         for i in range(n_bins)
     ])
 
@@ -268,10 +270,10 @@ def plot_histogram_with_rank(
         ax1.bar(bin_centers - bar_width / 2, icl_counts, width=bar_width,
                 color=_BLUE, alpha=0.7, label="TALENT datasets")
 
-        if nn_dists_t4 is not None:
-            t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
-            t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
-            ax1.bar(bin_centers + bar_width / 2, t4_counts, width=bar_width,
+        if nn_dists_fm is not None:
+            fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
+            fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
+            ax1.bar(bin_centers + bar_width / 2, fm_counts, width=bar_width,
                     color=_ORANGE, alpha=0.7, label="Curated (FM) tables")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
@@ -280,27 +282,28 @@ def plot_histogram_with_rank(
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
         ax2.plot(bin_centers[mask], bin_means[mask],
-                 color=_GREEN, lw=1.5, marker="o", ms=4, label="Mean rank (Synthetic)")
+                 color=_GREEN, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
         ax2.fill_between(
             bin_centers[mask],
             (bin_means - bin_stds)[mask],
             (bin_means + bin_stds)[mask],
             color=_GREEN, alpha=0.25,
         )
-        ax2.invert_yaxis()   # rank 1 (best) shown highest
-        ax2.set_ylabel("TabICL mean rank (lower = better)", color=_GREEN)
+        if invert_y:
+            ax2.invert_yaxis()
+        ax2.set_ylabel(f"TabICL mean {y_label}", color=_GREEN)
         ax2.tick_params(axis="y", labelcolor=_GREEN)
 
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
 
-        plt.title("NN Distance to TabICL Prior vs Benchmark Rank")
+        plt.title(f"NN Distance to TabICL Prior vs {y_label}")
         plt.tight_layout()
-        out = output_dir / "rank_vs_nndist_histogram.png"
+        out = output_dir / filename
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
-            run.log({"rank_vs_nndist_histogram": wandb.Image(str(out))})
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -309,37 +312,39 @@ def plot_histogram_with_rank(
 # Plot 2 — scatter with correlations
 # ------------------------------------------------------------------
 
-def plot_rank_vs_distance(
+def plot_metric_vs_distance(
     nn_dists: np.ndarray,
-    ranks: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
     output_dir: Path,
     run=None,
 ) -> dict:
-    """Scatter: tabICL rank vs NN distance, with Pearson r and Spearman ρ."""
-    r_p, p_p = stats.pearsonr(nn_dists, ranks)
-    r_s, p_s = stats.spearmanr(nn_dists, ranks)
+    """Scatter: metric vs NN distance, with Pearson r and Spearman ρ."""
+    r_p, p_p = stats.pearsonr(nn_dists, y_vals)
+    r_s, p_s = stats.spearmanr(nn_dists, y_vals)
 
-    m, b = np.polyfit(nn_dists, ranks.astype(float), 1)
+    m, b = np.polyfit(nn_dists, y_vals.astype(float), 1)
     xs = np.linspace(nn_dists.min(), nn_dists.max(), 200)
 
     with mpl.rc_context(_PAPER_RC):
         fig, ax = plt.subplots(figsize=(5.5, 4.0))
-        ax.scatter(nn_dists, ranks, alpha=0.65, s=25,
+        ax.scatter(nn_dists, y_vals, alpha=0.65, s=25,
                    color=_BLUE, edgecolors="white", linewidths=0.3, zorder=3)
         ax.plot(xs, m * xs + b, color=_ORANGE, lw=1.5, label="Linear fit", zorder=4)
         ax.set_xlabel("Mean k-NN distance to TabICL distribution (normalised)")
-        ax.set_ylabel("TabICL rank (lower = better)")
+        ax.set_ylabel(f"TabICL {y_label}")
         ax.set_title(
-            f"Rank vs NN Distance\n"
+            f"{y_label} vs NN Distance\n"
             f"Pearson r = {r_p:.3f} (p = {p_p:.3f})   "
             f"Spearman ρ = {r_s:.3f} (p = {p_s:.3f})"
         )
         ax.legend()
         plt.tight_layout()
-        out = output_dir / "rank_vs_nndist_scatter.png"
+        out = output_dir / filename
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
-            run.log({"rank_vs_nndist_scatter": wandb.Image(str(out))})
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -350,15 +355,17 @@ def plot_rank_vs_distance(
 # Plot 3 — linear regression diagnostics
 # ------------------------------------------------------------------
 
-def plot_rank_prediction(
+def plot_metric_prediction(
     nn_dists: np.ndarray,
-    ranks: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
     output_dir: Path,
     run=None,
 ) -> dict:
-    """Linear regression of rank ~ NN distance with actual-vs-predicted and residuals."""
+    """Linear regression of metric ~ NN distance with actual-vs-predicted and residuals."""
     X = nn_dists.reshape(-1, 1)
-    y = ranks.astype(float)
+    y = y_vals.astype(float)
     model = LinearRegression().fit(X, y)
     y_pred = model.predict(X)
     r2 = model.score(X, y)
@@ -372,8 +379,8 @@ def plot_rank_prediction(
         ax.scatter(y, y_pred, alpha=0.6, s=25, color=_GREEN,
                    edgecolors="white", linewidths=0.3)
         ax.plot([lo, hi], [lo, hi], "k--", lw=0.8, label="Perfect fit")
-        ax.set_xlabel("Actual rank")
-        ax.set_ylabel("Predicted rank")
+        ax.set_xlabel(f"Actual {y_label}")
+        ax.set_ylabel(f"Predicted {y_label}")
         ax.set_title(f"Linear Regression  R² = {r2:.3f}")
         ax.legend()
 
@@ -381,15 +388,15 @@ def plot_rank_prediction(
         ax.scatter(y_pred, residuals, alpha=0.6, s=25, color=_ORANGE,
                    edgecolors="white", linewidths=0.3)
         ax.axhline(0, color="k", lw=0.8)
-        ax.set_xlabel("Predicted rank")
+        ax.set_xlabel(f"Predicted {y_label}")
         ax.set_ylabel("Residual")
         ax.set_title("Residuals")
 
         plt.tight_layout()
-        out = output_dir / "rank_prediction.png"
+        out = output_dir / filename
         fig.savefig(out, bbox_inches="tight")
         if run is not None:
-            run.log({"rank_prediction": wandb.Image(str(out))})
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
         plt.close(fig)
     print(f"  Saved {out}")
 
@@ -478,12 +485,20 @@ def main(
     # ── Plots ──────────────────────────────────────────────────────
     print("\n=== Generating figures ===")
     nn = df["nn_dist_icl"].values
-    rk = df["rank"].values
-    nn_t4 = nn_dists_t4
+    rk = df["rank"].values.astype(float)
+    auc = df["AUC"].values.astype(float)
+    nn_fm = nn_dists_t4   # FM distances (reuse variable)
 
-    plot_histogram_with_rank(nn, rk, output_dir, run, n_bins, nn_dists_t4=nn_t4)
-    corr = plot_rank_vs_distance(nn, rk, output_dir, run)
-    pred = plot_rank_prediction(nn, rk, output_dir, run)
+    plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
+                               output_dir, run, n_bins, nn_dists_fm=nn_fm, invert_y=True)
+    plot_histogram_with_metric(nn, auc, "AUC", "auc_vs_nndist_histogram.png",
+                               output_dir, run, n_bins, nn_dists_fm=nn_fm, invert_y=False)
+
+    corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
+    plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
+
+    pred = plot_metric_prediction(nn, rk, "rank", "rank_prediction.png", output_dir, run)
+    plot_metric_prediction(nn, auc, "AUC", "auc_prediction.png", output_dir, run)
 
     # ── Summary ────────────────────────────────────────────────────
     print("\n=== Results ===")

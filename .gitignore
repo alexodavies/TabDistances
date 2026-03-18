@@ -44,3 +44,5 @@ t4.zip
 
 benchmark_dataset.zip
 data/
+results/rank-coverage/*.png
+results/rank-coverage/*.pdf
