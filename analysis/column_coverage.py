@@ -562,7 +562,9 @@ def main(
     # ── Rank / AUC analysis at column level ────────────────────────
     # Each column inherits its parent dataset's tabicl rank and AUC.
     # Use TALENT→FM distances as the primary NN distance (fall back to T4).
-    col_nn = nn_pairs.get("talent_to_fm") or nn_pairs.get("talent_to_t4")
+    _fm = nn_pairs.get("talent_to_fm")
+    _t4 = nn_pairs.get("talent_to_t4")
+    col_nn = _fm if _fm is not None else _t4
     if col_nn is not None:
         print("\n=== Rank / AUC analysis (column level) ===")
         col_ranks = np.array([rank_map[ds]["rank"] for ds in col_datasets
