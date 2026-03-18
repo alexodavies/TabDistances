@@ -89,7 +89,7 @@ _PAPER_RC = {
     "xtick.labelsize": 7,
     "ytick.labelsize": 7,
     "legend.fontsize": 7,
-    "lines.linewidth": 0.9,
+    "lines.linewidth": 4,
     "figure.dpi":      300,
 }
 
@@ -281,21 +281,21 @@ def plot_histogram_with_metric(
         fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
 
         ax1.stairs(icl_density, bins, fill=True, alpha=0.2,
-                   color=_BLUE, linewidth=2.0, label="TALENT datasets")
+                   color=_BLUE, linewidth=4.0, label="TALENT datasets")
 
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
             fm_density = fm_counts / (fm_counts.sum() * bin_w)
             ax1.stairs(fm_density, bins, fill=True, alpha=0.2,
-                       color=_ORANGE, linewidth=2.0, label="Curated (FM) tables")
+                       color=_ORANGE, linewidth=4.0, label="Curated (FM) tables")
 
         if nn_dists_t4 is not None:
             t4_idx = np.clip(np.digitize(nn_dists_t4, bins) - 1, 0, n_bins - 1)
             t4_counts = np.array([(t4_idx == i).sum() for i in range(n_bins)])
             t4_density = t4_counts / (t4_counts.sum() * bin_w)
             ax1.stairs(t4_density, bins, fill=True, alpha=0.2,
-                       color=_GREEN, linewidth=2.0, label="Web-Scraped (T4)")
+                       color=_GREEN, linewidth=4.0, label="Web-Scraped (T4)")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
         ax1.set_ylabel("Density")

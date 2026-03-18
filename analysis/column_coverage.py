@@ -38,7 +38,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from scipy import stats
 from sklearn.decomposition import PCA
+from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import BallTree
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
@@ -92,14 +94,17 @@ def load_talent_col_hists(
     talent_dir: Path,
     datasets: list[str],
     cache_path: Path,
-) -> np.ndarray:
-    """Return (N_cols, 30) histogram array for all TALENT numeric columns."""
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return (hists, col_datasets) where hists is (N_cols, 30) and
+    col_datasets is (N_cols,) string array of the parent dataset name."""
     if cache_path.exists():
-        arr = np.load(cache_path)["hists"]
-        print(f"  Loaded {len(arr)} TALENT column histograms from cache")
-        return arr
+        data = np.load(cache_path, allow_pickle=True)
+        hists = data["hists"]
+        col_datasets = data["col_datasets"]
+        print(f"  Loaded {len(hists)} TALENT column histograms from cache")
+        return hists, col_datasets
 
-    hists = []
+    hists, col_datasets = [], []
     skipped_datasets = 0
     for ds in tqdm(datasets, desc="TALENT columns"):
         ds_path = talent_dir / ds
@@ -119,15 +124,16 @@ def load_talent_col_hists(
             continue
         data = np.concatenate(parts, axis=0)[:MAX_ROWS]
         for i in range(data.shape[1]):
-            h = get_histogram(pd.Series(data[:, i]))
-            hists.append(h)
+            hists.append(get_histogram(pd.Series(data[:, i])))
+            col_datasets.append(ds)
 
     print(f"  Computed {len(hists)} TALENT column histograms ({skipped_datasets} datasets skipped)")
-    arr = np.array(hists)
+    hists_arr = np.array(hists)
+    col_datasets_arr = np.array(col_datasets)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(cache_path, hists=arr)
+    np.savez(cache_path, hists=hists_arr, col_datasets=col_datasets_arr)
     print(f"  Cached -> {cache_path}")
-    return arr
+    return hists_arr, col_datasets_arr
 
 
 # ------------------------------------------------------------------
@@ -349,6 +355,131 @@ def plot_nn_distance_densities(
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
+
+_BLUE   = "#2980b9"
+_ORANGE = "#e67e22"
+_GREEN  = "#27ae60"
+
+
+def _plot_metric_histogram(
+    nn_dists: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_dir: Path,
+    run=None,
+    n_bins: int = 30,
+    invert_y: bool = False,
+) -> None:
+    """NN-distance density histogram (left y) with mean metric ± 1 SD per bin (right y)."""
+    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    bin_w = bins[1] - bins[0]
+    idx = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
+    counts = np.array([(idx == i).sum() for i in range(n_bins)])
+    density = counts / (counts.sum() * bin_w)
+    bin_means = np.array([y_vals[idx == i].mean() if (idx == i).sum() > 0 else np.nan for i in range(n_bins)])
+    bin_stds  = np.array([y_vals[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n_bins)])
+
+    with mpl.rc_context(_PAPER_RC):
+        fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
+        ax1.stairs(density, bins, fill=True, alpha=0.2, color=_BLUE, linewidth=2.0, label="TALENT columns")
+        ax1.set_xlabel("Mean k-NN distance (normalised)")
+        ax1.set_ylabel("Density")
+        ax2 = ax1.twinx()
+        mask = ~np.isnan(bin_means)
+        ax2.plot(bin_centers[mask], bin_means[mask], color=_GREEN, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
+        ax2.fill_between(bin_centers[mask], (bin_means - bin_stds)[mask], (bin_means + bin_stds)[mask],
+                         color=_GREEN, alpha=0.25)
+        if invert_y:
+            ax2.invert_yaxis()
+        ax2.set_ylabel(f"TabICL mean {y_label}", color=_GREEN)
+        ax2.tick_params(axis="y", labelcolor=_GREEN)
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+        plt.title(f"Column NN Distance vs {y_label}")
+        plt.tight_layout()
+        out = output_dir / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+
+
+def _plot_metric_scatter(
+    nn_dists: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_dir: Path,
+    run=None,
+) -> dict:
+    """Scatter of metric vs NN distance with Pearson r and Spearman ρ."""
+    r_p, p_p = stats.pearsonr(nn_dists, y_vals)
+    r_s, p_s = stats.spearmanr(nn_dists, y_vals)
+    m, b = np.polyfit(nn_dists, y_vals.astype(float), 1)
+    xs = np.linspace(nn_dists.min(), nn_dists.max(), 200)
+    with mpl.rc_context(_PAPER_RC):
+        fig, ax = plt.subplots(figsize=(5.5, 4.0))
+        ax.scatter(nn_dists, y_vals, alpha=0.3, s=8, color=_BLUE, linewidths=0, zorder=3)
+        ax.plot(xs, m * xs + b, color=_ORANGE, lw=1.5, label="Linear fit", zorder=4)
+        ax.set_xlabel("Mean k-NN distance (normalised)")
+        ax.set_ylabel(f"TabICL {y_label}")
+        ax.set_title(
+            f"{y_label} vs column NN distance\n"
+            f"Pearson r = {r_p:.3f} (p = {p_p:.3f})   Spearman ρ = {r_s:.3f} (p = {p_s:.3f})"
+        )
+        ax.legend()
+        plt.tight_layout()
+        out = output_dir / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+    return {"pearson_r": r_p, "pearson_p": p_p, "spearman_r": r_s, "spearman_p": p_s}
+
+
+def _plot_metric_prediction(
+    nn_dists: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_dir: Path,
+    run=None,
+) -> dict:
+    """Linear regression: metric ~ column NN distance."""
+    X = nn_dists.reshape(-1, 1)
+    y = y_vals.astype(float)
+    model = LinearRegression().fit(X, y)
+    y_pred = model.predict(X)
+    r2 = model.score(X, y)
+    residuals = y - y_pred
+    with mpl.rc_context(_PAPER_RC):
+        fig, axes = plt.subplots(1, 2, figsize=(6.5, 3.2))
+        lo, hi = y.min(), y.max()
+        axes[0].scatter(y, y_pred, alpha=0.3, s=8, color=_GREEN, linewidths=0)
+        axes[0].plot([lo, hi], [lo, hi], "k--", lw=0.8, label="Perfect fit")
+        axes[0].set_xlabel(f"Actual {y_label}")
+        axes[0].set_ylabel(f"Predicted {y_label}")
+        axes[0].set_title(f"Linear Regression  R² = {r2:.3f}")
+        axes[0].legend()
+        axes[1].scatter(y_pred, residuals, alpha=0.3, s=8, color=_ORANGE, linewidths=0)
+        axes[1].axhline(0, color="k", lw=0.8)
+        axes[1].set_xlabel(f"Predicted {y_label}")
+        axes[1].set_ylabel("Residual")
+        axes[1].set_title("Residuals")
+        plt.tight_layout()
+        out = output_dir / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+    return {"r2": r2, "coef": float(model.coef_[0]), "intercept": float(model.intercept_)}
+
 
 def main(
     talent_dir: Path,
