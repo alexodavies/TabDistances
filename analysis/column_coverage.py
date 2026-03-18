@@ -406,7 +406,7 @@ def _plot_metric_histogram(
 
     idx = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
     counts = np.array([(idx == i).sum() for i in range(n_bins)])
-    density = counts / (counts.sum() * bin_w)
+    density = counts / counts.max()
     bin_means = np.array([y_vals[idx == i].mean() if (idx == i).sum() > 0 else np.nan for i in range(n_bins)])
     bin_stds  = np.array([y_vals[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n_bins)])
 
@@ -416,18 +416,19 @@ def _plot_metric_histogram(
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, fm_counts / (fm_counts.sum() * bin_w), bins, _ORANGE, _LABELS["fm"], alpha_fill=0.15)
+            _stairs(ax1, fm_counts / fm_counts.max(), bins, _ORANGE, _LABELS["fm"], alpha_fill=0.15)
         if nn_dists_icl_self is not None:
             si_idx = np.clip(np.digitize(nn_dists_icl_self, bins) - 1, 0, n_bins - 1)
             si_counts = np.array([(si_idx == i).sum() for i in range(n_bins)])
-            _stairs(ax1, si_counts / (si_counts.sum() * bin_w), bins, _PURPLE, "TabICL Prior (self)", alpha_fill=0.15)
+            _stairs(ax1, si_counts / si_counts.max(), bins, _PURPLE, "TabICL Prior (self)", alpha_fill=0.15)
         ax1.set_xlabel("Mean k-NN distance (normalised)")
-        ax1.set_ylabel("Density")
+        ax1.set_ylabel("Relative density")
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
+        lo = np.clip(bin_means - bin_stds, 1, None) if invert_y else bin_means - bin_stds
+        hi = bin_means + bin_stds
         ax2.plot(bin_centers[mask], bin_means[mask], color=_RED, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
-        ax2.fill_between(bin_centers[mask], (bin_means - bin_stds)[mask], (bin_means + bin_stds)[mask],
-                         color=_RED, alpha=0.25)
+        ax2.fill_between(bin_centers[mask], lo[mask], hi[mask], color=_RED, alpha=0.25)
         if invert_y:
             ax2.invert_yaxis()
         ax2.set_ylabel(f"TabICL mean {y_label}", color=_RED)

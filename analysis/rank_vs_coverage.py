@@ -278,7 +278,7 @@ def plot_histogram_with_metric(
 
     icl_idx = np.clip(np.digitize(nn_dists_icl, bins) - 1, 0, n_bins - 1)
     icl_counts = np.array([(icl_idx == i).sum() for i in range(n_bins)])
-    icl_density = icl_counts / (icl_counts.sum() * bin_w)
+    icl_density = icl_counts / icl_counts.max()
     bin_means  = np.array([
         y_vals[icl_idx == i].mean() if (icl_idx == i).sum() > 0 else np.nan
         for i in range(n_bins)
@@ -296,32 +296,27 @@ def plot_histogram_with_metric(
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
             fm_counts = np.array([(fm_idx == i).sum() for i in range(n_bins)])
-            fm_density = fm_counts / (fm_counts.sum() * bin_w)
-            _stairs(ax1, fm_density, bins, _ORANGE, "Curated (FM) tables")
+            _stairs(ax1, fm_counts / fm_counts.max(), bins, _ORANGE, "Curated (FM) tables")
 
         if nn_dists_icl_self is not None:
             si_idx = np.clip(np.digitize(nn_dists_icl_self, bins) - 1, 0, n_bins - 1)
             si_counts = np.array([(si_idx == i).sum() for i in range(n_bins)])
-            si_density = si_counts / (si_counts.sum() * bin_w)
-            _stairs(ax1, si_density, bins, _PURPLE, "TabICL Prior (self)")
+            _stairs(ax1, si_counts / si_counts.max(), bins, _PURPLE, "TabICL Prior (self)")
 
         ax1.set_xlabel("Mean k-NN distance (normalised)")
-        ax1.set_ylabel("Density")
+        ax1.set_ylabel("Relative density")
 
         ax2 = ax1.twinx()
         mask = ~np.isnan(bin_means)
+        lo = np.clip(bin_means - bin_stds, 1, None) if invert_y else bin_means - bin_stds
+        hi = bin_means + bin_stds
         ax2.plot(bin_centers[mask], bin_means[mask],
                  color=_RED, lw=1.5, marker="o", ms=4, label=f"Mean {y_label}")
-        ax2.fill_between(
-            bin_centers[mask],
-            (bin_means - bin_stds)[mask],
-            (bin_means + bin_stds)[mask],
-            color=_RED, alpha=0.25,
-        )
+        ax2.fill_between(bin_centers[mask], lo[mask], hi[mask], color=_RED, alpha=0.25)
         if invert_y:
             ax2.invert_yaxis()
-        ax2.set_ylabel(f"TabICL mean {y_label}", color=_GREEN)
-        ax2.tick_params(axis="y", labelcolor=_GREEN)
+        ax2.set_ylabel(f"TabICL mean {y_label}", color=_RED)
+        ax2.tick_params(axis="y", labelcolor=_RED)
 
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
