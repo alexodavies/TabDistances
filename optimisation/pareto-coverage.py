@@ -271,16 +271,22 @@ def run_pareto_restart(
     restart_idx: int,
     out_csv: Path,
     run=None,
+    all_points: list | None = None,
 ) -> pd.DataFrame:
     """One NSGA-II restart.  Appends all trials to *out_csv* immediately."""
     seed = RANDOM_STATE + restart_idx * 1000
-    _live_points: list = []
+    if all_points is None:
+        all_points = []
+    _best: list = [0.0, 0.0, 0.5, 0.0]  # [recall, precision, auc, score]
+
     def objective(trial: optuna.Trial) -> tuple:
         params = make_params(trial)
         trial_seed = seed + trial.number
         recall, precision, auc = evaluate(params, real_feats, trial_seed)
         score = combined_score(recall, precision, auc)
-        _live_points.append([recall, precision, auc])
+        all_points.append([recall, precision, auc])
+        if score > _best[3]:
+            _best[:] = [recall, precision, auc, score]
 
         print(f"  [r{restart_idx+1:03d}|t{trial.number:03d}] "
               f"Recall={recall:.4f}  Precision={precision:.4f}  auc={auc:.4f}  score={score:.4f}")
@@ -295,24 +301,6 @@ def run_pareto_restart(
         pd.DataFrame([row]).to_csv(
             out_csv, mode="a", header=not out_csv.exists(), index=False
         )
-
-        if run is not None:
-            scatter_table = wandb.Table(
-                data=_live_points, columns=["Recall", "Precision", "AUC"]
-            )
-            run.log({
-                "restart":                         restart_idx,
-                "A":                               source_name,
-                "B":                               "tabicl",
-                f"{source_name}/score":            score,
-                f"{source_name}/discriminator_auc": auc,
-                f"{source_name}/recall":           recall,
-                f"{source_name}/precision":        precision,
-                f"{source_name}/coverage_scatter": wandb.plot.scatter(
-                    scatter_table, "Recall", "Precision",
-                    title=f"Pareto — {source_name}",
-                ),
-            })
         return recall, precision
 
     study = optuna.create_study(
@@ -321,6 +309,29 @@ def run_pareto_restart(
     )
     study.optimize(objective, n_trials=N_TRIALS)
     print(f"  Restart {restart_idx+1} done.")
+
+    if run is not None:
+        tbl = wandb.Table(data=all_points, columns=["Recall", "Precision", "AUC"])
+        run.log({
+            "restart":                          restart_idx,
+            f"{source_name}/score":             _best[3],
+            f"{source_name}/recall":            _best[0],
+            f"{source_name}/precision":         _best[1],
+            f"{source_name}/discriminator_auc": _best[2],
+            f"{source_name}/recall_vs_precision": wandb.plot.scatter(
+                tbl, "Recall", "Precision",
+                title=f"Recall vs Precision — {source_name}",
+            ),
+            f"{source_name}/recall_vs_auc": wandb.plot.scatter(
+                tbl, "Recall", "AUC",
+                title=f"Recall vs AUC — {source_name}",
+            ),
+            f"{source_name}/precision_vs_auc": wandb.plot.scatter(
+                tbl, "Precision", "AUC",
+                title=f"Precision vs AUC — {source_name}",
+            ),
+        })
+
     return pd.read_csv(out_csv).query(f"restart == {restart_idx}")
 
 
@@ -341,9 +352,10 @@ def run_pareto_study(
         out_csv.unlink()
     print(f"  Live results -> {out_csv}")
 
+    all_points: list = []
     for r in range(N_RESTARTS_PARETO):
         print(f"\n  ===== Restart {r+1}/{N_RESTARTS_PARETO} =====")
-        run_pareto_restart(source_name, real_feats, r, out_csv, run=run)
+        run_pareto_restart(source_name, real_feats, r, out_csv, run=run, all_points=all_points)
 
     # Load full results and compute global Pareto front
     df = pd.read_csv(out_csv)
@@ -469,8 +481,12 @@ if __name__ == "__main__":
         df = run_pareto_study(source_name, real_feats, run=run)
 
         if run is not None:
-            rename = {"recall": "Recall", "precision": "Precision"}
-            run.log({f"{source_name}/results_table": wandb.Table(dataframe=df.rename(columns=rename))})
+            cols = ["restart", "trial", "recall", "precision", "discriminator_auc", "score", "is_pareto"]
+            rename = {"recall": "Recall", "precision": "Precision",
+                      "discriminator_auc": "AUC", "is_pareto": "Pareto"}
+            run.log({f"{source_name}/results_table": wandb.Table(
+                dataframe=df[cols].rename(columns=rename)
+            )})
             run.summary[f"{source_name}/n_pareto"] = int(df["is_pareto"].sum())
 
         log_plots(df, source_name, run)
