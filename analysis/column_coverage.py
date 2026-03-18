@@ -491,14 +491,20 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(RANDOM_STATE)
 
-    # ── Rankings → dataset list ────────────────────────────────────
+    # ── Rankings ───────────────────────────────────────────────────
     rankings = pd.read_csv(RANKINGS_CSV)
-    datasets = rankings["dataset"].unique().tolist()
+    tabicl_ranks = (
+        rankings[rankings["model"] == "tabicl"][["dataset", "rank", "AUC"]]
+        .copy()
+    )
+    tabicl_ranks["rank"] = tabicl_ranks["rank"].astype(int)
+    datasets = tabicl_ranks["dataset"].tolist()
+    rank_map = tabicl_ranks.set_index("dataset")[["rank", "AUC"]].to_dict("index")
     print(f"\n=== TALENT: {len(datasets)} datasets ===")
 
     # ── TALENT column histograms ───────────────────────────────────
     talent_cache = CACHE_DIR / "talent_col_hists.npz"
-    talent_hists = load_talent_col_hists(talent_dir, datasets, talent_cache)
+    talent_hists, col_datasets = load_talent_col_hists(talent_dir, datasets, talent_cache)
     n_talent = len(talent_hists)
     print(f"  {n_talent} TALENT numeric columns")
 
@@ -545,6 +551,43 @@ def main(
         nn_pairs["fm_to_t4"] = compute_nn_distances(fm_hists, t4_hists, k)
 
     plot_nn_distance_densities(nn_pairs, output_dir, run)
+
+    # ── Rank / AUC analysis at column level ────────────────────────
+    # Each column inherits its parent dataset's tabicl rank and AUC.
+    # Use TALENT→FM distances as the primary NN distance (fall back to T4).
+    col_nn = nn_pairs.get("talent_to_fm") or nn_pairs.get("talent_to_t4")
+    if col_nn is not None:
+        print("\n=== Rank / AUC analysis (column level) ===")
+        col_ranks = np.array([rank_map[ds]["rank"] for ds in col_datasets
+                              if ds in rank_map], dtype=float)
+        col_aucs  = np.array([rank_map[ds]["AUC"]  for ds in col_datasets
+                              if ds in rank_map], dtype=float)
+        mask = np.array([ds in rank_map for ds in col_datasets])
+        col_nn_masked = col_nn[mask]
+
+        ref_label = "FM" if "talent_to_fm" in nn_pairs else "T4"
+        _plot_metric_histogram(col_nn_masked, col_ranks, "rank (lower = better)",
+                               "col_rank_vs_nndist_histogram.png", output_dir, run,
+                               invert_y=True)
+        _plot_metric_histogram(col_nn_masked, col_aucs, "AUC",
+                               "col_auc_vs_nndist_histogram.png", output_dir, run)
+        corr = _plot_metric_scatter(col_nn_masked, col_ranks, f"rank (TALENT→{ref_label})",
+                                    "col_rank_vs_nndist_scatter.png", output_dir, run)
+        _plot_metric_scatter(col_nn_masked, col_aucs, f"AUC (TALENT→{ref_label})",
+                             "col_auc_vs_nndist_scatter.png", output_dir, run)
+        pred = _plot_metric_prediction(col_nn_masked, col_ranks, "rank",
+                                       "col_rank_prediction.png", output_dir, run)
+        _plot_metric_prediction(col_nn_masked, col_aucs, "AUC",
+                                "col_auc_prediction.png", output_dir, run)
+
+        print(f"\n=== Results (column level, n={mask.sum()} cols) ===")
+        print(f"  Pearson  r : {corr['pearson_r']:.3f}  (p = {corr['pearson_p']:.4f})")
+        print(f"  Spearman ρ : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
+        print(f"  Linear R²  : {pred['r2']:.3f}")
+
+        if run is not None:
+            run.log({"col_pearson_r": corr["pearson_r"], "col_spearman_r": corr["spearman_r"],
+                     "col_linear_r2": pred["r2"]})
 
     if run is not None:
         run.finish()
