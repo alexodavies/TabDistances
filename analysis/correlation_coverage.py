@@ -537,12 +537,15 @@ def main(
 
     # ── Rankings ───────────────────────────────────────────────────
     rankings = pd.read_csv(RANKINGS_CSV)
+    mean_aucs = rankings.groupby("dataset")["AUC"].mean().rename("mean_AUC")
     tabicl_ranks = (
         rankings[rankings["model"] == "tabicl"][["dataset", "rank", "AUC"]].copy()
     )
     tabicl_ranks["rank"] = tabicl_ranks["rank"].astype(int)
+    tabicl_ranks = tabicl_ranks.merge(mean_aucs, on="dataset")
+    tabicl_ranks["relative_auc"] = tabicl_ranks["AUC"] / tabicl_ranks["mean_AUC"]
     datasets = tabicl_ranks["dataset"].tolist()
-    rank_map = tabicl_ranks.set_index("dataset")[["rank", "AUC"]].to_dict("index")
+    rank_map = tabicl_ranks.set_index("dataset")[["rank", "AUC", "relative_auc"]].to_dict("index")
     print(f"\n=== TALENT: {len(datasets)} datasets ===")
 
     # ── TALENT ─────────────────────────────────────────────────────
@@ -624,9 +627,10 @@ def main(
             print("  No datasets matched to rankings — skipping rank/AUC plots")
         else:
             ds_names, nn_vals, rk_vals, auc_vals = zip(*matched)
-            nn_arr  = np.array(nn_vals)
-            rk_arr  = np.array(rk_vals, dtype=float)
-            auc_arr = np.array(auc_vals, dtype=float)
+            nn_arr   = np.array(nn_vals)
+            rk_arr   = np.array(rk_vals, dtype=float)
+            auc_arr  = np.array(auc_vals, dtype=float)
+            rel_auc_arr = np.array([rank_map[ds]["relative_auc"] for ds in ds_names], dtype=float)
             fm_arr  = np.array([fm_dict[ds] for ds in ds_names]) if fm_dict else None
 
             # ICL self-distances
@@ -648,25 +652,39 @@ def main(
             _plot_metric_histogram(nn_arr, auc_arr, "AUC",
                                    "corr_auc_vs_nndist_histogram.png", output_dir, run,
                                    nn_dists_fm=fm_arr, nn_dists_icl_self=icl_self_dists)
+            _plot_metric_histogram(nn_arr, rel_auc_arr, "relative AUC",
+                                   "corr_relative_auc_vs_nndist_histogram.png", output_dir, run,
+                                   nn_dists_fm=fm_arr, nn_dists_icl_self=icl_self_dists)
 
             corr = _plot_metric_scatter(nn_arr, rk_arr, f"rank (TALENT $\\in$ {ref_label})",
                                         "corr_rank_vs_nndist_scatter.png", output_dir, run)
             _plot_metric_scatter(nn_arr, auc_arr, f"AUC (TALENT $\\in$ {ref_label})",
                                  "corr_auc_vs_nndist_scatter.png", output_dir, run)
+            corr_rel = _plot_metric_scatter(nn_arr, rel_auc_arr,
+                                            f"relative AUC (TALENT $\\in$ {ref_label})",
+                                            "corr_relative_auc_vs_nndist_scatter.png", output_dir, run)
             pred = _plot_metric_prediction(nn_arr, rk_arr, "rank",
                                            "corr_rank_prediction.png", output_dir, run)
             _plot_metric_prediction(nn_arr, auc_arr, "AUC",
                                     "corr_auc_prediction.png", output_dir, run)
+            pred_rel = _plot_metric_prediction(nn_arr, rel_auc_arr, "relative AUC",
+                                               "corr_relative_auc_prediction.png", output_dir, run)
 
             print(f"\n=== Results (n={len(nn_arr)} datasets) ===")
-            print(f"  Pearson  r : {corr['pearson_r']:.3f}  (p = {corr['pearson_p']:.4f})")
-            print(f"  Spearman ρ : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
-            print(f"  Linear R²  : {pred['r2']:.3f}")
+            print(f"  Pearson  r (rank)         : {corr['pearson_r']:.3f}  (p = {corr['pearson_p']:.4f})")
+            print(f"  Spearman ρ (rank)         : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
+            print(f"  Linear R²  (rank)         : {pred['r2']:.3f}")
+            print(f"  Pearson  r (relative AUC) : {corr_rel['pearson_r']:.3f}  (p = {corr_rel['pearson_p']:.4f})")
+            print(f"  Spearman ρ (relative AUC) : {corr_rel['spearman_r']:.3f}  (p = {corr_rel['spearman_p']:.4f})")
+            print(f"  Linear R²  (relative AUC) : {pred_rel['r2']:.3f}")
 
             if run is not None:
                 run.log({"corr_pearson_r": corr["pearson_r"],
                          "corr_spearman_r": corr["spearman_r"],
-                         "corr_linear_r2": pred["r2"]})
+                         "corr_linear_r2": pred["r2"],
+                         "corr_rel_pearson_r": corr_rel["pearson_r"],
+                         "corr_rel_spearman_r": corr_rel["spearman_r"],
+                         "corr_rel_linear_r2": pred_rel["r2"]})
 
     if run is not None:
         run.finish()

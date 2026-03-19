@@ -446,11 +446,14 @@ def main(
 
     # ── Rankings ───────────────────────────────────────────────────
     rankings = pd.read_csv(RANKINGS_CSV)
+    mean_aucs = rankings.groupby("dataset")["AUC"].mean().rename("mean_AUC")
     tabicl_ranks = (
         rankings[rankings["model"] == "tabicl"][["dataset", "rank", "AUC"]]
         .copy()
     )
     tabicl_ranks["rank"] = tabicl_ranks["rank"].astype(int)
+    tabicl_ranks = tabicl_ranks.merge(mean_aucs, on="dataset")
+    tabicl_ranks["relative_auc"] = tabicl_ranks["AUC"] / tabicl_ranks["mean_AUC"]
     datasets = tabicl_ranks["dataset"].tolist()
     print(f"\n=== Rankings: {len(datasets)} datasets with tabicl entries ===")
 
@@ -518,35 +521,52 @@ def main(
     nn = df["nn_dist_icl"].values
     rk = df["rank"].values.astype(float)
     auc = df["AUC"].values.astype(float)
+    rel_auc = df["relative_auc"].values.astype(float)
     plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
                                nn_dists_icl_self=nn_dists_icl_self, invert_y=True)
     plot_histogram_with_metric(nn, auc, "AUC", "auc_vs_nndist_histogram.png",
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
                                nn_dists_icl_self=nn_dists_icl_self, invert_y=False)
+    plot_histogram_with_metric(nn, rel_auc, "relative AUC", "relative_auc_vs_nndist_histogram.png",
+                               output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
+                               nn_dists_icl_self=nn_dists_icl_self, invert_y=False)
 
     corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
     plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
+    corr_rel = plot_metric_vs_distance(nn, rel_auc, "relative AUC", "relative_auc_vs_nndist_scatter.png", output_dir, run)
 
     pred = plot_metric_prediction(nn, rk, "rank", "rank_prediction.png", output_dir, run)
     plot_metric_prediction(nn, auc, "AUC", "auc_prediction.png", output_dir, run)
+    pred_rel = plot_metric_prediction(nn, rel_auc, "relative AUC", "relative_auc_prediction.png", output_dir, run)
 
     # ── Summary ────────────────────────────────────────────────────
-    print("\n=== Results ===")
+    print("\n=== Results (rank) ===")
     print(f"  n datasets       : {len(df)}")
     print(f"  Pearson  r       : {corr['pearson_r']:.3f}  (p = {corr['pearson_p']:.4f})")
     print(f"  Spearman ρ       : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
     print(f"  Linear R²        : {pred['r2']:.3f}")
     print(f"  Linear coef      : {pred['coef']:.4f}  (intercept = {pred['intercept']:.4f})")
+    print("\n=== Results (relative AUC = AUC(tabicl)/mean(all AUCs)) ===")
+    print(f"  Pearson  r       : {corr_rel['pearson_r']:.3f}  (p = {corr_rel['pearson_p']:.4f})")
+    print(f"  Spearman ρ       : {corr_rel['spearman_r']:.3f}  (p = {corr_rel['spearman_p']:.4f})")
+    print(f"  Linear R²        : {pred_rel['r2']:.3f}")
+    print(f"  Linear coef      : {pred_rel['coef']:.4f}  (intercept = {pred_rel['intercept']:.4f})")
 
     if run is not None:
         run.log({
-            "pearson_r":   corr["pearson_r"],
-            "pearson_p":   corr["pearson_p"],
-            "spearman_r":  corr["spearman_r"],
-            "spearman_p":  corr["spearman_p"],
-            "linear_r2":   pred["r2"],
-            "linear_coef": pred["coef"],
+            "pearson_r":       corr["pearson_r"],
+            "pearson_p":       corr["pearson_p"],
+            "spearman_r":      corr["spearman_r"],
+            "spearman_p":      corr["spearman_p"],
+            "linear_r2":       pred["r2"],
+            "linear_coef":     pred["coef"],
+            "rel_pearson_r":   corr_rel["pearson_r"],
+            "rel_pearson_p":   corr_rel["pearson_p"],
+            "rel_spearman_r":  corr_rel["spearman_r"],
+            "rel_spearman_p":  corr_rel["spearman_p"],
+            "rel_linear_r2":   pred_rel["r2"],
+            "rel_linear_coef": pred_rel["coef"],
         })
         run.finish()
 
