@@ -85,9 +85,9 @@ def plot_graph(df, title, threshold=0.7):
 # ## Synthetic Dataset
 #
 # Known structure:
-# - `num_a` → `num_b` (linear + small noise): strong num–num edge expected
-# - `num_a` → `cat_hi_lo` (thresholded): strong num–cat edge expected
-# - `cat_hi_lo` → `cat_label` (noisy copy): strong cat–cat edge expected
+# - `num_a`  $\\in$  `num_b` (linear + small noise): strong num–num edge expected
+# - `num_a`  $\\in$  `cat_hi_lo` (thresholded): strong num–cat edge expected
+# - `cat_hi_lo`  $\\in$  `cat_label` (noisy copy): strong cat–cat edge expected
 # - `num_free`: independent noise — no strong edges expected
 # - `cat_random`: independent random category — no strong edges expected
 # ---------------------------------------------------------------------------
@@ -100,22 +100,22 @@ def make_synthetic(n=300, seed=0):
     # num_a: base signal
     num_a = rng.normal(size=n)
 
-    # num_b: linear function of num_a + small noise  →  strong num–num
+    # num_b: linear function of num_a + small noise   $\\in$   strong num–num
     num_b = 2.0 * num_a + rng.normal(scale=0.2, size=n)
 
-    # num_free: pure noise  →  no strong edges
+    # num_free: pure noise   $\\in$   no strong edges
     num_free = rng.normal(size=n)
 
-    # cat_hi_lo: thresholded on num_a  →  strong num–cat
+    # cat_hi_lo: thresholded on num_a   $\\in$   strong num–cat
     cat_hi_lo = pd.Categorical(np.where(num_a > 0, "high", "low"))
 
-    # cat_label: noisy copy of cat_hi_lo  →  strong cat–cat
+    # cat_label: noisy copy of cat_hi_lo   $\\in$   strong cat–cat
     flip = rng.random(size=n) < 0.05          # flip 5 % of labels
     raw = np.where(num_a > 0, "high", "low")
     raw[flip] = np.where(raw[flip] == "high", "low", "high")
     cat_label = pd.Categorical(raw)
 
-    # cat_random: independent  →  no strong edges
+    # cat_random: independent   $\\in$   no strong edges
     cat_random = pd.Categorical(rng.choice(["x", "y", "z"], size=n))
 
     return pd.DataFrame({

@@ -207,7 +207,7 @@ def _draw_coverage_dists(ax, real_to_synth: np.ndarray, synth_internal: np.ndarr
     ax.hist(synth_internal.mean(axis=1), bins=50, alpha=0.6,
             color="steelblue", label=f"within-{label_cand}", edgecolor="white")
     ax.hist(real_to_synth, bins=50, alpha=0.6,
-            color="salmon", label=f"{label_ref} → nearest {label_cand}", edgecolor="white")
+            color="salmon", label=f"{label_ref}  $\\in$  nearest {label_cand}", edgecolor="white")
     ax.axvline(threshold, color="black", linestyle="--",
                label=f"threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f}): {threshold:.3f}")
     ax.set_xlabel(f"Mean {KNN_K}-NN distance (normalised)")
@@ -375,7 +375,7 @@ def analyse_coverage(real: np.ndarray, synth: np.ndarray, run,
     covered_fraction = 1.0 - (real_to_synth > threshold).mean()
     print(f"  Coverage threshold (p{COVERAGE_THRESHOLD_QUANTILE*100:.0f} within-{label_cand}): {threshold:.4f}")
     print(f"  Fraction of {label_ref} samples covered: {covered_fraction:.3f}")
-    print(f"  Median {label_ref}→{label_cand} distance: {np.median(real_to_synth):.4f}")
+    print(f"  Median {label_ref} $\\in$ {label_cand} distance: {np.median(real_to_synth):.4f}")
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     _draw_coverage_dists(axes[0], real_to_synth, synth_internal, threshold, tag,

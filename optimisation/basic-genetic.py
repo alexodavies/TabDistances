@@ -227,7 +227,7 @@ def run_ga(source_name: str, real_dfs: list) -> tuple[dict, float]:
                 continue
             print(f"\n  Individual {idx + 1}/{POP_SIZE}: {ind}")
             fitnesses[idx] = evaluate({**ind, **fixed_params}, real_dfs)
-            print(f"  → AUC = {fitnesses[idx]:.4f}")
+            print(f"   $\\in$  AUC = {fitnesses[idx]:.4f}")
 
             if fitnesses[idx] < best_fit:
                 best_fit    = fitnesses[idx]

@@ -162,7 +162,7 @@ for ax, sc in zip(axes, scenarios):
     cov_fwd = (~uncovered).mean()
     cov_rev = (~uncovered_synth).mean()
     ax.set_aspect('equal', adjustable='box')
-    ax.set_title(f"{sc['title']}\nA→B={cov_fwd:.1%}  B→A={cov_rev:.1%}")
+    ax.set_title(f"{sc['title']}\nA $\\in$ B={cov_fwd:.1%}  B $\\in$ A={cov_rev:.1%}")
     ax.set_xticks([])
     ax.set_yticks([])
 

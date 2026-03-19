@@ -9,7 +9,7 @@ Structural
   - Row / column count distributions
   - Missingness rate (fraction of missing cells)
   - Missingness structure (mean pairwise correlation of per-column missingness indicators;
-    high value → structured MNAR/MAR-like missingness, low → MCAR)
+    high value  $\\in$  structured MNAR/MAR-like missingness, low  $\\in$  MCAR)
   - Numeric-column fraction
   - Categorical-column cardinality distribution
 
@@ -352,7 +352,7 @@ def plot_distributions(
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved plot      → {output_path}")
+    print(f"  Saved plot       $\\in$  {output_path}")
 
 
 # ── Pairwise scatter / density plots ───────────────────────────────────────────
@@ -474,7 +474,7 @@ def plot_pairwise(
         )
 
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved pairwise  → {output_path}")
+    print(f"  Saved pairwise   $\\in$  {output_path}")
 
 
 # ── Column-shape embedding helpers ────────────────────────────────────────────
@@ -558,7 +558,7 @@ def plot_shape_pca(
     )
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved shape PCA  → {output_path}")
+    print(f"  Saved shape PCA   $\\in$  {output_path}")
 
 
 def plot_shape_umap(
@@ -586,7 +586,7 @@ def plot_shape_umap(
     )
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved shape UMAP → {output_path}")
+    print(f"  Saved shape UMAP  $\\in$  {output_path}")
 
 
 def plot_shape_mean_histograms(
@@ -613,7 +613,7 @@ def plot_shape_mean_histograms(
     ax.legend(fontsize=9)
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved shape mean → {output_path}")
+    print(f"  Saved shape mean  $\\in$  {output_path}")
 
 
 def plot_shape_distances(
@@ -641,7 +641,7 @@ def plot_shape_distances(
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved shape dist → {output_path}")
+    print(f"  Saved shape dist  $\\in$  {output_path}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -677,7 +677,7 @@ def main() -> None:
                 continue
             print(f"\nLoading {source_name} …")
             df = load_source_metrics(parquet_dir, source_name, MAX_TABLES, MAX_ROWS)
-            print(f"  → {len(df)} tables")
+            print(f"   $\\in$  {len(df)} tables")
             dfs.append(df)
 
         if not dfs:
@@ -696,7 +696,7 @@ def main() -> None:
 
         csv_path = "characterisation_metrics.csv"
         all_metrics.to_csv(csv_path, index=False)
-        print(f"  Saved raw data  → {csv_path}")
+        print(f"  Saved raw data   $\\in$  {csv_path}")
 
         sources     = list(SOURCES.keys())
         metric_cols = [m for m in METRIC_META if m in all_metrics.columns]
@@ -720,7 +720,7 @@ def main() -> None:
             if not parquet_dir.exists():
                 continue
             hists = load_source_shape_histograms(parquet_dir, source_name, MAX_TABLES, MAX_ROWS)
-            print(f"  → {len(hists)} column PMFs for {source_name}")
+            print(f"   $\\in$  {len(hists)} column PMFs for {source_name}")
             source_shape_hists[source_name] = hists
 
         active_shape_sources = [s for s in source_shape_hists if len(source_shape_hists[s]) > 0]

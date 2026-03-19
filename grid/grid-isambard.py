@@ -152,8 +152,8 @@ PARAM_SPACE = {
 def build_grid(granularity: int) -> list[dict]:
     """Build the parameter grid, respecting conditional relevance:
 
-    - tree_model   : irrelevant for mlp_scm  → fixed to "xgboost"
-    - mix_prob_mlp : irrelevant for mlp_scm and tree_scm → fixed to 0.5
+    - tree_model   : irrelevant for mlp_scm   $\\in$  fixed to "xgboost"
+    - mix_prob_mlp : irrelevant for mlp_scm and tree_scm  $\\in$  fixed to 0.5
 
     This avoids ~60% redundant evaluations vs a full Cartesian product.
 

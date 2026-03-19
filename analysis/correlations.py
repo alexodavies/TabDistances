@@ -68,7 +68,7 @@ def corr_pmf(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray] | tuple[None, No
     Returns (None, None) if fewer than MIN_NUMERIC_COLS numeric columns remain.
     """
     numeric = df.select_dtypes(include="number")
-    # Drop low-cardinality numeric columns (unique ratio < 0.2 → effectively categorical)
+    # Drop low-cardinality numeric columns (unique ratio < 0.2  $\\in$  effectively categorical)
     numeric = numeric.loc[:, (numeric.nunique() / max(len(numeric), 1)) >= 0.2]
     if numeric.shape[1] < MIN_NUMERIC_COLS:
         return None, None
@@ -221,7 +221,7 @@ def plot_pca(
     )
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved PCA       → {output_path}")
+    print(f"  Saved PCA        $\\in$  {output_path}")
 
 
 def plot_umap(
@@ -249,7 +249,7 @@ def plot_umap(
     )
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved UMAP      → {output_path}")
+    print(f"  Saved UMAP       $\\in$  {output_path}")
 
 
 def plot_mean_histograms(
@@ -276,7 +276,7 @@ def plot_mean_histograms(
     ax.legend(fontsize=9)
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved mean hist → {output_path}")
+    print(f"  Saved mean hist  $\\in$  {output_path}")
 
 
 def plot_distance_matrix(
@@ -312,7 +312,7 @@ def plot_distance_matrix(
 
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
-    print(f"  Saved distances → {output_path}")
+    print(f"  Saved distances  $\\in$  {output_path}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -339,7 +339,7 @@ def main() -> None:
             continue
         print(f"\nLoading {source_name} …")
         hists, pooled = load_source(parquet_dir, source_name, MAX_TABLES, MAX_ROWS)
-        print(f"  → {len(hists)} tables with ≥{MIN_NUMERIC_COLS} numeric columns")
+        print(f"   $\\in$  {len(hists)} tables with ≥{MIN_NUMERIC_COLS} numeric columns")
         source_hists[source_name]  = hists
         source_pooled[source_name] = pooled
 

@@ -14,8 +14,8 @@ Workflow
 5. Produce three outputs:
      a. Mean ± SD histogram band plot (TALENT vs FM vs T4 vs ICL).
      b. PCA of all column histograms coloured by source.
-     c. Pairwise NN-distance density histograms (TALENT→ICL, TALENT→FM,
-        TALENT→T4) using the same compute_nn_distances approach as
+     c. Pairwise NN-distance density histograms (TALENT $\\in$ ICL, TALENT $\\in$ FM,
+        TALENT $\\in$ T4) using the same compute_nn_distances approach as
         rank_vs_coverage.py.
 
 Usage
@@ -337,10 +337,10 @@ def plot_nn_distance_densities(
         "fm_to_t4":      "#7f8c8d",
     }
     pair_labels = {
-        "talent_to_icl": f"TALENT → {_LABELS['icl']}",
-        "talent_to_fm":  f"TALENT → {_LABELS['fm']}",
-        "talent_to_t4":  f"TALENT → {_LABELS['t4']}",
-        "fm_to_t4":      f"{_LABELS['fm']} → {_LABELS['t4']}",
+        "talent_to_icl": f"TALENT  $\\in$  {_LABELS['icl']}",
+        "talent_to_fm":  f"TALENT  $\\in$  {_LABELS['fm']}",
+        "talent_to_t4":  f"TALENT  $\\in$  {_LABELS['t4']}",
+        "fm_to_t4":      f"{_LABELS['fm']}  $\\in$  {_LABELS['t4']}",
     }
 
     with mpl.rc_context(_PAPER_RC):
@@ -394,7 +394,7 @@ def _plot_metric_histogram(
     """NN-distance density histogram (left y) with mean metric ± 1 SD per bin (right y).
 
     Optionally overlays FM and ICL self-distance distributions on the left axis.
-    nn_dists is the TALENT→ICL distribution used for the metric binning.
+    nn_dists is the TALENT $\\in$ ICL distribution used for the metric binning.
     """
     all_parts = [nn_dists]
     if nn_dists_fm       is not None: all_parts.append(nn_dists_fm)
@@ -638,23 +638,23 @@ def main(
     print("\n=== Computing NN distances ===")
     nn_pairs = {}
     if len(icl_hists):
-        print("  TALENT → ICL")
+        print("  TALENT  $\\in$  ICL")
         nn_pairs["talent_to_icl"] = compute_nn_distances(talent_hists, icl_hists, k)
     if len(fm_hists):
-        print("  TALENT → FM")
+        print("  TALENT  $\\in$  FM")
         nn_pairs["talent_to_fm"] = compute_nn_distances(talent_hists, fm_hists, k)
     if len(t4_hists):
-        print("  TALENT → T4")
+        print("  TALENT  $\\in$  T4")
         nn_pairs["talent_to_t4"] = compute_nn_distances(talent_hists, t4_hists, k)
     if len(fm_hists) and len(t4_hists):
-        print("  FM → T4")
+        print("  FM  $\\in$  T4")
         nn_pairs["fm_to_t4"] = compute_nn_distances(fm_hists, t4_hists, k)
 
     plot_nn_distance_densities(nn_pairs, output_dir, run)
 
     # ── Rank / AUC analysis at column level ────────────────────────
     # Each column inherits its parent dataset's tabicl rank and AUC.
-    # Use TALENT→ICL distances as primary (fall back to FM, then T4).
+    # Use TALENT $\\in$ ICL distances as primary (fall back to FM, then T4).
     _icl = nn_pairs.get("talent_to_icl")
     _fm  = nn_pairs.get("talent_to_fm")
     _t4  = nn_pairs.get("talent_to_t4")
@@ -684,9 +684,9 @@ def main(
         _plot_metric_histogram(col_nn_masked, col_aucs, "AUC",
                                "col_auc_vs_nndist_histogram.png", output_dir, run,
                                nn_dists_fm=fm_masked, nn_dists_icl_self=icl_self_dists)
-        corr = _plot_metric_scatter(col_nn_masked, col_ranks, f"rank (TALENT→{ref_label})",
+        corr = _plot_metric_scatter(col_nn_masked, col_ranks, f"rank (TALENT $\\in$ {ref_label})",
                                     "col_rank_vs_nndist_scatter.png", output_dir, run)
-        _plot_metric_scatter(col_nn_masked, col_aucs, f"AUC (TALENT→{ref_label})",
+        _plot_metric_scatter(col_nn_masked, col_aucs, f"AUC (TALENT $\\in$ {ref_label})",
                              "col_auc_vs_nndist_scatter.png", output_dir, run)
         pred = _plot_metric_prediction(col_nn_masked, col_ranks, "rank",
                                        "col_rank_prediction.png", output_dir, run)

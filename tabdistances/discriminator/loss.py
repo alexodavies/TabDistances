@@ -25,9 +25,9 @@ def combined_score(
                     (real) falls within B's 95th-percentile k-NN radius.
 
       auc_quality = (1 - discriminator_auc) * 2
-                    Realism: normalised from [0.5, 1] → [1, 0].
-                    AUC = 0.5 (indistinguishable, ideal) → auc_quality = 1.0
-                    AUC = 1.0 (easily separated, worst)  → auc_quality = 0.0
+                    Realism: normalised from [0.5, 1]  $\\in$  [1, 0].
+                    AUC = 0.5 (indistinguishable, ideal)  $\\in$  auc_quality = 1.0
+                    AUC = 1.0 (easily separated, worst)   $\\in$  auc_quality = 0.0
 
     Returns
     -------

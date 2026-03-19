@@ -28,7 +28,7 @@ _MAX_ROWS = 512   # cap per table to keep encoding fast
 
 
 class _Encoder(nn.Module):
-    """ColEmbedding → RowInteraction → mean-pool → (C*E,) table vector."""
+    """ColEmbedding  $\\in$  RowInteraction  $\\in$  mean-pool  $\\in$  (C*E,) table vector."""
 
     def __init__(
         self,

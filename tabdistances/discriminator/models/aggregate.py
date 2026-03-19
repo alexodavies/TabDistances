@@ -1,4 +1,4 @@
-"""Aggregate-feature discriminator: DataFrame → fixed vec → sklearn classifier."""
+"""Aggregate-feature discriminator: DataFrame  $\\in$  fixed vec  $\\in$  sklearn classifier."""
 
 from __future__ import annotations
 

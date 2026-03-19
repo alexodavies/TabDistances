@@ -278,7 +278,7 @@ def run_ga(source_name: str, real_feats: np.ndarray, run=None) -> tuple[dict, fl
             score, recall, precision = evaluate({**ind, **fixed_params}, real_feats)
             fitnesses[idx] = score
             eval_count += 1
-            print(f"  → score={score:.4f}  "
+            print(f"   $\\in$  score={score:.4f}  "
                   f"Recall={recall:.4f}  Precision={precision:.4f}")
 
             if score > best_coverage:

@@ -346,10 +346,10 @@ def plot_nn_distance_densities(
         "fm_to_t4":      "#7f8c8d",
     }
     pair_labels = {
-        "talent_to_icl": f"TALENT → {_LABELS['icl']}",
-        "talent_to_fm":  f"TALENT → {_LABELS['fm']}",
-        "talent_to_t4":  f"TALENT → {_LABELS['t4']}",
-        "fm_to_t4":      f"{_LABELS['fm']} → {_LABELS['t4']}",
+        "talent_to_icl": f"TALENT  $\\in$  {_LABELS['icl']}",
+        "talent_to_fm":  f"TALENT  $\\in$  {_LABELS['fm']}",
+        "talent_to_t4":  f"TALENT  $\\in$  {_LABELS['t4']}",
+        "fm_to_t4":      f"{_LABELS['fm']}  $\\in$  {_LABELS['t4']}",
     }
     with mpl.rc_context(_PAPER_RC):
         fig, ax = plt.subplots(figsize=(6.5, 3.5))
@@ -590,16 +590,16 @@ def main(
     print("\n=== Computing NN distances ===")
     nn_pairs = {}
     if len(icl_hists):
-        print("  TALENT → ICL")
+        print("  TALENT  $\\in$  ICL")
         nn_pairs["talent_to_icl"] = compute_nn_distances(talent_hists, icl_hists, k)
     if len(fm_hists):
-        print("  TALENT → FM")
+        print("  TALENT  $\\in$  FM")
         nn_pairs["talent_to_fm"] = compute_nn_distances(talent_hists, fm_hists, k)
     if len(t4_hists):
-        print("  TALENT → T4")
+        print("  TALENT  $\\in$  T4")
         nn_pairs["talent_to_t4"] = compute_nn_distances(talent_hists, t4_hists, k)
     if len(fm_hists) and len(t4_hists):
-        print("  FM → T4")
+        print("  FM  $\\in$  T4")
         nn_pairs["fm_to_t4"] = compute_nn_distances(fm_hists, t4_hists, k)
 
     plot_nn_distance_densities(nn_pairs, output_dir, run)
@@ -649,9 +649,9 @@ def main(
                                    "corr_auc_vs_nndist_histogram.png", output_dir, run,
                                    nn_dists_fm=fm_arr, nn_dists_icl_self=icl_self_dists)
 
-            corr = _plot_metric_scatter(nn_arr, rk_arr, f"rank (TALENT→{ref_label})",
+            corr = _plot_metric_scatter(nn_arr, rk_arr, f"rank (TALENT $\\in$ {ref_label})",
                                         "corr_rank_vs_nndist_scatter.png", output_dir, run)
-            _plot_metric_scatter(nn_arr, auc_arr, f"AUC (TALENT→{ref_label})",
+            _plot_metric_scatter(nn_arr, auc_arr, f"AUC (TALENT $\\in$ {ref_label})",
                                  "corr_auc_vs_nndist_scatter.png", output_dir, run)
             pred = _plot_metric_prediction(nn_arr, rk_arr, "rank",
                                            "corr_rank_prediction.png", output_dir, run)

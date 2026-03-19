@@ -51,3 +51,7 @@ results/rank-coverage/*.csv
 results/column-coverage/*.png
 results/column-coverage/*.pdf
 results/column-coverage/*.csv
+
+results/correlation-coverage/*.png
+results/correlation-coverage/*.pdf
+results/correlation-coverage/*.csv
