@@ -197,10 +197,11 @@ def _save(fig: plt.Figure, name: str, out_dir: Path, tag: str = "", run=None) ->
 # ------------------------------------------------------------------
 
 def analyse_per_feature(real: np.ndarray, synth: np.ndarray,
-                        tag: str, out_dir: Path, run=None) -> pd.DataFrame:
+                        tag: str, out_dir: Path, run=None,
+                        feature_names: list[str] = FEATURE_NAMES) -> pd.DataFrame:
     print("  ── Per-feature KS tests ──")
     rows = []
-    for i, name in enumerate(FEATURE_NAMES):
+    for i, name in enumerate(feature_names):
         ks_stat, p_val = stats.ks_2samp(real[:, i], synth[:, i])
         u_stat, _ = stats.mannwhitneyu(real[:, i], synth[:, i], alternative="two-sided")
         r = 1 - (2 * u_stat) / (len(real) * len(synth))
@@ -384,8 +385,8 @@ def main() -> None:
         print(f"  Generating {N_SYNTH} synthetic tables ...")
         synth_feats_full = generate_synthetic_features(best.to_dict(), target_cols)
 
-        real_m,  _ = select_features(real_feats,       FEATURE_MODE)
-        synth_m, _ = select_features(synth_feats_full, FEATURE_MODE)
+        real_m,  fnames = select_features(real_feats,       FEATURE_MODE)
+        synth_m, _      = select_features(synth_feats_full, FEATURE_MODE)
         print(f"  Feature matrix: real={real_m.shape}  synth={synth_m.shape}")
 
         tag = f"pareto_best_{source_name}"
@@ -410,7 +411,7 @@ def main() -> None:
                 reinit=True,
             )
 
-        analyse_per_feature(real_m, synth_m, tag, args.out_dir, run)
+        analyse_per_feature(real_m, synth_m, tag, args.out_dir, run, fnames)
         analyse_bootstrap_auc(real_m, synth_m, tag, args.out_dir, run)
         analyse_coverage(real_m,  synth_m, label,        _LABEL_SYNTH, tag,
                          args.out_dir, run, log_prefix="recall")
