@@ -118,7 +118,7 @@ def _select_continuous(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def table_corr_hist(df: pd.DataFrame) -> np.ndarray | None:
-    """Return a 30-bin normalised histogram of upper-triangle Pearson correlations.
+    """Return a 30-bin normalised cumulative histogram of upper-triangle Pearson correlations.
 
     Returns None if the table has fewer than 2 continuous columns or all
     correlation values are NaN.
@@ -136,7 +136,7 @@ def table_corr_hist(df: pd.DataFrame) -> np.ndarray | None:
     total = counts.sum()
     if total == 0:
         return None
-    return counts / total  # sums to 1
+    return np.cumsum(counts) / total
 
 
 # ------------------------------------------------------------------
