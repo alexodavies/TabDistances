@@ -461,22 +461,22 @@ def main():
     wb_run = None
     wb_table = None
     wb_ranking_rows = None
-    if args.wandb_project:
-        import wandb
-        wb_run = wandb.init(
-            project="ICL-Benchmarking",
-            name=args.wandb_run_name,
-            config={
-                "datasets": dataset_names,
-                "seeds": args.seeds,
-                "max_context": args.max_context,
-                "models": args.models,
-            },
-        )
-        wb_table = wandb.Table(columns=[
-            "dataset", "model", "seed", "metric", "value", "fit_time", "inference_time"
-        ])
-        wb_ranking_rows = []
+    # if args.wandb_project:
+    import wandb
+    wb_run = wandb.init(
+        project="ICL-Benchmarking",
+        name=args.wandb_run_name,
+        config={
+            "datasets": dataset_names,
+            "seeds": args.seeds,
+            "max_context": args.max_context,
+            "models": args.models,
+        },
+    )
+    wb_table = wandb.Table(columns=[
+        "dataset", "model", "seed", "metric", "value", "fit_time", "inference_time"
+    ])
+    wb_ranking_rows = []
 
     # Prepare output CSV
     os.makedirs(Path(args.output).parent, exist_ok=True)
