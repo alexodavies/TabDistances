@@ -280,7 +280,7 @@ def run_autogluon(dataset_name, train_val_data, test_data, info, n_seeds):
 
         t0 = time.time()
         predictor = TabularPredictor(label="label", path=save_path).fit(
-            train_df, seed=seed, verbosity=0
+            train_df, ag_args_fit={"random_state": seed}, verbosity=0
         )
         fit_time = time.time() - t0
 
