@@ -279,8 +279,8 @@ def run_autogluon(dataset_name, train_val_data, test_data, info, n_seeds):
         save_path = str(_ROOT / f"results_model/{dataset_name}-autogluon-seed{seed}")
 
         t0 = time.time()
-        predictor = TabularPredictor(label="label", path=save_path).fit(
-            train_df, ag_args_fit={"random_state": seed}, verbosity=0
+        predictor = TabularPredictor(label="label", path=save_path, verbosity=0).fit(
+            train_df, ag_args_fit={"random_state": seed}
         )
         fit_time = time.time() - t0
 
