@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Benchmark TabICL (via TALENT) vs tabula-8b on classification datasets.
+Benchmark TabICL (via TALENT) vs AutoGluon and classical models on classification datasets.
 
 Datasets must be in TALENT format:
   <dataset_path>/<dataset_name>/N_train.npy, C_train.npy, y_train.npy, info.json, ...
@@ -22,7 +22,7 @@ Usage:
   python benchmark/tabicl_vs_tabula8b.py \
       --dataset_path /path/to/benchmark_datasets \
       --output benchmark/results.csv \
-      --seeds 3 --max_context 32
+      --seeds 3
 
   # One model only
   python benchmark/tabicl_vs_tabula8b.py \
@@ -42,20 +42,37 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 
 warnings.filterwarnings("ignore")
 
-# ── Make TALENT and rtfm importable ──────────────────────────────────────────
+# ── Make TALENT importable ─────────────────────────────────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "TALENT-main"))
-# rtfm is used as a source checkout (pip install may not expose the module)
-_RTFM_SRC = _ROOT / "rtfm-src"
-if _RTFM_SRC.exists():
-    sys.path.insert(0, str(_RTFM_SRC))
 
 from TALENT.model.utils import get_method, set_seeds
 from TALENT.model.lib.data import get_dataset
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _talent_to_df(N, C, split: str) -> pd.DataFrame:
+    """Convert TALENT numpy arrays for one split to a pandas DataFrame."""
+    parts = {}
+    if N is not None and split in N:
+        arr = np.array(N[split], dtype=float)
+        if arr.ndim == 1:
+            arr = arr.reshape(-1, 1)
+        for i in range(arr.shape[1]):
+            parts[f"num_{i}"] = arr[:, i]
+    if C is not None and split in C:
+        arr = C[split]
+        if arr.ndim == 1:
+            arr = arr.reshape(-1, 1)
+        for i in range(arr.shape[1]):
+            parts[f"cat_{i}"] = arr[:, i].astype(str)
+    return pd.DataFrame(parts)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,16 +123,54 @@ def _make_tabicl_args(seed: int, dataset: str) -> argparse.Namespace:
     )
 
 
-def run_tabicl(dataset_name, train_val_data, test_data, info, n_seeds):
-    """Run TabICL for n_seeds seeds; return list of per-seed metric dicts."""
+def _cap_train_split(train_val_data, max_context, seed):
+    """Return a copy of train_val_data with the 'train' split capped to
+    max_context examples, sampled in a balanced-per-class fashion."""
+    N, C, y = train_val_data
+    y_train = np.array(y["train"])
+    unique_labels = np.unique(y_train)
+    per_class = max(1, max_context // len(unique_labels))
+
+    rng = np.random.default_rng(seed)
+    chosen = []
+    for lbl in unique_labels:
+        idx = np.where(y_train == lbl)[0]
+        n = min(per_class, len(idx))
+        chosen.append(rng.choice(idx, size=n, replace=False))
+    sel = np.concatenate(chosen)
+    rng.shuffle(sel)
+
+    def _slice(arr_dict):
+        if arr_dict is None:
+            return None
+        out = dict(arr_dict)
+        if "train" in out and out["train"] is not None:
+            out["train"] = np.array(out["train"])[sel]
+        return out
+
+    return _slice(N), _slice(C), _slice(y)
+
+
+def run_tabicl(dataset_name, train_val_data, test_data, info, n_seeds, max_context=None):
+    """Run TabICL for n_seeds seeds; return list of per-seed metric dicts.
+
+    If max_context is given the training split is capped to that many examples
+    (balanced per class).
+    """
     results = []
     for seed in range(n_seeds):
         set_seeds(seed)
         args = _make_tabicl_args(seed, dataset_name)
         method = get_method("tabicl")(args, is_regression=False)
 
+        fit_data = (
+            _cap_train_split(train_val_data, max_context, seed)
+            if max_context is not None
+            else train_val_data
+        )
+
         t0 = time.time()
-        method.fit(train_val_data, info)
+        method.fit(fit_data, info)
         fit_time = time.time() - t0
 
         t1 = time.time()
@@ -133,7 +188,7 @@ def run_tabicl(dataset_name, train_val_data, test_data, info, n_seeds):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# XGBoost helpers
+# Classical model helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 _CLASSICAL_MODELS = ["xgboost", "catboost", "lightgbm", "RandomForest", "LogReg", "svm", "knn"]
@@ -199,135 +254,13 @@ def run_classical(model_type, dataset_name, train_val_data, test_data, info, n_s
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# tabula-8b helpers
+# AutoGluon helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _talent_to_df(N, C, split: str) -> pd.DataFrame:
-    """Convert TALENT numpy arrays for one split to a pandas DataFrame."""
-    parts = {}
-    if N is not None and split in N:
-        arr = np.array(N[split], dtype=float)
-        if arr.ndim == 1:
-            arr = arr.reshape(-1, 1)
-        for i in range(arr.shape[1]):
-            parts[f"num_{i}"] = arr[:, i]
-    if C is not None and split in C:
-        arr = C[split]
-        if arr.ndim == 1:
-            arr = arr.reshape(-1, 1)
-        for i in range(arr.shape[1]):
-            parts[f"cat_{i}"] = arr[:, i].astype(str)
-    return pd.DataFrame(parts)
-
-
-def _build_class_map(unique_labels, info):
-    """Return {raw_label -> string_name} using info['target_intro'] if available."""
-    target_intro = info.get("target_intro", {})
-    result = {}
-    for i, lbl in enumerate(unique_labels):
-        key = str(lbl)
-        result[lbl] = target_intro.get(key, f"class_{i}")
-    return result
-
-
-def _sample_context(train_df, y_train_raw, class_map, max_context, rng):
-    """Return a balanced context DataFrame with string target column."""
-    unique_labels = sorted(class_map.keys())
-    per_class = max(1, max_context // len(unique_labels))
-    chunks = []
-    for lbl in unique_labels:
-        idx = np.where(y_train_raw == lbl)[0]
-        n = min(per_class, len(idx))
-        chosen = rng.choice(idx, size=n, replace=False)
-        sub = train_df.iloc[chosen].copy()
-        sub["__target__"] = class_map[lbl]
-        chunks.append(sub)
-    ctx = pd.concat(chunks, ignore_index=True)
-    return ctx.sample(frac=1, random_state=int(rng.integers(1 << 31))).reset_index(
-        drop=True
-    )
-
-
-def _build_context_str(serializer, context_df, target_col, choice_names):
-    """Serialize the labeled context examples into a single reusable string."""
-    from rtfm.special_tokens import EOC_TOKEN, QA_SEP_TOKEN
-
-    prefix = f"Predict the {target_col}"
-    suffix = f"What is the value of {target_col}?"
-    parts = []
-    for _, row in context_df.iterrows():
-        label = str(row[target_col])
-        features = row.drop(labels=[target_col])
-        serialized = serializer(
-            features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
-        )
-        parts.append(f"{serialized} {QA_SEP_TOKEN} {label} {EOC_TOKEN}")
-    return " ".join(parts)
-
-
-def _infer_tabula8b_batch(model, tokenizer, serializer, context_str,
-                          query_df, target_col, choice_names,
-                          batch_size=8, max_new_tokens=16):
-    """Batched inference over query_df rows; returns list of predicted strings."""
-    from rtfm.generation_utils import parse_generated_text
-    from rtfm.special_tokens import QA_SEP_TOKEN
-
-    prefix = f"Predict the {target_col}"
-    suffix = f"What is the value of {target_col}?"
-
-    tokenizer.padding_side = "left"
-    tokenizer.truncation_side = "left"
-
-    predictions = []
-    for start in range(0, len(query_df), batch_size):
-        batch = query_df.iloc[start:start + batch_size]
-        prompts = []
-        for _, row in batch.iterrows():
-            features = row.drop(labels=[target_col], errors="ignore")
-            serialized = serializer(
-                features, prefix_text=prefix, suffix_text=suffix, choices=choice_names
-            )
-            prompts.append(f"{context_str} {serialized} {QA_SEP_TOKEN}")
-
-        inputs = tokenizer(
-            prompts, return_tensors="pt", padding=True,
-            truncation=True, max_length=tokenizer.model_max_length,
-        ).to(model.device)
-
-        with torch.no_grad():
-            outputs = model.generate(
-                inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-            )
-
-        for output in outputs:
-            decoded = tokenizer.decode(output, skip_special_tokens=False)
-            try:
-                pred, _ = parse_generated_text(decoded)
-            except ValueError:
-                pred = choice_names[0]
-            predictions.append(pred.strip())
-
-    return predictions
-
-
-def run_tabula8b(
-    dataset_name,
-    train_val_data,
-    test_data,
-    info,
-    max_context,
-    n_seeds,
-    max_test_samples,
-    model,
-    tokenizer,
-    serializer,
-    batch_size=8,
-):
-    """Run tabula-8b inference; return list of per-seed metric dicts."""
+def run_autogluon(dataset_name, train_val_data, test_data, info, n_seeds):
+    """Run AutoGluon TabularPredictor for n_seeds seeds; return per-seed metric dicts."""
     import sklearn.metrics as skm
+    from autogluon.tabular import TabularPredictor
 
     N_tv, C_tv, y_tv = train_val_data
     N_te, C_te, y_te = test_data
@@ -335,72 +268,46 @@ def run_tabula8b(
     train_df = _talent_to_df(N_tv, C_tv, "train")
     test_df = _talent_to_df(N_te, C_te, "test")
 
-    y_train_raw = np.array(y_tv["train"])
-    y_test_raw = np.array(y_te["test"])
+    y_train = np.array(y_tv["train"])
+    y_test = np.array(y_te["test"])
 
-    # Optionally cap test set size (tabula-8b inference is slow)
-    if max_test_samples is not None and len(test_df) > max_test_samples:
-        rng0 = np.random.default_rng(0)
-        sel = rng0.choice(len(test_df), size=max_test_samples, replace=False)
-        test_df = test_df.iloc[sel].reset_index(drop=True)
-        y_test_raw = y_test_raw[sel]
-
-    unique_labels = np.unique(y_train_raw)
-    class_map = _build_class_map(unique_labels, info)
-    # Choices must be a list of strings in a fixed order
-    choice_names = [class_map[lbl] for lbl in sorted(class_map)]
-    inv_map = {v: k for k, v in class_map.items()}
-
-    # Add dummy target column to test_df for serializer compatibility
-    test_df = test_df.copy()
-    test_df["__target__"] = choice_names[0]
+    train_df = train_df.copy()
+    train_df["label"] = y_train
 
     results = []
     for seed in range(n_seeds):
-        rng = np.random.default_rng(seed)
-        ctx = _sample_context(train_df, y_train_raw, class_map, max_context, rng)
-        context_str = _build_context_str(serializer, ctx, "__target__", choice_names)
+        save_path = str(_ROOT / f"results_model/{dataset_name}-autogluon-seed{seed}")
 
         t0 = time.time()
-        pred_strs = _infer_tabula8b_batch(
-            model=model,
-            tokenizer=tokenizer,
-            serializer=serializer,
-            context_str=context_str,
-            query_df=test_df,
-            target_col="__target__",
-            choice_names=choice_names,
-            batch_size=batch_size,
-            max_new_tokens=16,
+        predictor = TabularPredictor(label="label", path=save_path).fit(
+            train_df, seed=seed, verbosity=0
         )
+        fit_time = time.time() - t0
 
-        pred_labels = np.array([inv_map.get(p, unique_labels[0]) for p in pred_strs])
+        t1 = time.time()
+        predictions = predictor.predict(test_df).to_numpy()
+        inference_time = time.time() - t1
 
-        inference_time = time.time() - t0
-
-        accuracy = skm.accuracy_score(y_test_raw, pred_labels)
-        avg_recall = skm.balanced_accuracy_score(y_test_raw, pred_labels)
+        accuracy = skm.accuracy_score(y_test, predictions)
+        avg_recall = skm.balanced_accuracy_score(y_test, predictions)
         avg_precision = skm.precision_score(
-            y_test_raw, pred_labels, average="macro", zero_division=0
+            y_test, predictions, average="macro", zero_division=0
         )
-        f1 = skm.f1_score(
-            y_test_raw, pred_labels, average="macro", zero_division=0
-        )
+        f1 = skm.f1_score(y_test, predictions, average="macro", zero_division=0)
 
         row = {
             "seed": seed,
-            "fit_time": 0.0,   # pure ICL: no per-dataset fitting
+            "fit_time": fit_time,
             "inference_time": inference_time,
             "Accuracy": accuracy,
             "Avg_Recall": avg_recall,
             "Avg_Precision": avg_precision,
             "F1": f1,
-            # LogLoss and AUC omitted: require probability scores
         }
         results.append(row)
         print(
             f"    seed {seed}: Accuracy={accuracy:.4f}, F1={f1:.4f}, "
-            f"inference={inference_time:.1f}s ({len(test_df)} samples)"
+            f"fit={fit_time:.1f}s, inference={inference_time:.1f}s"
         )
 
     return results
@@ -492,7 +399,7 @@ def _discover_datasets(dataset_path: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Benchmark TabICL vs tabula-8b on TALENT classification datasets"
+        description="Benchmark TabICL vs AutoGluon and classical models on TALENT classification datasets"
     )
     parser.add_argument(
         "--dataset_path",
@@ -519,27 +426,15 @@ def main():
     parser.add_argument(
         "--max_context",
         type=int,
-        default=32,
-        help="Max labeled training examples in tabula-8b context (default: 32)",
-    )
-    parser.add_argument(
-        "--max_test_samples",
-        type=int,
-        default=None,
-        help="Cap test-set size for tabula-8b to limit inference time (default: no cap)",
+        default=512,
+        help="Max labeled training examples in TabICL context (default: 512)",
     )
     parser.add_argument(
         "--models",
         nargs="+",
-        default=["tabicl"] + _CLASSICAL_MODELS,
-        choices=["tabicl", "tabula8b"] + _CLASSICAL_MODELS,
-        help="Which models to benchmark (default: all)",
-    )
-    parser.add_argument(
-        "--tabula_batch_size",
-        type=int,
-        default=8,
-        help="Batch size for tabula-8b inference (default: 8)",
+        default=["tabicl", "autogluon"] + _CLASSICAL_MODELS,
+        choices=["tabicl", "autogluon"] + _CLASSICAL_MODELS,
+        help="Which models to benchmark (default: tabicl + autogluon + classical)",
     )
     parser.add_argument(
         "--rank_metric",
@@ -569,13 +464,12 @@ def main():
     if args.wandb_project:
         import wandb
         wb_run = wandb.init(
-            project=args.wandb_project,
+            project="ICL-Benchmarking",
             name=args.wandb_run_name,
             config={
                 "datasets": dataset_names,
                 "seeds": args.seeds,
                 "max_context": args.max_context,
-                "max_test_samples": args.max_test_samples,
                 "models": args.models,
             },
         )
@@ -583,27 +477,6 @@ def main():
             "dataset", "model", "seed", "metric", "value", "fit_time", "inference_time"
         ])
         wb_ranking_rows = []
-
-    # Load tabula-8b once (expensive: ~16 GB GPU RAM, several minutes)
-    tabula_model = tabula_tokenizer = tabula_serializer = None
-    tabula_load_time = None
-    if "tabula8b" in args.models:
-        print("\nLoading tabula-8b from HuggingFace (this may take a while)...")
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        from rtfm.serialization.serializers import BasicSerializerV2
-        from rtfm.configs import SerializerConfig
-
-        t_load = time.time()
-        tabula_tokenizer = AutoTokenizer.from_pretrained("mlfoundations/tabula-8b")
-        tabula_model = AutoModelForCausalLM.from_pretrained(
-            "mlfoundations/tabula-8b",
-            torch_dtype=torch.float16,
-            device_map="auto",
-        )
-        tabula_serializer = BasicSerializerV2(SerializerConfig())
-        tabula_model.generation_config.max_length = None
-        tabula_load_time = time.time() - t_load
-        print(f"tabula-8b loaded in {tabula_load_time:.1f}s")
 
     # Prepare output CSV
     os.makedirs(Path(args.output).parent, exist_ok=True)
@@ -613,21 +486,6 @@ def main():
     out_file = open(args.output, "w", newline="")
     writer = csv.DictWriter(out_file, fieldnames=fieldnames)
     writer.writeheader()
-
-    # Write tabula-8b model load time as a metadata row
-    if tabula_load_time is not None:
-        writer.writerow({
-            "dataset": "__meta__",
-            "model": "tabula8b",
-            "seed": -1,
-            "metric": "model_load_time",
-            "value": tabula_load_time,
-            "fit_time": float("nan"),
-            "inference_time": float("nan"),
-        })
-        out_file.flush()
-        if wb_run is not None:
-            wb_run.summary["tabula8b/model_load_time"] = tabula_load_time
 
     for dataset_name in dataset_names:
         print(f"\n{'=' * 60}\nDataset: {dataset_name}")
@@ -668,10 +526,11 @@ def main():
                 print(f"  [ERROR] {classical_model}: {e}")
 
         if "tabicl" in args.models:
-            print("  Running TabICL...")
+            print(f"  Running TabICL (max_context={args.max_context})...")
             try:
                 res = run_tabicl(
-                    dataset_name, train_val_data, test_data, info, args.seeds
+                    dataset_name, train_val_data, test_data, info, args.seeds,
+                    max_context=args.max_context,
                 )
                 _write_results(writer, out_file, dataset_name, "tabicl", res, wb_table)
                 acc = [r.get("Accuracy", float("nan")) for r in res]
@@ -683,42 +542,28 @@ def main():
             except Exception as e:
                 print(f"  [ERROR] TabICL: {e}")
 
+        if "autogluon" in args.models:
+            print("  Running AutoGluon...")
+            try:
+                res = run_autogluon(
+                    dataset_name, train_val_data, test_data, info, args.seeds
+                )
+                _write_results(writer, out_file, dataset_name, "autogluon", res, wb_table)
+                if wb_run is not None:
+                    _log_wandb_summary(wb_run, dataset_name, "autogluon", res)
+                acc = [r.get("Accuracy", float("nan")) for r in res]
+                scores = [r.get(args.rank_metric, float("nan")) for r in res]
+                mean_score = float(np.nanmean(scores))
+                if not np.isnan(mean_score):
+                    dataset_scores["autogluon"] = mean_score
+                print(f"  AutoGluon Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}")
+            except Exception as e:
+                print(f"  [ERROR] AutoGluon: {e}")
+
         if len(dataset_scores) > 1:
             _compute_and_write_rankings(
                 writer, out_file, dataset_name, dataset_scores, args.rank_metric, wb_run, wb_ranking_rows, wb_table
             )
-
-        if "tabula8b" in args.models:
-            print(
-                f"  Running tabula-8b (context={args.max_context}, "
-                f"batch={args.tabula_batch_size}, "
-                f"max_test={args.max_test_samples or 'all'})..."
-            )
-            try:
-                res = run_tabula8b(
-                    dataset_name,
-                    train_val_data,
-                    test_data,
-                    info,
-                    args.max_context,
-                    args.seeds,
-                    args.max_test_samples,
-                    tabula_model,
-                    tabula_tokenizer,
-                    tabula_serializer,
-                    batch_size=args.tabula_batch_size,
-                )
-                _write_results(writer, out_file, dataset_name, "tabula8b", res, wb_table)
-                if wb_run is not None:
-                    _log_wandb_summary(wb_run, dataset_name, "tabula8b", res)
-                acc = [r.get("Accuracy", float("nan")) for r in res]
-                print(
-                    f"  tabula-8b Accuracy: {np.mean(acc):.4f} ± {np.std(acc):.4f}"
-                )
-            except Exception as e:
-                print(f"  [ERROR] tabula-8b: {e}")
-            finally:
-                torch.cuda.empty_cache()
 
     out_file.close()
     print(f"\nResults saved to: {args.output}")
