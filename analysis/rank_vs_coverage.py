@@ -67,12 +67,13 @@ from tabdistances.discriminator.features import (
 # ------------------------------------------------------------------
 _ROOT        = Path(__file__).resolve().parent.parent   # project root
 
-TABICL_DIR   = _ROOT / "tables-tabicl/parquet"
-ICL_CACHE    = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
-FM_CACHE     = _ROOT / "cache/real_feats_tabfm_5000_512.npz"
-T4_CACHE     = _ROOT / "cache/real_feats_t4_5000_512_v2.npz"
-RANKINGS_CSV = _ROOT / "results/tabicl-rankings.csv"
-TALENT_DIR   = _ROOT / "data"
+TABICL_DIR          = _ROOT / "tables-tabicl/parquet"
+ICL_CACHE           = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
+FM_CACHE            = _ROOT / "cache/real_feats_tabfm_5000_512.npz"
+T4_CACHE            = _ROOT / "cache/real_feats_t4_5000_512_v2.npz"
+RANKINGS_CSV        = _ROOT / "results/tabicl-rankings-full-context.csv"
+AUTOGLUON_RESULTS_CSV = _ROOT / "results/results-autogluon-512-context.csv"
+TALENT_DIR          = _ROOT / "data"
 
 MAX_ROWS     = 512
 N_ICL        = 25000
@@ -168,6 +169,36 @@ def load_talent_feats(
         print(f"  Cached TALENT features -> {cache_path}")
 
     return records
+
+
+# ------------------------------------------------------------------
+# Autogluon rank loader
+# ------------------------------------------------------------------
+
+def load_autogluon_ranks(results_csv: Path) -> pd.DataFrame:
+    """Load autogluon (and tabicl-with-autogluon) ranks from results CSV.
+
+    Returns a DataFrame with columns [dataset, ag_rank, tabicl_rank_with_ag]
+    where ranks are among all 8 models including autogluon.
+    """
+    df = pd.read_csv(results_csv)
+    ranking_rows = df[df["metric"] == "ranking"][["dataset", "model", "value"]].copy()
+    ranking_rows["value"] = ranking_rows["value"].astype(int)
+
+    ag = (
+        ranking_rows[ranking_rows["model"] == "autogluon"]
+        .rename(columns={"value": "ag_rank"})
+        [["dataset", "ag_rank"]]
+    )
+    tc = (
+        ranking_rows[ranking_rows["model"] == "tabicl"]
+        .rename(columns={"value": "tabicl_rank_with_ag"})
+        [["dataset", "tabicl_rank_with_ag"]]
+    )
+    merged = ag.merge(tc, on="dataset", how="outer")
+    print(f"  Autogluon ranks: {ag['dataset'].nunique()} datasets, "
+          f"tabicl-with-ag ranks: {tc['dataset'].nunique()} datasets")
+    return merged
 
 
 # ------------------------------------------------------------------
@@ -428,6 +459,53 @@ def plot_metric_prediction(
 
 
 # ------------------------------------------------------------------
+# Plot 4 — side-by-side model comparison scatter
+# ------------------------------------------------------------------
+
+def plot_comparison_scatter(
+    nn_dists: np.ndarray,
+    y_tabicl: np.ndarray,
+    y_autogluon: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_dir: Path,
+    run=None,
+) -> None:
+    """Overlay TabICL and AutoGluon rank/metric vs NN distance on one plot."""
+    with mpl.rc_context(_PAPER_RC):
+        fig, ax = plt.subplots(figsize=(5.5, 4.0))
+
+        for y_vals, color, label in [
+            (y_tabicl,    _BLUE,   "TabICL"),
+            (y_autogluon, _ORANGE, "AutoGluon"),
+        ]:
+            mask = ~np.isnan(y_vals)
+            if mask.sum() < 2:
+                continue
+            xm, ym = nn_dists[mask], y_vals[mask]
+            r_p, _ = stats.pearsonr(xm, ym)
+            r_s, _ = stats.spearmanr(xm, ym)
+            m, b   = np.polyfit(xm, ym.astype(float), 1)
+            xs     = np.linspace(xm.min(), xm.max(), 200)
+            ax.scatter(xm, ym, alpha=0.50, s=20, color=color,
+                       edgecolors="white", linewidths=0.3, zorder=3,
+                       label=f"{label}  r={r_p:.2f}  ρ={r_s:.2f}")
+            ax.plot(xs, m * xs + b, color=color, lw=1.5, zorder=4)
+
+        ax.set_xlabel("Mean k-NN distance to TabICL distribution (normalised)")
+        ax.set_ylabel(y_label)
+        ax.set_title(f"TabICL vs AutoGluon — {y_label} vs NN Distance")
+        ax.legend()
+        plt.tight_layout()
+        out = output_dir / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+
+
+# ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
 
@@ -444,7 +522,7 @@ def main(
 
     talent_cache = _ROOT / f"cache/talent_feats_{MAX_ROWS}.npz"
 
-    # ── Rankings ───────────────────────────────────────────────────
+    # ── Rankings (tabicl-rankings-full-context.csv) ────────────────
     rankings = pd.read_csv(RANKINGS_CSV)
     mean_aucs = rankings.groupby("dataset")["AUC"].mean().rename("mean_AUC")
     tabicl_ranks = (
@@ -456,6 +534,10 @@ def main(
     tabicl_ranks["relative_auc"] = tabicl_ranks["AUC"] / tabicl_ranks["mean_AUC"]
     datasets = tabicl_ranks["dataset"].tolist()
     print(f"\n=== Rankings: {len(datasets)} datasets with tabicl entries ===")
+
+    # ── Autogluon rankings (results-autogluon-512-context.csv) ─────
+    print("\n=== Loading AutoGluon ranks ===")
+    ag_ranks = load_autogluon_ranks(AUTOGLUON_RESULTS_CSV)
 
     # ── TALENT feature vectors ─────────────────────────────────────
     print("\n=== Loading TALENT datasets ===")
@@ -496,7 +578,9 @@ def main(
     # ── Merge with ranks ───────────────────────────────────────────
     df = pd.DataFrame({"dataset": talent_names, "nn_dist_icl": nn_dists})
     df = df.merge(tabicl_ranks, on="dataset", how="inner")
-    print(f"  Matched {len(df)} datasets to rankings")
+    df = df.merge(ag_ranks, on="dataset", how="left")
+    print(f"  Matched {len(df)} datasets to rankings "
+          f"({df['ag_rank'].notna().sum()} with autogluon rank)")
 
     csv_path = output_dir / "rank_vs_nndist.csv"
     df.to_csv(csv_path, index=False)
@@ -518,10 +602,14 @@ def main(
 
     # ── Plots ──────────────────────────────────────────────────────
     print("\n=== Generating figures ===")
-    nn = df["nn_dist_icl"].values
-    rk = df["rank"].values.astype(float)
-    auc = df["AUC"].values.astype(float)
-    rel_auc = df["relative_auc"].values.astype(float)
+    nn       = df["nn_dist_icl"].values
+    rk       = df["rank"].values.astype(float)
+    auc      = df["AUC"].values.astype(float)
+    rel_auc  = df["relative_auc"].values.astype(float)
+    ag_rk    = df["ag_rank"].values.astype(float)       # NaN where autogluon absent
+    tc_rk_ag = df["tabicl_rank_with_ag"].values.astype(float)  # tabicl rank in 8-model field
+
+    # TabICL plots (7-model ranking)
     plot_histogram_with_metric(nn, rk, "rank (lower = better)", "rank_vs_nndist_histogram.png",
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
                                nn_dists_icl_self=nn_dists_icl_self, invert_y=True)
@@ -532,16 +620,43 @@ def main(
                                output_dir, run, n_bins, nn_dists_fm=nn_dists_fm,
                                nn_dists_icl_self=nn_dists_icl_self, invert_y=False)
 
-    corr = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
+    corr     = plot_metric_vs_distance(nn, rk, "rank", "rank_vs_nndist_scatter.png", output_dir, run)
     plot_metric_vs_distance(nn, auc, "AUC", "auc_vs_nndist_scatter.png", output_dir, run)
     corr_rel = plot_metric_vs_distance(nn, rel_auc, "relative AUC", "relative_auc_vs_nndist_scatter.png", output_dir, run)
 
-    pred = plot_metric_prediction(nn, rk, "rank", "rank_prediction.png", output_dir, run)
+    pred     = plot_metric_prediction(nn, rk, "rank", "rank_prediction.png", output_dir, run)
     plot_metric_prediction(nn, auc, "AUC", "auc_prediction.png", output_dir, run)
     pred_rel = plot_metric_prediction(nn, rel_auc, "relative AUC", "relative_auc_prediction.png", output_dir, run)
 
+    # AutoGluon plots (8-model ranking, datasets with autogluon results only)
+    ag_mask = ~np.isnan(ag_rk)
+    if ag_mask.sum() >= 2:
+        nn_ag = nn[ag_mask]
+        plot_histogram_with_metric(
+            nn_ag, ag_rk[ag_mask], "AutoGluon rank (lower = better)",
+            "ag_rank_vs_nndist_histogram.png", output_dir, run, n_bins,
+            nn_dists_icl_self=nn_dists_icl_self, invert_y=True,
+        )
+        corr_ag = plot_metric_vs_distance(
+            nn_ag, ag_rk[ag_mask], "AutoGluon rank",
+            "ag_rank_vs_nndist_scatter.png", output_dir, run,
+        )
+        pred_ag = plot_metric_prediction(
+            nn_ag, ag_rk[ag_mask], "AutoGluon rank",
+            "ag_rank_prediction.png", output_dir, run,
+        )
+        # Comparison scatter: tabicl-with-ag vs autogluon rank on common datasets
+        plot_comparison_scatter(
+            nn_ag, tc_rk_ag[ag_mask], ag_rk[ag_mask],
+            "rank (lower = better, 8-model field)",
+            "tabicl_vs_ag_rank_scatter.png", output_dir, run,
+        )
+    else:
+        corr_ag = pred_ag = None
+        print("  Skipping autogluon plots (insufficient matched datasets)")
+
     # ── Summary ────────────────────────────────────────────────────
-    print("\n=== Results (rank) ===")
+    print("\n=== Results (TabICL rank, 7-model field) ===")
     print(f"  n datasets       : {len(df)}")
     print(f"  Pearson  r       : {corr['pearson_r']:.3f}  (p = {corr['pearson_p']:.4f})")
     print(f"  Spearman ρ       : {corr['spearman_r']:.3f}  (p = {corr['spearman_p']:.4f})")
@@ -552,9 +667,16 @@ def main(
     print(f"  Spearman ρ       : {corr_rel['spearman_r']:.3f}  (p = {corr_rel['spearman_p']:.4f})")
     print(f"  Linear R²        : {pred_rel['r2']:.3f}")
     print(f"  Linear coef      : {pred_rel['coef']:.4f}  (intercept = {pred_rel['intercept']:.4f})")
+    if corr_ag is not None:
+        print("\n=== Results (AutoGluon rank, 8-model field) ===")
+        print(f"  n datasets       : {ag_mask.sum()}")
+        print(f"  Pearson  r       : {corr_ag['pearson_r']:.3f}  (p = {corr_ag['pearson_p']:.4f})")
+        print(f"  Spearman ρ       : {corr_ag['spearman_r']:.3f}  (p = {corr_ag['spearman_p']:.4f})")
+        print(f"  Linear R²        : {pred_ag['r2']:.3f}")
+        print(f"  Linear coef      : {pred_ag['coef']:.4f}  (intercept = {pred_ag['intercept']:.4f})")
 
     if run is not None:
-        run.log({
+        log_dict = {
             "pearson_r":       corr["pearson_r"],
             "pearson_p":       corr["pearson_p"],
             "spearman_r":      corr["spearman_r"],
@@ -567,7 +689,17 @@ def main(
             "rel_spearman_p":  corr_rel["spearman_p"],
             "rel_linear_r2":   pred_rel["r2"],
             "rel_linear_coef": pred_rel["coef"],
-        })
+        }
+        if corr_ag is not None:
+            log_dict.update({
+                "ag_pearson_r":  corr_ag["pearson_r"],
+                "ag_pearson_p":  corr_ag["pearson_p"],
+                "ag_spearman_r": corr_ag["spearman_r"],
+                "ag_spearman_p": corr_ag["spearman_p"],
+                "ag_linear_r2":  pred_ag["r2"],
+                "ag_linear_coef": pred_ag["coef"],
+            })
+        run.log(log_dict)
         run.finish()
 
     print(f"\nOutputs in: {output_dir}/")

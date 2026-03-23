@@ -18,14 +18,20 @@ Pipeline:
 import warnings
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import wandb
 from matplotlib.patches import Ellipse
+from scipy import stats
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import wasserstein_distance
 from sklearn.decomposition import PCA
+from sklearn.neighbors import BallTree
+from sklearn.preprocessing import MinMaxScaler
 from umap import UMAP
 from tqdm import tqdm
 
@@ -33,12 +39,24 @@ warnings.filterwarnings("ignore")
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
+_ROOT = Path(__file__).resolve().parent.parent
+
 SOURCES = {
     # "CleanTabLib": Path("tables/parquet"),
-    "TabICL": Path("tables-tabicl/parquet"),
-    "TabFM":  Path("tables-tabfm/parquet"),
-    "T4":     Path("tables-t4/parquet"),
+    "TabICL": _ROOT / "tables-tabicl/parquet",
+    "TabFM":  _ROOT / "tables-tabfm/parquet",
+    "T4":     _ROOT / "tables-t4/parquet",
 }
+
+RANKINGS_CSV          = _ROOT / "results/tabicl-rankings-full-context.csv"
+AUTOGLUON_RESULTS_CSV = _ROOT / "results/results-autogluon-512-context.csv"
+TALENT_DIR            = _ROOT / "data"
+CACHE_DIR             = _ROOT / "cache"
+
+CORR_HIST_CACHE = CACHE_DIR / "talent_corr_hists.npz"
+
+KNN_K        = 5
+RANDOM_STATE = 42
 COLORS = {
     "CleanTabLib": "#4C72B0",
     "TabICL":      "#DD8452",
@@ -315,6 +333,181 @@ def plot_distance_matrix(
     print(f"  Saved distances  $\\in$  {output_path}")
 
 
+# ── Rank-vs-coverage helpers ───────────────────────────────────────────────────
+
+def load_talent_corr_hists(
+    talent_dir: Path,
+    datasets: list[str],
+    cache_path: Path,
+) -> tuple[np.ndarray, list[str]]:
+    """Compute per-table correlation PMFs for TALENT datasets.
+
+    Returns (hists, names) where hists is (N, N_BINS) and names is the matched
+    dataset list (some may be skipped if no numeric columns / not found).
+    Caches to cache_path.
+    """
+    if cache_path.exists():
+        data = np.load(cache_path, allow_pickle=True)
+        hists = data["hists"]
+        names = data["names"].tolist()
+        print(f"  Loaded {len(hists)} TALENT correlation histograms from cache")
+        return hists, names
+
+    hists, names = [], []
+    skipped = 0
+    for ds in tqdm(datasets, desc="TALENT corr histograms"):
+        ds_path = talent_dir / ds
+        if not ds_path.exists():
+            skipped += 1
+            continue
+        parts = []
+        for split in ("train", "val", "test"):
+            npy = ds_path / f"N_{split}.npy"
+            if npy.exists():
+                arr = np.load(npy, allow_pickle=True).astype(float)
+                if arr.ndim == 1:
+                    arr = arr.reshape(-1, 1)
+                parts.append(arr)
+        if not parts:
+            skipped += 1
+            continue
+        data_arr = np.concatenate(parts, axis=0)
+        df = pd.DataFrame(data_arr, columns=[f"c{i}" for i in range(data_arr.shape[1])])
+        h, _ = corr_pmf(df)
+        if h is None:
+            skipped += 1
+            continue
+        hists.append(h)
+        names.append(ds)
+
+    print(f"  Computed {len(hists)} TALENT correlation histograms ({skipped} skipped)")
+    hists_arr = np.array(hists)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(cache_path, hists=hists_arr, names=np.array(names))
+    print(f"  Cached -> {cache_path}")
+    return hists_arr, names
+
+
+def _corr_nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
+    """Mean k-NN distance from query correlation histograms to the reference pool."""
+    query = np.nan_to_num(query, nan=0.0, posinf=0.0, neginf=0.0)
+    ref   = np.nan_to_num(ref,   nan=0.0, posinf=0.0, neginf=0.0)
+    scaler = MinMaxScaler().fit(ref)
+    q_sc = scaler.transform(query)
+    r_sc = scaler.transform(ref)
+    tree = BallTree(r_sc, metric="euclidean")
+    dists, _ = tree.query(q_sc, k=min(k, len(r_sc)))
+    return dists.mean(axis=1)
+
+
+def _load_ag_ranks(results_csv: Path) -> pd.DataFrame:
+    """Load autogluon and tabicl-with-ag ranks from the autogluon results CSV."""
+    df = pd.read_csv(results_csv)
+    ranking_rows = df[df["metric"] == "ranking"][["dataset", "model", "value"]].copy()
+    ranking_rows["value"] = ranking_rows["value"].astype(int)
+    ag = (
+        ranking_rows[ranking_rows["model"] == "autogluon"]
+        .rename(columns={"value": "ag_rank"})[["dataset", "ag_rank"]]
+    )
+    tc = (
+        ranking_rows[ranking_rows["model"] == "tabicl"]
+        .rename(columns={"value": "tabicl_rank_with_ag"})[["dataset", "tabicl_rank_with_ag"]]
+    )
+    return ag.merge(tc, on="dataset", how="outer")
+
+
+_PAPER_RC = {
+    "font.size":       8,
+    "axes.titlesize":  9,
+    "axes.labelsize":  8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
+    "lines.linewidth": 1.4,
+    "figure.dpi":      300,
+}
+_BLUE   = "#2980b9"
+_ORANGE = "#e67e22"
+_GREEN  = "#27ae60"
+_RED    = "#ef0e0e"
+
+
+def _plot_rank_vs_corr_dist(
+    nn_dists: np.ndarray,
+    y_vals: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_path: str,
+    run=None,
+) -> dict:
+    """Scatter of rank/metric vs correlation-NN distance with Pearson r and Spearman ρ."""
+    r_p, p_p = stats.pearsonr(nn_dists, y_vals)
+    r_s, p_s = stats.spearmanr(nn_dists, y_vals)
+    m, b = np.polyfit(nn_dists, y_vals.astype(float), 1)
+    xs = np.linspace(nn_dists.min(), nn_dists.max(), 200)
+    with mpl.rc_context(_PAPER_RC):
+        fig, ax = plt.subplots(figsize=(5.5, 4.0))
+        ax.scatter(nn_dists, y_vals, alpha=0.65, s=25, color=_BLUE,
+                   edgecolors="white", linewidths=0.3, zorder=3)
+        ax.plot(xs, m * xs + b, color=_ORANGE, lw=1.5, label="Linear fit", zorder=4)
+        ax.set_xlabel("Mean k-NN distance to TabICL corr. distribution (normalised)")
+        ax.set_ylabel(y_label)
+        ax.set_title(
+            f"{y_label} vs correlation-NN distance\n"
+            f"Pearson r = {r_p:.3f} (p = {p_p:.3f})   Spearman ρ = {r_s:.3f} (p = {p_s:.3f})"
+        )
+        ax.legend()
+        plt.tight_layout()
+        out = Path(output_path) / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+    return {"pearson_r": r_p, "pearson_p": p_p, "spearman_r": r_s, "spearman_p": p_s}
+
+
+def _plot_corr_comparison_scatter(
+    nn_dists: np.ndarray,
+    y_tabicl: np.ndarray,
+    y_autogluon: np.ndarray,
+    y_label: str,
+    filename: str,
+    output_path: str,
+    run=None,
+) -> None:
+    """Overlay TabICL and AutoGluon rank vs correlation-NN distance."""
+    with mpl.rc_context(_PAPER_RC):
+        fig, ax = plt.subplots(figsize=(5.5, 4.0))
+        for y_vals, color, label in [
+            (y_tabicl,    _BLUE,   "TabICL"),
+            (y_autogluon, _ORANGE, "AutoGluon"),
+        ]:
+            mask = ~np.isnan(y_vals)
+            if mask.sum() < 2:
+                continue
+            xm, ym = nn_dists[mask], y_vals[mask]
+            r_p, _ = stats.pearsonr(xm, ym)
+            r_s, _ = stats.spearmanr(xm, ym)
+            m, b   = np.polyfit(xm, ym.astype(float), 1)
+            xs     = np.linspace(xm.min(), xm.max(), 200)
+            ax.scatter(xm, ym, alpha=0.5, s=25, color=color,
+                       edgecolors="white", linewidths=0.3, zorder=3,
+                       label=f"{label}  r={r_p:.2f}  ρ={r_s:.2f}")
+            ax.plot(xs, m * xs + b, color=color, lw=1.5, zorder=4)
+        ax.set_xlabel("Mean k-NN distance to TabICL corr. distribution (normalised)")
+        ax.set_ylabel(y_label)
+        ax.set_title(f"TabICL vs AutoGluon — {y_label} vs corr-NN distance")
+        ax.legend()
+        plt.tight_layout()
+        out = Path(output_path) / filename
+        fig.savefig(out, bbox_inches="tight")
+        if run is not None:
+            run.log({filename.rsplit(".", 1)[0]: wandb.Image(str(out))})
+        plt.close(fig)
+    print(f"  Saved {out}")
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -365,10 +558,11 @@ def main() -> None:
     print(pd.DataFrame(js_mat, index=sources, columns=sources).round(4).to_string())
 
     # ── Plots ─────────────────────────────────────────────────────────────────
-    pca_path  = "correlations_pca.png"
-    umap_path = "correlations_umap.png"
-    mean_path = "correlations_mean.png"
-    dist_path = "correlations_distances.png"
+    out_dir   = Path(".")
+    pca_path  = str(out_dir / "correlations_pca.png")
+    umap_path = str(out_dir / "correlations_umap.png")
+    mean_path = str(out_dir / "correlations_mean.png")
+    dist_path = str(out_dir / "correlations_distances.png")
 
     all_hists  = np.concatenate([source_hists[s] for s in sources])
     all_labels = [s for s in sources for _ in range(len(source_hists[s]))]
@@ -378,8 +572,86 @@ def main() -> None:
     plot_mean_histograms(source_hists, output_path=mean_path)
     plot_distance_matrix(sources, w_mat, js_mat, output_path=dist_path)
 
+    # ── Rank-vs-coverage (correlation-structure distance) ─────────────────────
+    print("\n=== Rank-vs-coverage analysis (correlation structure) ===")
+
+    # Load rankings
+    rankings  = pd.read_csv(RANKINGS_CSV)
+    mean_aucs = rankings.groupby("dataset")["AUC"].mean().rename("mean_AUC")
+    tc_ranks  = rankings[rankings["model"] == "tabicl"][["dataset", "rank", "AUC"]].copy()
+    tc_ranks["rank"] = tc_ranks["rank"].astype(int)
+    tc_ranks  = tc_ranks.merge(mean_aucs, on="dataset")
+    tc_ranks["relative_auc"] = tc_ranks["AUC"] / tc_ranks["mean_AUC"]
+    datasets  = tc_ranks["dataset"].tolist()
+    rank_map  = tc_ranks.set_index("dataset")[["rank", "AUC", "relative_auc"]].to_dict("index")
+
+    # Load autogluon ranks
+    ag_df        = _load_ag_ranks(AUTOGLUON_RESULTS_CSV)
+    ag_rank_map  = ag_df.set_index("dataset")["ag_rank"].to_dict()
+    tc_ag_rank_map = ag_df.set_index("dataset")["tabicl_rank_with_ag"].to_dict()
+
+    # Compute TALENT correlation histograms
+    talent_corr_hists, talent_names = load_talent_corr_hists(
+        TALENT_DIR, datasets, CORR_HIST_CACHE
+    )
+
+    if len(talent_corr_hists) >= 2 and "TabICL" in source_hists and len(source_hists["TabICL"]) >= 2:
+        rng   = np.random.default_rng(RANDOM_STATE)
+        icl_h = source_hists["TabICL"]
+        print(f"  Computing correlation-NN distances ({len(talent_corr_hists)} TALENT tables → TabICL)")
+        nn_dists = _corr_nn_distances(talent_corr_hists, icl_h, KNN_K)
+
+        # Align with rank maps
+        tc_rank_vals  = np.array([rank_map[ds]["rank"]         if ds in rank_map else np.nan for ds in talent_names], dtype=float)
+        tc_auc_vals   = np.array([rank_map[ds]["AUC"]          if ds in rank_map else np.nan for ds in talent_names], dtype=float)
+        tc_rel_vals   = np.array([rank_map[ds]["relative_auc"] if ds in rank_map else np.nan for ds in talent_names], dtype=float)
+        ag_rank_vals  = np.array([ag_rank_map.get(ds, np.nan)    for ds in talent_names], dtype=float)
+        tc_ag_rank_vals = np.array([tc_ag_rank_map.get(ds, np.nan) for ds in talent_names], dtype=float)
+
+        tc_mask = ~np.isnan(tc_rank_vals)
+        if tc_mask.sum() >= 2:
+            corr_tc = _plot_rank_vs_corr_dist(
+                nn_dists[tc_mask], tc_rank_vals[tc_mask],
+                "TabICL rank (lower = better)", "corr_rank_vs_nndist_scatter.png", str(out_dir), run,
+            )
+            _plot_rank_vs_corr_dist(
+                nn_dists[tc_mask], tc_auc_vals[tc_mask],
+                "TabICL AUC", "corr_auc_vs_nndist_scatter.png", str(out_dir), run,
+            )
+            corr_rel = _plot_rank_vs_corr_dist(
+                nn_dists[tc_mask], tc_rel_vals[tc_mask],
+                "TabICL relative AUC", "corr_relative_auc_vs_nndist_scatter.png", str(out_dir), run,
+            )
+        else:
+            corr_tc = corr_rel = None
+
+        ag_mask = ~np.isnan(ag_rank_vals)
+        if ag_mask.sum() >= 2:
+            corr_ag = _plot_rank_vs_corr_dist(
+                nn_dists[ag_mask], ag_rank_vals[ag_mask],
+                "AutoGluon rank (lower = better)", "corr_ag_rank_vs_nndist_scatter.png", str(out_dir), run,
+            )
+            _plot_corr_comparison_scatter(
+                nn_dists[ag_mask], tc_ag_rank_vals[ag_mask], ag_rank_vals[ag_mask],
+                "rank (lower = better, 8-model field)",
+                "corr_tabicl_vs_ag_rank_scatter.png", str(out_dir), run,
+            )
+        else:
+            corr_ag = None
+
+        print("\n── Correlation-NN rank summary ──")
+        if corr_tc:
+            print(f"  TabICL  Pearson r = {corr_tc['pearson_r']:.3f}  Spearman ρ = {corr_tc['spearman_r']:.3f}")
+        if corr_rel:
+            print(f"  TabICL rel-AUC  Pearson r = {corr_rel['pearson_r']:.3f}  Spearman ρ = {corr_rel['spearman_r']:.3f}")
+        if corr_ag:
+            print(f"  AutoGluon  Pearson r = {corr_ag['pearson_r']:.3f}  Spearman ρ = {corr_ag['spearman_r']:.3f}")
+    else:
+        corr_tc = corr_rel = corr_ag = None
+        print("  Skipping rank-vs-coverage (insufficient TALENT data or TabICL source missing)")
+
     # ── wandb logging ─────────────────────────────────────────────────────────
-    run.log({
+    log_dict = {
         "correlations/pca":       wandb.Image(pca_path),
         "correlations/umap":      wandb.Image(umap_path),
         "correlations/mean_hist": wandb.Image(mean_path),
@@ -394,7 +666,17 @@ def main() -> None:
                   for i in range(n) for j in range(n)],
             columns=["source_a", "source_b", "js_divergence"],
         ),
-    })
+    }
+    if corr_tc:
+        log_dict["corr_nn/tc_pearson_r"]  = corr_tc["pearson_r"]
+        log_dict["corr_nn/tc_spearman_r"] = corr_tc["spearman_r"]
+    if corr_rel:
+        log_dict["corr_nn/rel_pearson_r"]  = corr_rel["pearson_r"]
+        log_dict["corr_nn/rel_spearman_r"] = corr_rel["spearman_r"]
+    if corr_ag:
+        log_dict["corr_nn/ag_pearson_r"]  = corr_ag["pearson_r"]
+        log_dict["corr_nn/ag_spearman_r"] = corr_ag["spearman_r"]
+    run.log(log_dict)
     run.finish()
 
 
