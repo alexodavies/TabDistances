@@ -351,7 +351,8 @@ def plot_histogram_with_metric(
 
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+        ax1.legend(lines1 + lines2, labels1 + labels2,
+                   loc="upper left", bbox_to_anchor=(1.12, 1), borderaxespad=0)
 
         plt.title(f"NN Distance to TabICL Prior vs {y_label}")
         plt.tight_layout()
