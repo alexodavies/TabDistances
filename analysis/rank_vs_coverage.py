@@ -135,39 +135,47 @@ def load_talent_feats(
     datasets: list[str],
     cache_path: Path,
 ) -> list[dict]:
-    """Return list of {dataset, feats} dicts, using a cache when available."""
+    """Return list of {dataset, feats} dicts for exactly the requested datasets.
+
+    Loads from cache where available and computes (then caches) any missing entries.
+    """
+    dataset_set = set(datasets)
+    cached: dict[str, np.ndarray] = {}
+
     if cache_path.exists():
         data = np.load(cache_path, allow_pickle=True)
-        names = data["names"].tolist()
-        feats = data["feats"]
-        print(f"  Loaded TALENT features from cache: {cache_path} ({len(names)} datasets)")
-        return [{"dataset": n, "feats": f} for n, f in zip(names, feats)]
+        cached = {n: f for n, f in zip(data["names"].tolist(), data["feats"])
+                  if n in dataset_set}
+        print(f"  Cache hit: {len(cached)}/{len(datasets)} datasets "
+              f"(from {len(data['names'])} cached)")
 
-    records = []
-    skipped = 0
-    for ds in tqdm(datasets, desc="Featurising TALENT datasets"):
-        ds_path = talent_dir / ds
-        if not ds_path.exists():
-            skipped += 1
-            continue
-        df = _load_talent_dataset(ds_path)
-        if df is None or df.shape[0] == 0 or df.shape[1] == 0:
-            skipped += 1
-            continue
-        vec = df_to_vec(df.iloc[:MAX_ROWS])
-        records.append({"dataset": ds, "feats": vec})
+    missing = [ds for ds in datasets if ds not in cached]
+    if missing:
+        print(f"  Computing features for {len(missing)} datasets not in cache…")
+        skipped = 0
+        for ds in tqdm(missing, desc="Featurising TALENT datasets"):
+            ds_path = talent_dir / ds
+            if not ds_path.exists():
+                skipped += 1
+                continue
+            df = _load_talent_dataset(ds_path)
+            if df is None or df.shape[0] == 0 or df.shape[1] == 0:
+                skipped += 1
+                continue
+            cached[ds] = df_to_vec(df.iloc[:MAX_ROWS])
+        print(f"  Featurised {len(missing) - skipped} new datasets ({skipped} skipped / not found)")
 
-    print(f"  Featurised {len(records)} TALENT datasets ({skipped} skipped / not found)")
-
-    if records:
+        # Update cache with all known entries
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         np.savez(
             cache_path,
-            names=np.array([r["dataset"] for r in records]),
-            feats=np.array([r["feats"] for r in records]),
+            names=np.array(list(cached.keys())),
+            feats=np.array(list(cached.values())),
         )
-        print(f"  Cached TALENT features -> {cache_path}")
+        print(f"  Updated cache -> {cache_path} ({len(cached)} datasets total)")
 
+    records = [{"dataset": ds, "feats": cached[ds]} for ds in datasets if ds in cached]
+    print(f"  Using {len(records)} TALENT feature vectors")
     return records
 
 
