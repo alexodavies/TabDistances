@@ -328,7 +328,7 @@ def plot_histogram_with_metric(
     ])
 
     with mpl.rc_context(_PAPER_RC):
-        fig, ax1 = plt.subplots(figsize=(6.5, 3.5))
+        fig, ax1 = plt.subplots(figsize=(7.5, 3.5))
 
         _stairs(ax1, icl_density, bins, _BLUE, "TALENT datasets")
 
