@@ -105,6 +105,11 @@ _FEAT_LABELS = {
 }
 
 
+def _cdf_to_density(hists: np.ndarray) -> np.ndarray:
+    """Convert (N, 30) CDF histograms to relative densities (PMF) via finite differences."""
+    return np.diff(hists, prepend=0.0, axis=1)
+
+
 # ------------------------------------------------------------------
 # Column histogram loaders  (compatible with rank_vs_coverage_columns)
 # ------------------------------------------------------------------
@@ -366,7 +371,6 @@ def _plot_combined_per_pair(pair_key: str, feat_data: dict) -> None:
             d = feat_data[ft]["pca"]
             _draw_pca(ax, d["X_2d"], d["labels"], d["var"], "",
                       label_ref=d["label_ref"], label_cand=d["label_cand"])
-            ax.set_title(_FEAT_LABELS[ft])
         plt.tight_layout()
         _save_and_log(fig, "combined_pca", None, tag)
 
@@ -455,7 +459,6 @@ def _plot_combined_across_pairs(
             d = all_pair_data[pk][feat_type]["pca"]
             _draw_pca(ax, d["X_2d"], d["labels"], d["var"], "",
                       label_ref=d["label_ref"], label_cand=d["label_cand"])
-            ax.set_title(pairs_display[pk])
         plt.tight_layout()
         _save_and_log(fig, f"xpair_{feat_type}_pca", summary_run, tag)
 
@@ -475,7 +478,7 @@ def main(tables_dir: Path, icl_dir: Path, n_sample: int) -> None:
     col_hists = {}
     for name, d in [("fm", tables_dir), ("t4", T4_DIR), ("icl", icl_dir)]:
         cache = CACHE_DIR / f"{name}_col_hists_{n_sample}.npz"
-        col_hists[name] = load_col_hists(d, n_sample, rng, cache)
+        col_hists[name] = _cdf_to_density(load_col_hists(d, n_sample, rng, cache))
         print(f"  {name}: {col_hists[name].shape}")
 
     # ── Load correlation histograms ──────────────────────────────────
@@ -483,7 +486,7 @@ def main(tables_dir: Path, icl_dir: Path, n_sample: int) -> None:
     corr_hists = {}
     for name, d in [("fm", tables_dir), ("t4", T4_DIR), ("icl", icl_dir)]:
         cache = CACHE_DIR / f"{name}_corr_hists_{n_sample}.npz"
-        corr_hists[name] = load_corr_hists(d, n_sample, rng, cache)
+        corr_hists[name] = _cdf_to_density(load_corr_hists(d, n_sample, rng, cache))
         print(f"  {name}: {corr_hists[name].shape}")
 
     feat_sets = {"col_hist": col_hists, "corr_hist": corr_hists}
