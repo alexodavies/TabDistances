@@ -413,7 +413,9 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
                 r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
                 ax1.text(0.5, 0.03, f"$r = {r:.2f}$",
                          transform=ax1.transAxes, va="bottom", ha="center",
-                         fontsize=7, color=_RED)
+                         fontsize=7, color="black",
+                         bbox=dict(boxstyle="square,pad=0.15",
+                                   facecolor="white", edgecolor="none", alpha=0.85))
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
