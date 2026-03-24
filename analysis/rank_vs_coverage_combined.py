@@ -220,8 +220,10 @@ def _corr_pmf(arr2d: np.ndarray) -> np.ndarray | None:
 def _load_talent_corr_hists(datasets: list[str]) -> tuple[np.ndarray, list[str]]:
     if TALENT_CORR_CACHE.exists():
         d = np.load(TALENT_CORR_CACHE, allow_pickle=True)
-        print(f"  Corr hists: {len(d['hists'])} TALENT tables from cache")
-        return d["hists"], d["names"].tolist()
+        if d["hists"].shape[1] == N_CORR_BINS:
+            print(f"  Corr hists: {len(d['hists'])} TALENT tables from cache")
+            return d["hists"], d["names"].tolist()
+        print(f"  Corr hists: cache has {d['hists'].shape[1]} bins (expected {N_CORR_BINS}), recomputing …")
 
     hists, names = [], []
     for ds in tqdm(datasets, desc="TALENT corr hists"):
@@ -250,8 +252,10 @@ def _load_talent_corr_hists(datasets: list[str]) -> tuple[np.ndarray, list[str]]
 def _load_tabicl_corr_hists() -> np.ndarray:
     if TABICL_CORR_CACHE.exists():
         arr = np.load(TABICL_CORR_CACHE)["hists"]
-        print(f"  Corr hists: {len(arr)} TabICL tables from cache")
-        return arr
+        if arr.shape[1] == N_CORR_BINS:
+            print(f"  Corr hists: {len(arr)} TabICL tables from cache")
+            return arr
+        print(f"  Corr hists: cache has {arr.shape[1]} bins (expected {N_CORR_BINS}), recomputing …")
 
     if not ICL_DIR.exists():
         raise FileNotFoundError(f"TabICL parquet dir not found: {ICL_DIR}")
