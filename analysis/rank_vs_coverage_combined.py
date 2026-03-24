@@ -409,6 +409,12 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
                             labelleft=False, labelright=True,
                             direction="in", pad=-10)
 
+            if mask.sum() >= 2:
+                r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
+                ax1.text(0.5, 0.03, f"$r = {r:.2f}$",
+                         transform=ax1.transAxes, va="bottom", ha="center",
+                         fontsize=7, color=_RED)
+
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
         h_right = [right_axes[0].get_legend_handles_labels()[0][0]]
@@ -423,6 +429,12 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             frameon=True,
             borderaxespad=0.5,
         )
+
+        fig.canvas.draw()
+        for ax2 in right_axes:
+            for lbl in ax2.get_yticklabels():
+                lbl.set_bbox(dict(boxstyle="square,pad=0.15",
+                                  facecolor="white", edgecolor="none", alpha=0.85))
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
