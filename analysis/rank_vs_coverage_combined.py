@@ -103,26 +103,22 @@ def _nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
     return dists.mean(axis=1)
 
 
-def _drop_singletons(nn_dists: np.ndarray, ranks: np.ndarray,
-                     n_bins: int) -> tuple[np.ndarray, np.ndarray]:
-    """Remove points that are the sole occupant of their bin in a preliminary pass."""
+def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
+                n_bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
+    """Bin TALENT data, zero out singleton bins, return bins + stats + trimmed x-range."""
     bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
     idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
     cts  = np.array([(idx == i).sum() for i in range(n_bins)])
-    keep = cts[idx] > 1
-    return nn_dists[keep], ranks[keep]
-
-
-def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
-                bins: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    n = len(bins) - 1
-    idx     = np.clip(np.digitize(nn_dists, bins) - 1, 0, n - 1)
-    cts     = np.array([(idx == i).sum() for i in range(n)])
-    density = cts.astype(float)
+    keep = cts > 1
+    density = np.where(keep, cts, 0).astype(float)
     density /= density.max() if density.max() > 0 else 1.0
-    means = np.array([ranks[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n)])
-    stds  = np.array([ranks[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n)])
-    return density, means, stds
+    means = np.array([ranks[idx == i].mean() if keep[i] else np.nan for i in range(n_bins)])
+    stds  = np.array([ranks[idx == i].std()  if keep[i] else 0.0   for i in range(n_bins)])
+    nz = np.where(keep)[0]
+    x_lo = bins[nz[0]]      if len(nz) else bins[0]
+    x_hi = bins[nz[-1] + 1] if len(nz) else bins[-1]
+    return bins, bin_centers, density, means, stds, x_lo, x_hi
 
 
 # ------------------------------------------------------------------
@@ -332,21 +328,18 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
 
         right_axes = []
         for col, (ax1, p) in enumerate(zip(axes, panels)):
-            nn_dists, ranks = _drop_singletons(p["nn_dists"], p["ranks"], n_bins)
-            bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
-            bin_centers = (bins[:-1] + bins[1:]) / 2
+            bins, bin_centers, talent_density, means, stds, x_lo, x_hi = \
+                _bin_metric(p["nn_dists"], p["ranks"], n_bins)
 
-            # Self-distance density
-            si_idx  = np.clip(np.digitize(p["nn_self"], bins) - 1, 0, n_bins - 1)
-            si_cts  = np.array([(si_idx == i).sum() for i in range(n_bins)])
+            # Self-distance density (clipped to TALENT bins)
+            si_idx     = np.clip(np.digitize(p["nn_self"], bins) - 1, 0, n_bins - 1)
+            si_cts     = np.array([(si_idx == i).sum() for i in range(n_bins)])
             si_density = si_cts / si_cts.max()
-
-            talent_density, means, stds = _bin_metric(nn_dists, ranks, bins)
 
             # Left: density histograms
             _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
             _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
-            ax1.set_xlim(bins[0], bins[-1])
+            ax1.set_xlim(x_lo, x_hi)
             ax1.set_xlabel("Mean k-NN distance (normalised)")
             if col == 0:
                 ax1.set_ylabel("Relative density")
