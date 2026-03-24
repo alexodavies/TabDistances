@@ -433,6 +433,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             for tick in ax2.yaxis.get_major_ticks():
                 tick.label2.set_bbox(dict(boxstyle="square,pad=0.15",
                                           facecolor="white", edgecolor="none", alpha=1.0))
+                tick.label2.set_zorder(10)
             if hasattr(ax2, "_corr_r"):
                 ax2.text(0.5, 0.03, f"$r = {ax2._corr_r:.2f}$",
                          transform=ax2.transAxes, va="bottom", ha="center",
