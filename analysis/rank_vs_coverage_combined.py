@@ -122,11 +122,10 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
     bin_centers = (bins[:-1] + bins[1:]) / 2
     idx  = np.clip(np.digitize(nd, bins) - 1, 0, n_bins - 1)
     cts  = np.array([(idx == i).sum() for i in range(n_bins)])
-    keep = cts > 1
-    density = np.where(keep, cts, 0).astype(float)
+    density = cts.astype(float)
     density /= density.max() if density.max() > 0 else 1.0
-    means = np.array([rk[idx == i].mean() if keep[i] else np.nan for i in range(n_bins)])
-    stds  = np.array([rk[idx == i].std()  if keep[i] else 0.0   for i in range(n_bins)])
+    means = np.array([rk[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n_bins)])
+    stds  = np.array([rk[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n_bins)])
     return bins, bin_centers, density, means, stds, x_lo, x_hi
 
 
