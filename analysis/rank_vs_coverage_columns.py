@@ -412,7 +412,7 @@ def _plot_metric_histogram(
     bin_stds  = np.array([y_vals[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n_bins)])
 
     with mpl.rc_context(_PAPER_RC):
-        fig, ax1 = plt.subplots(figsize=(7.5, 3.5))
+        fig, ax1 = plt.subplots(figsize=(5, 3.5))
         _stairs(ax1, density, bins, _BLUE, "TALENT columns", alpha_fill=0.15)
         if nn_dists_fm is not None:
             fm_idx = np.clip(np.digitize(nn_dists_fm, bins) - 1, 0, n_bins - 1)
