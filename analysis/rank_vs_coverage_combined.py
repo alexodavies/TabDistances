@@ -256,8 +256,13 @@ def _load_tabicl_corr_hists() -> np.ndarray:
     if not ICL_DIR.exists():
         raise FileNotFoundError(f"TabICL parquet dir not found: {ICL_DIR}")
 
+    all_files = sorted(ICL_DIR.glob("*.parquet"))
+    rng = np.random.default_rng(RANDOM_STATE)
+    if len(all_files) > 10_000:
+        all_files = rng.choice(all_files, size=10_000, replace=False).tolist()
+
     hists = []
-    for p in tqdm(sorted(ICL_DIR.glob("*.parquet")), desc="TabICL corr hists"):
+    for p in tqdm(all_files, desc="TabICL corr hists"):
         try:
             df = pd.read_parquet(p)
             num = df.select_dtypes(include="number")
