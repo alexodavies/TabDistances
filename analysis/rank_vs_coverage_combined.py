@@ -31,6 +31,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from sklearn.neighbors import BallTree
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
@@ -404,9 +405,10 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             # Right-axis label and ticks only on the last panel
             ax2.set_ylabel("TabICL mean rank", color=_RED,
                            visible=(col == len(panels) - 1))
+            ax2.yaxis.set_major_locator(MaxNLocator(integer=True, prune="upper"))
             ax2.tick_params(axis="y", labelcolor=_RED,
                             labelleft=False, labelright=True,
-                            direction="in", pad=-20)
+                            direction="in", pad=-10)
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
