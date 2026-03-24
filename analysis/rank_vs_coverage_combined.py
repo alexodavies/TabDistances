@@ -411,11 +411,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
 
             if mask.sum() >= 2:
                 r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
-                ax1.text(0.5, 0.03, f"$r = {r:.2f}$",
-                         transform=ax1.transAxes, va="bottom", ha="center",
-                         fontsize=7, color="black",
-                         bbox=dict(boxstyle="square,pad=0.15",
-                                   facecolor="white", edgecolor="none", alpha=1.0))
+                right_axes[-1]._corr_r = r   # stash for post-draw annotation
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
@@ -434,9 +430,15 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
 
         fig.canvas.draw()
         for ax2 in right_axes:
-            for lbl in ax2.get_yticklabels():
-                lbl.set_bbox(dict(boxstyle="square,pad=0.15",
-                                  facecolor="white", edgecolor="none", alpha=1.0))
+            for tick in ax2.yaxis.get_major_ticks():
+                tick.label2.set_bbox(dict(boxstyle="square,pad=0.15",
+                                          facecolor="white", edgecolor="none", alpha=1.0))
+            if hasattr(ax2, "_corr_r"):
+                ax2.text(0.5, 0.03, f"$r = {ax2._corr_r:.2f}$",
+                         transform=ax2.transAxes, va="bottom", ha="center",
+                         fontsize=7, color="black", zorder=10,
+                         bbox=dict(boxstyle="square,pad=0.15",
+                                   facecolor="white", edgecolor="none", alpha=1.0))
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
