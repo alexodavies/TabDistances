@@ -141,16 +141,50 @@ def _load_rankings() -> tuple[dict[str, float], list[str]]:
 
 def _load_table_panel(rank_map: dict, datasets: list[str], rng: np.random.Generator):
     """Returns (nn_dists_talent, nn_dists_self, ranks)."""
-    # TALENT table features
-    if not TALENT_FEATS_CACHE.exists():
-        raise FileNotFoundError(f"Cache missing: {TALENT_FEATS_CACHE}  "
-                                f"(run rank_vs_coverage.py first)")
-    data  = np.load(TALENT_FEATS_CACHE, allow_pickle=True)
-    by_name = {n: data["feats"][i] for i, n in enumerate(data["names"])}
-    matched = [(n, by_name[n]) for n in datasets if n in by_name]
-    names   = [m[0] for m in matched]
-    talent_feats = np.stack([m[1] for m in matched])
-    ranks = np.array([rank_map[n] for n in names], dtype=float)
+    # TALENT table features — load from cache, compute any missing entries
+    cached: dict[str, np.ndarray] = {}
+    if TALENT_FEATS_CACHE.exists():
+        data = np.load(TALENT_FEATS_CACHE, allow_pickle=True)
+        cached = {n: data["feats"][i] for i, n in enumerate(data["names"].tolist())
+                  if n in set(datasets)}
+        print(f"  Table feats: cache hit {len(cached)}/{len(datasets)} datasets")
+
+    missing = [ds for ds in datasets if ds not in cached]
+    if missing:
+        print(f"  Table feats: computing {len(missing)} missing datasets …")
+        skipped = 0
+        for ds in tqdm(missing, desc="Featurising TALENT datasets"):
+            ds_path = TALENT_DIR / ds
+            if not ds_path.exists():
+                skipped += 1
+                continue
+            parts = []
+            for split in ("train", "val", "test"):
+                npy = ds_path / f"N_{split}.npy"
+                if npy.exists():
+                    arr = np.load(npy, allow_pickle=True).astype(float)
+                    parts.append(pd.DataFrame(
+                        arr.reshape(-1, 1) if arr.ndim == 1 else arr,
+                        columns=[f"num_{i}" for i in range(arr.shape[-1])],
+                    ))
+            if not parts:
+                skipped += 1
+                continue
+            df = pd.concat(parts, ignore_index=True)
+            if df.shape[0] == 0 or df.shape[1] == 0:
+                skipped += 1
+                continue
+            cached[ds] = df_to_vec(df.iloc[:MAX_ROWS])
+        print(f"  Table feats: computed {len(missing) - skipped} ({skipped} skipped)")
+        CACHE.mkdir(parents=True, exist_ok=True)
+        np.savez(TALENT_FEATS_CACHE,
+                 names=np.array(list(cached.keys())),
+                 feats=np.array(list(cached.values())))
+        print(f"  Table feats: cache updated ({len(cached)} total) -> {TALENT_FEATS_CACHE}")
+
+    names        = [ds for ds in datasets if ds in cached]
+    talent_feats = np.stack([cached[ds] for ds in names])
+    ranks        = np.array([rank_map[n] for n in names], dtype=float)
     print(f"  Table feats: {len(names)} TALENT datasets")
 
     # ICL table features
