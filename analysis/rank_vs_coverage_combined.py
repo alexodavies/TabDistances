@@ -103,14 +103,25 @@ def _nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
     return dists.mean(axis=1)
 
 
+def _drop_singletons(nn_dists: np.ndarray, ranks: np.ndarray,
+                     n_bins: int) -> tuple[np.ndarray, np.ndarray]:
+    """Remove points that are the sole occupant of their bin in a preliminary pass."""
+    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
+    cts  = np.array([(idx == i).sum() for i in range(n_bins)])
+    keep = cts[idx] > 1
+    return nn_dists[keep], ranks[keep]
+
+
 def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
                 bins: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     n = len(bins) - 1
-    idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n - 1)
-    cts  = np.array([(idx == i).sum() for i in range(n)])
-    density = cts / cts.max()
-    means = np.array([ranks[idx == i].mean() if (idx == i).sum() > 1 else np.nan for i in range(n)])
-    stds  = np.array([ranks[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n)])
+    idx     = np.clip(np.digitize(nn_dists, bins) - 1, 0, n - 1)
+    cts     = np.array([(idx == i).sum() for i in range(n)])
+    density = cts.astype(float)
+    density /= density.max() if density.max() > 0 else 1.0
+    means = np.array([ranks[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n)])
+    stds  = np.array([ranks[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n)])
     return density, means, stds
 
 
@@ -321,7 +332,8 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
 
         right_axes = []
         for col, (ax1, p) in enumerate(zip(axes, panels)):
-            all_dists = np.concatenate([p["nn_dists"], p["nn_self"]])
+            nn_dists, ranks = _drop_singletons(p["nn_dists"], p["ranks"], n_bins)
+            all_dists = np.concatenate([nn_dists, p["nn_self"]])
             bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
             bin_centers = (bins[:-1] + bins[1:]) / 2
 
@@ -330,7 +342,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             si_cts  = np.array([(si_idx == i).sum() for i in range(n_bins)])
             si_density = si_cts / si_cts.max()
 
-            talent_density, means, stds = _bin_metric(p["nn_dists"], p["ranks"], bins)
+            talent_density, means, stds = _bin_metric(nn_dists, ranks, bins)
 
             # Left: density histograms
             _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
@@ -359,7 +371,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
                            visible=(col == len(panels) - 1))
             ax2.tick_params(axis="y", labelcolor=_RED,
                             labelleft=False,
-                            labelright=(col == len(panels) - 1))
+                            labelright=True)
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
