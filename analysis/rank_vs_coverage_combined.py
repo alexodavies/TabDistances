@@ -333,8 +333,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
         right_axes = []
         for col, (ax1, p) in enumerate(zip(axes, panels)):
             nn_dists, ranks = _drop_singletons(p["nn_dists"], p["ranks"], n_bins)
-            all_dists = np.concatenate([nn_dists, p["nn_self"]])
-            bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
+            bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
             bin_centers = (bins[:-1] + bins[1:]) / 2
 
             # Self-distance density
@@ -347,6 +346,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             # Left: density histograms
             _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
             _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
+            ax1.set_xlim(bins[0], bins[-1])
             ax1.set_xlabel("Mean k-NN distance (normalised)")
             if col == 0:
                 ax1.set_ylabel("Relative density")
@@ -370,8 +370,8 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             ax2.set_ylabel("TabICL mean rank", color=_RED,
                            visible=(col == len(panels) - 1))
             ax2.tick_params(axis="y", labelcolor=_RED,
-                            labelleft=False,
-                            labelright=True)
+                            labelleft=False, labelright=True,
+                            direction="in", pad=-20)
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
