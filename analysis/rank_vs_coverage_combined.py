@@ -415,7 +415,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
                          transform=ax1.transAxes, va="bottom", ha="center",
                          fontsize=7, color="black",
                          bbox=dict(boxstyle="square,pad=0.15",
-                                   facecolor="white", edgecolor="none", alpha=0.85))
+                                   facecolor="white", edgecolor="none", alpha=1.0))
 
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
