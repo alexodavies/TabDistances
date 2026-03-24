@@ -406,8 +406,8 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
                            visible=(col == len(panels) - 1))
             ax2.yaxis.set_major_locator(MaxNLocator(integer=True, prune="upper"))
             ax2.tick_params(axis="y", labelcolor=_RED,
-                            labelleft=False, labelright=True,
-                            direction="in", pad=-10)
+                            labelleft=False, labelright=False,
+                            direction="in")
 
             if mask.sum() >= 2:
                 r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
@@ -429,17 +429,20 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
         )
 
         fig.canvas.draw()
+        _bbox = dict(boxstyle="square,pad=0.15", facecolor="white", edgecolor="none", alpha=1.0)
+        _trans_yd = mpl.transforms.blended_transform_factory
         for ax2 in right_axes:
-            for tick in ax2.yaxis.get_major_ticks():
-                tick.label2.set_bbox(dict(boxstyle="square,pad=0.15",
-                                          facecolor="white", edgecolor="none", alpha=1.0))
-                tick.label2.set_zorder(10)
+            trans = _trans_yd(ax2.transAxes, ax2.transData)
+            ylim  = sorted(ax2.get_ylim())   # sort: inverted axis has ylim[0] > ylim[1]
+            for loc in ax2.yaxis.get_majorticklocs():
+                if ylim[0] <= loc <= ylim[1]:
+                    ax2.text(0.97, loc, str(int(round(loc))),
+                             transform=trans, ha="right", va="center",
+                             fontsize=7, color=_RED, zorder=10, bbox=_bbox)
             if hasattr(ax2, "_corr_r"):
                 ax2.text(0.5, 0.03, f"$r = {ax2._corr_r:.2f}$",
                          transform=ax2.transAxes, va="bottom", ha="center",
-                         fontsize=7, color="black", zorder=10,
-                         bbox=dict(boxstyle="square,pad=0.15",
-                                   facecolor="white", edgecolor="none", alpha=1.0))
+                         fontsize=7, color="black", zorder=10, bbox=_bbox)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
