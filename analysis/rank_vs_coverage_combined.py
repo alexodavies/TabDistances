@@ -416,7 +416,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
         h_right = [right_axes[0].get_legend_handles_labels()[0][0]]
-        l_right = ["Mean rank (↓ better)"]
+        l_right = ["Mean rank"]
 
         fig.legend(
             h_left + h_right,
