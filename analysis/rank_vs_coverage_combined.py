@@ -396,7 +396,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             hi = means + stds
             ax2.plot(bin_centers[mask], means[mask],
                      color=_RED, lw=1.5, marker="o", ms=3,
-                     label="Mean rank (↓ better)")
+                     label="Mean rank")
             ax2.fill_between(bin_centers[mask], lo[mask], hi[mask],
                              color=_RED, alpha=0.2)
             ax2.invert_yaxis()
