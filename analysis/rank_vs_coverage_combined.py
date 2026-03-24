@@ -105,19 +105,27 @@ def _nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
 
 def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
                 n_bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
-    """Bin TALENT data, zero out singleton bins, return bins + stats + trimmed x-range."""
-    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    """Bin TALENT data, zero out singleton bins, then rebin over trimmed range."""
+    # Pass 1: find the non-singleton range
+    bins1 = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
+    idx1  = np.clip(np.digitize(nn_dists, bins1) - 1, 0, n_bins - 1)
+    cts1  = np.array([(idx1 == i).sum() for i in range(n_bins)])
+    nz    = np.where(cts1 > 1)[0]
+    x_lo  = bins1[nz[0]]      if len(nz) else bins1[0]
+    x_hi  = bins1[nz[-1] + 1] if len(nz) else bins1[-1]
+
+    # Pass 2: rebin only the data within [x_lo, x_hi]
+    inner = (nn_dists >= x_lo) & (nn_dists <= x_hi)
+    nd, rk = nn_dists[inner], ranks[inner]
+    bins = np.linspace(x_lo, x_hi, n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
-    idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
+    idx  = np.clip(np.digitize(nd, bins) - 1, 0, n_bins - 1)
     cts  = np.array([(idx == i).sum() for i in range(n_bins)])
     keep = cts > 1
     density = np.where(keep, cts, 0).astype(float)
     density /= density.max() if density.max() > 0 else 1.0
-    means = np.array([ranks[idx == i].mean() if keep[i] else np.nan for i in range(n_bins)])
-    stds  = np.array([ranks[idx == i].std()  if keep[i] else 0.0   for i in range(n_bins)])
-    nz = np.where(keep)[0]
-    x_lo = bins[nz[0]]      if len(nz) else bins[0]
-    x_hi = bins[nz[-1] + 1] if len(nz) else bins[-1]
+    means = np.array([rk[idx == i].mean() if keep[i] else np.nan for i in range(n_bins)])
+    stds  = np.array([rk[idx == i].std()  if keep[i] else 0.0   for i in range(n_bins)])
     return bins, bin_centers, density, means, stds, x_lo, x_hi
 
 
