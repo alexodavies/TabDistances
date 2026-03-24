@@ -1,19 +1,26 @@
-"""3-panel combined histogram + metric figure for rank_vs_coverage.
+"""3-panel combined histogram + mean-rank figure.
 
-Produces a single figure (rank_vs_coverage_combined.png) with three side-by-side
-panels, each showing:
-  - Left y-axis: normalised NN-distance density (TALENT datasets + TabICL Prior self)
-  - Right y-axis: mean metric ± 1 SD per bin (rank, AUC, relative AUC)
+One panel per distance representation:
+  (1) Table feature vectors   (rank_vs_coverage approach)
+  (2) Column histograms       (rank_vs_coverage_columns approach)
+  (3) Correlation histograms  (rank_vs_coverage_correlations approach)
 
-Sized for US letter paper (full-width, portrait).
+Each panel:
+  - Left y-axis:  normalised NN-distance density (TALENT datasets + TabICL Prior self)
+  - Right y-axis: mean TabICL rank ± 1 SD per distance bin (inverted, lower = better)
+
+Ranks are drawn exclusively from tabicl-rankings-full-context.csv.
+Sized for US letter paper (full text width, portrait).
 
 Usage
 -----
     python analysis/rank_vs_coverage_combined.py [--output-dir results/rank-coverage]
+                                                 [--n-bins 30]
 """
 
 import argparse
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -28,22 +35,34 @@ from sklearn.neighbors import BallTree
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
-from tabdistances.discriminator.features import df_to_vec, select_features, FEATURE_MODES
+from tabdistances.discriminator.features import df_to_vec, FEATURE_MODES
+from tabdistances.columns.node_features import get_histogram
 
 # ------------------------------------------------------------------
-# CONFIG  (shared with rank_vs_coverage.py)
+# CONFIG  (mirrors paths used by the individual rank_vs_coverage* scripts)
 # ------------------------------------------------------------------
-_ROOT                 = Path(__file__).resolve().parent.parent
-ICL_CACHE             = _ROOT / "cache/real_feats_icl_25000_512_v2.npz"
-RANKINGS_CSV          = _ROOT / "results/tabicl-rankings-full-context.csv"
-AUTOGLUON_RESULTS_CSV = _ROOT / "results/results-autogluon-512-context.csv"
-TALENT_DIR            = _ROOT / "data"
+_ROOT  = Path(__file__).resolve().parent.parent
+CACHE  = _ROOT / "cache"
+
+RANKINGS_CSV = _ROOT / "results/tabicl-rankings-full-context.csv"
+TALENT_DIR   = _ROOT / "data"
+ICL_DIR      = _ROOT / "tables-tabicl/parquet"
+
+TALENT_FEATS_CACHE  = CACHE / "talent_feats_512.npz"
+ICL_FEATS_CACHE     = CACHE / "real_feats_icl_25000_512_v2.npz"
+TALENT_COL_CACHE    = CACHE / "talent_col_hists.npz"
+TALENT_CORR_CACHE   = CACHE / "talent_corr_hists.npz"
+TABICL_CORR_CACHE   = CACHE / "tabicl_corr_hists.npz"
 
 MAX_ROWS     = 512
-N_ICL        = 25_000
-FEATURE_MODE = "full"
 KNN_K        = 5
+N_ICL        = 25_000
 RANDOM_STATE = 42
+
+# Correlation histogram config (matches rank_vs_coverage_correlations.py)
+N_CORR_BINS  = 50
+CORR_EDGES   = np.linspace(-1.0, 1.0, N_CORR_BINS + 1)
+MIN_NUM_COLS = 2
 
 _PAPER_RC = {
     "font.size":       8,
@@ -62,161 +81,281 @@ _RED    = "#ef0e0e"
 
 
 # ------------------------------------------------------------------
-# Helpers
+# Shared utilities
 # ------------------------------------------------------------------
-def _stairs(ax, density, bins, color, label, alpha_fill=0.2, lw=1.5):
+
+def _stairs(ax, density, bins, color, label, alpha_fill=0.15, lw=1.5):
     patch = ax.stairs(density, bins, fill=True, label=label)
     patch.set_facecolor((*mpl.colors.to_rgb(color), alpha_fill))
     patch.set_edgecolor(color)
     patch.set_linewidth(lw)
 
 
-def _load_talent_feats(talent_dir: Path, datasets: list[str], cache: Path) -> list[dict]:
-    if cache.exists():
-        data = np.load(cache, allow_pickle=True)
-        feats_arr = data["feats"]
-        names_arr = data["names"]
-        by_name = {n: feats_arr[i] for i, n in enumerate(names_arr)}
-        records = [{"dataset": d, "feats": by_name[d]} for d in datasets if d in by_name]
-        print(f"  Loaded {len(records)} TALENT feature vectors from {cache}")
-        return records
-
-    print(f"  Cache not found at {cache}, computing features …")
-    import glob as _glob, os
-    records = []
-    dataset_dirs = {p.name: p for p in talent_dir.iterdir() if p.is_dir()}
-    for ds in tqdm(datasets, desc="TALENT feats"):
-        d = dataset_dirs.get(ds)
-        if d is None:
-            continue
-        csvs = list(d.glob("*.csv"))
-        if not csvs:
-            continue
-        dfs = []
-        for csv in csvs:
-            try:
-                dfs.append(pd.read_csv(csv, nrows=MAX_ROWS))
-            except Exception:
-                pass
-        if not dfs:
-            continue
-        df = pd.concat(dfs, ignore_index=True).head(MAX_ROWS)
-        try:
-            vec = df_to_vec(df, mode=FEATURE_MODE)
-        except Exception:
-            continue
-        records.append({"dataset": ds, "feats": vec})
-
-    if records:
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(cache,
-                 feats=np.stack([r["feats"] for r in records]),
-                 names=np.array([r["dataset"] for r in records]))
-        print(f"  Cached {len(records)} vectors to {cache}")
-    return records
-
-
-def _load_icl_feats(cache: Path, rng: np.random.Generator) -> np.ndarray:
-    data = np.load(cache)
-    arr  = data["feats"]
-    idx  = rng.choice(len(arr), size=min(N_ICL, len(arr)), replace=False)
-    return arr[idx]
-
-
-def _compute_nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
+def _nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
+    """Mean k-NN distance from each query point to the reference pool."""
+    query = np.nan_to_num(query, nan=0.0, posinf=0.0, neginf=0.0)
+    ref   = np.nan_to_num(ref,   nan=0.0, posinf=0.0, neginf=0.0)
     scaler = MinMaxScaler().fit(ref)
     q = scaler.transform(query)
     r = scaler.transform(ref)
     tree = BallTree(r, metric="euclidean")
-    dists, _ = tree.query(q, k=k)
+    dists, _ = tree.query(q, k=min(k, len(r)))
     return dists.mean(axis=1)
 
 
-def _bin_metric(nn_dists: np.ndarray, y_vals: np.ndarray, bins: np.ndarray):
-    n_bins = len(bins) - 1
-    idx = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
-    counts = np.array([(idx == i).sum() for i in range(n_bins)])
-    density = counts / counts.max()
-    means = np.array([y_vals[idx == i].mean() if (idx == i).sum() > 0 else np.nan
-                      for i in range(n_bins)])
-    stds  = np.array([y_vals[idx == i].std()  if (idx == i).sum() > 1 else 0.0
-                      for i in range(n_bins)])
+def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
+                bins: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n = len(bins) - 1
+    idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n - 1)
+    cts  = np.array([(idx == i).sum() for i in range(n)])
+    density = cts / cts.max()
+    means = np.array([ranks[idx == i].mean() if (idx == i).sum() > 0 else np.nan for i in range(n)])
+    stds  = np.array([ranks[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n)])
     return density, means, stds
 
 
 # ------------------------------------------------------------------
-# Main figure
+# Rankings
 # ------------------------------------------------------------------
-def plot_combined(
-    nn_dists_talent: np.ndarray,
-    nn_dists_self:   np.ndarray,
-    rk:    np.ndarray,
-    auc:   np.ndarray,
-    rel_auc: np.ndarray,
-    output_path: Path,
-    n_bins: int = 30,
-) -> None:
-    """3-panel histogram + metric figure sized for US letter paper."""
 
-    # Shared distance bins (cover both talent and self)
-    all_dists = np.concatenate([nn_dists_talent, nn_dists_self])
-    bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
-    bin_centers = (bins[:-1] + bins[1:]) / 2
+def _load_rankings() -> tuple[dict[str, float], list[str]]:
+    """Returns (rank_map {dataset: rank}, datasets list) from full-context CSV."""
+    df = pd.read_csv(RANKINGS_CSV)
+    tc = df[df["model"] == "tabicl"][["dataset", "rank"]].copy()
+    tc["rank"] = tc["rank"].astype(int)
+    rank_map = dict(zip(tc["dataset"], tc["rank"]))
+    print(f"Rankings: {len(rank_map)} datasets (full-context TabICL)")
+    return rank_map, tc["dataset"].tolist()
 
-    # Self-distance density (same in all panels)
-    si_idx    = np.clip(np.digitize(nn_dists_self, bins) - 1, 0, n_bins - 1)
-    si_counts = np.array([(si_idx == i).sum() for i in range(n_bins)])
-    si_density = si_counts / si_counts.max()
 
-    panels = [
-        dict(y=rk,      label="rank",         ylabel="Mean rank (↓ better)", invert=True),
-        dict(y=auc,     label="AUC",           ylabel="Mean AUC",             invert=False),
-        dict(y=rel_auc, label="relative AUC",  ylabel="Mean relative AUC",    invert=False),
-    ]
+# ------------------------------------------------------------------
+# Panel 1 — table feature vectors
+# ------------------------------------------------------------------
 
-    # US letter full-width: 7.5" wide, height chosen to leave room for the legend
+def _load_table_panel(rank_map: dict, datasets: list[str], rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks)."""
+    # TALENT table features
+    if not TALENT_FEATS_CACHE.exists():
+        raise FileNotFoundError(f"Cache missing: {TALENT_FEATS_CACHE}  "
+                                f"(run rank_vs_coverage.py first)")
+    data  = np.load(TALENT_FEATS_CACHE, allow_pickle=True)
+    by_name = {n: data["feats"][i] for i, n in enumerate(data["names"])}
+    matched = [(n, by_name[n]) for n in datasets if n in by_name]
+    names   = [m[0] for m in matched]
+    talent_feats = np.stack([m[1] for m in matched])
+    ranks = np.array([rank_map[n] for n in names], dtype=float)
+    print(f"  Table feats: {len(names)} TALENT datasets")
+
+    # ICL table features
+    icl_all = np.load(ICL_FEATS_CACHE)["feats"]
+    idx = rng.choice(len(icl_all), size=min(N_ICL, len(icl_all)), replace=False)
+    icl_feats = icl_all[idx]
+    print(f"  Table feats: {len(icl_feats)} ICL vectors")
+
+    nn_dists = _nn_distances(talent_feats, icl_feats, KNN_K)
+    half = len(icl_feats) // 2
+    nn_self  = _nn_distances(icl_feats[:half], icl_feats[half:], KNN_K)
+    return nn_dists, nn_self, ranks
+
+
+# ------------------------------------------------------------------
+# Panel 2 — column histograms
+# ------------------------------------------------------------------
+
+def _load_column_panel(rank_map: dict, rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks) at column level."""
+    # TALENT column hists
+    if not TALENT_COL_CACHE.exists():
+        raise FileNotFoundError(f"Cache missing: {TALENT_COL_CACHE}  "
+                                f"(run rank_vs_coverage_columns.py first)")
+    cdata = np.load(TALENT_COL_CACHE, allow_pickle=True)
+    talent_hists   = cdata["hists"]
+    col_datasets   = cdata["col_datasets"]
+    print(f"  Col hists: {len(talent_hists)} TALENT columns")
+
+    # ICL column hists (cache named after n_talent to match rank_vs_coverage_columns.py)
+    n_talent = len(talent_hists)
+    icl_col_cache = CACHE / f"icl_col_hists_{n_talent}.npz"
+    if not icl_col_cache.exists():
+        raise FileNotFoundError(f"Cache missing: {icl_col_cache}  "
+                                f"(run rank_vs_coverage_columns.py first)")
+    icl_hists = np.load(icl_col_cache)["hists"]
+    idx = rng.choice(len(icl_hists), size=min(n_talent, len(icl_hists)), replace=False)
+    icl_hists = icl_hists[idx]
+    print(f"  Col hists: {len(icl_hists)} ICL columns")
+
+    # Filter talent cols to those with rank data
+    mask = np.array([ds in rank_map for ds in col_datasets])
+    talent_hists_m = talent_hists[mask]
+    ranks = np.array([rank_map[ds] for ds in col_datasets[mask]], dtype=float)
+
+    nn_dists = _nn_distances(talent_hists_m, icl_hists, KNN_K)
+    half = len(icl_hists) // 2
+    nn_self  = _nn_distances(icl_hists[:half], icl_hists[half:], KNN_K)
+    print(f"  Col hists: {mask.sum()} columns matched to ranks")
+    return nn_dists, nn_self, ranks
+
+
+# ------------------------------------------------------------------
+# Panel 3 — correlation histograms
+# ------------------------------------------------------------------
+
+def _corr_pmf(arr2d: np.ndarray) -> np.ndarray | None:
+    """(N, D) numeric array → 50-bin correlation PMF, or None if too few columns."""
+    df = pd.DataFrame(arr2d)
+    df = df.loc[:, (df.nunique() / max(len(df), 1)) >= 0.2]
+    if df.shape[1] < MIN_NUM_COLS:
+        return None
+    corr = df.corr(method="pearson").to_numpy()
+    n = corr.shape[0]
+    vals = corr[np.triu_indices(n, k=1)]
+    vals = vals[~np.isnan(vals)]
+    if len(vals) == 0:
+        return None
+    hist = np.histogram(vals, bins=CORR_EDGES)[0].astype(np.float32)
+    s = hist.sum()
+    return hist / s if s > 0 else hist
+
+
+def _load_talent_corr_hists(datasets: list[str]) -> tuple[np.ndarray, list[str]]:
+    if TALENT_CORR_CACHE.exists():
+        d = np.load(TALENT_CORR_CACHE, allow_pickle=True)
+        print(f"  Corr hists: {len(d['hists'])} TALENT tables from cache")
+        return d["hists"], d["names"].tolist()
+
+    hists, names = [], []
+    for ds in tqdm(datasets, desc="TALENT corr hists"):
+        ds_path = TALENT_DIR / ds
+        parts = []
+        for split in ("train", "val", "test"):
+            npy = ds_path / f"N_{split}.npy"
+            if npy.exists():
+                arr = np.load(npy, allow_pickle=True).astype(float)
+                parts.append(arr.reshape(-1, 1) if arr.ndim == 1 else arr)
+        if not parts:
+            continue
+        data = np.concatenate(parts, axis=0)
+        h = _corr_pmf(data)
+        if h is not None:
+            hists.append(h)
+            names.append(ds)
+
+    hists_arr = np.array(hists)
+    CACHE.mkdir(parents=True, exist_ok=True)
+    np.savez(TALENT_CORR_CACHE, hists=hists_arr, names=np.array(names))
+    print(f"  Corr hists: {len(hists_arr)} TALENT tables computed + cached")
+    return hists_arr, names
+
+
+def _load_tabicl_corr_hists() -> np.ndarray:
+    if TABICL_CORR_CACHE.exists():
+        arr = np.load(TABICL_CORR_CACHE)["hists"]
+        print(f"  Corr hists: {len(arr)} TabICL tables from cache")
+        return arr
+
+    if not ICL_DIR.exists():
+        raise FileNotFoundError(f"TabICL parquet dir not found: {ICL_DIR}")
+
+    hists = []
+    for p in tqdm(sorted(ICL_DIR.glob("*.parquet")), desc="TabICL corr hists"):
+        try:
+            df = pd.read_parquet(p)
+            num = df.select_dtypes(include="number")
+            num = num.loc[:, (num.nunique() / max(len(num), 1)) >= 0.2]
+            if num.shape[1] < MIN_NUM_COLS:
+                continue
+            h = _corr_pmf(num.to_numpy())
+            if h is not None:
+                hists.append(h)
+        except Exception:
+            pass
+
+    arr = np.array(hists) if hists else np.zeros((0, N_CORR_BINS), dtype=np.float32)
+    TABICL_CORR_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(TABICL_CORR_CACHE, hists=arr)
+    print(f"  Corr hists: {len(arr)} TabICL tables computed + cached")
+    return arr
+
+
+def _load_corr_panel(rank_map: dict, datasets: list[str], rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks) at table level."""
+    talent_hists, names = _load_talent_corr_hists(datasets)
+    tabicl_hists = _load_tabicl_corr_hists()
+
+    idx = rng.choice(len(tabicl_hists),
+                     size=min(N_ICL, len(tabicl_hists)), replace=False)
+    tabicl_hists = tabicl_hists[idx]
+    print(f"  Corr hists: {len(tabicl_hists)} TabICL tables used as reference")
+
+    mask  = np.array([n in rank_map for n in names])
+    hists_m = talent_hists[mask]
+    ranks   = np.array([rank_map[n] for n in np.array(names)[mask]], dtype=float)
+
+    nn_dists = _nn_distances(hists_m, tabicl_hists, KNN_K)
+    half = len(tabicl_hists) // 2
+    nn_self  = _nn_distances(tabicl_hists[:half], tabicl_hists[half:], KNN_K)
+    print(f"  Corr hists: {mask.sum()} tables matched to ranks")
+    return nn_dists, nn_self, ranks
+
+
+# ------------------------------------------------------------------
+# Figure
+# ------------------------------------------------------------------
+
+def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> None:
+    """panels: list of dicts with keys nn_dists, nn_self, ranks, title."""
     with mpl.rc_context(_PAPER_RC):
-        fig, axes = plt.subplots(1, 3, figsize=(7.0, 3.0), sharey=True,
+        fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6), sharey=True,
                                  constrained_layout=False)
-        fig.subplots_adjust(left=0.07, right=0.93, bottom=0.22, top=0.93,
+        fig.subplots_adjust(left=0.07, right=0.93, bottom=0.26, top=0.91,
                             wspace=0.08)
 
         right_axes = []
         for col, (ax1, p) in enumerate(zip(axes, panels)):
-            talent_density, means, stds = _bin_metric(nn_dists_talent, p["y"], bins)
+            all_dists = np.concatenate([p["nn_dists"], p["nn_self"]])
+            bins = np.linspace(all_dists.min(), all_dists.max(), n_bins + 1)
+            bin_centers = (bins[:-1] + bins[1:]) / 2
+
+            # Self-distance density
+            si_idx  = np.clip(np.digitize(p["nn_self"], bins) - 1, 0, n_bins - 1)
+            si_cts  = np.array([(si_idx == i).sum() for i in range(n_bins)])
+            si_density = si_cts / si_cts.max()
+
+            talent_density, means, stds = _bin_metric(p["nn_dists"], p["ranks"], bins)
 
             # Left: density histograms
-            _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets",      alpha_fill=0.15)
-            _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)",  alpha_fill=0.15)
+            _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
+            _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
             ax1.set_xlabel("Mean k-NN distance (normalised)")
             if col == 0:
                 ax1.set_ylabel("Relative density")
 
-            # Right: mean metric ± 1 SD
+            ax1.set_title(p["title"])
+
+            # Right: mean rank ± 1 SD (inverted — lower = better)
             ax2 = ax1.twinx()
             right_axes.append(ax2)
             mask = ~np.isnan(means)
-            lo = np.clip(means - stds, 1, None) if p["invert"] else means - stds
+            lo = np.clip(means - stds, 1, None)
             hi = means + stds
             ax2.plot(bin_centers[mask], means[mask],
                      color=_RED, lw=1.5, marker="o", ms=3,
-                     label=p["ylabel"])
+                     label="Mean rank (↓ better)")
             ax2.fill_between(bin_centers[mask], lo[mask], hi[mask],
                              color=_RED, alpha=0.2)
-            if p["invert"]:
-                ax2.invert_yaxis()
-            ax2.set_ylabel(p["ylabel"], color=_RED,
+            ax2.invert_yaxis()
+
+            # Right-axis label and ticks only on the last panel
+            ax2.set_ylabel("TabICL mean rank", color=_RED,
                            visible=(col == len(panels) - 1))
             ax2.tick_params(axis="y", labelcolor=_RED,
                             labelleft=False,
                             labelright=(col == len(panels) - 1))
-            ax1.set_title(p["label"])
 
-        # Shared legend below all axes (3 columns)
-        # Collect: density handles from axes[0], metric handles from each right axis
-        h_left,  l_left  = axes[0].get_legend_handles_labels()
-        h_right = [ax.get_legend_handles_labels()[0][0] for ax in right_axes]
-        l_right = [ax.get_legend_handles_labels()[1][0] for ax in right_axes]
+        # Single 3-column legend below all axes
+        h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
+        h_right = [right_axes[0].get_legend_handles_labels()[0][0]]
+        l_right = ["Mean rank (↓ better)"]
 
         fig.legend(
             h_left + h_right,
@@ -237,6 +376,7 @@ def plot_combined(
 # ------------------------------------------------------------------
 # Entry point
 # ------------------------------------------------------------------
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path,
@@ -246,54 +386,25 @@ def main() -> None:
 
     rng = np.random.default_rng(RANDOM_STATE)
 
-    # Rankings
-    rankings  = pd.read_csv(RANKINGS_CSV)
-    mean_aucs = rankings.groupby("dataset")["AUC"].mean().rename("mean_AUC")
-    tabicl_ranks = (
-        rankings[rankings["model"] == "tabicl"][["dataset", "rank", "AUC"]].copy()
-    )
-    tabicl_ranks["rank"] = tabicl_ranks["rank"].astype(int)
-    tabicl_ranks = tabicl_ranks.merge(mean_aucs, on="dataset")
-    tabicl_ranks["relative_auc"] = tabicl_ranks["AUC"] / tabicl_ranks["mean_AUC"]
-    datasets = tabicl_ranks["dataset"].tolist()
-    print(f"Rankings: {len(datasets)} datasets with tabicl entries")
+    rank_map, datasets = _load_rankings()
 
-    # TALENT features
-    talent_cache = _ROOT / f"cache/talent_feats_{MAX_ROWS}.npz"
-    records = _load_talent_feats(TALENT_DIR, datasets, talent_cache)
-    if not records:
-        print("ERROR: no TALENT features found — check --output-dir / data paths")
-        sys.exit(1)
+    print("\n=== Panel 1: table feature vectors ===")
+    nn1, self1, rk1 = _load_table_panel(rank_map, datasets, rng)
 
-    talent_feats = np.stack([r["feats"] for r in records])
-    talent_names = [r["dataset"] for r in records]
-    print(f"Using {len(talent_names)} TALENT datasets, shape={talent_feats.shape}")
+    print("\n=== Panel 2: column histograms ===")
+    nn2, self2, rk2 = _load_column_panel(rank_map, rng)
 
-    # TabICL Prior features
-    icl_feats = _load_icl_feats(ICL_CACHE, rng)
-    print(f"Using {len(icl_feats)} TabICL feature vectors, shape={icl_feats.shape}")
+    print("\n=== Panel 3: correlation histograms ===")
+    nn3, self3, rk3 = _load_corr_panel(rank_map, datasets, rng)
 
-    # NN distances
-    print(f"Computing {KNN_K}-NN distances …")
-    nn_dists = _compute_nn_distances(talent_feats, icl_feats, KNN_K)
+    panels = [
+        dict(nn_dists=nn1, nn_self=self1, ranks=rk1, title="Table features"),
+        dict(nn_dists=nn2, nn_self=self2, ranks=rk2, title="Column histograms"),
+        dict(nn_dists=nn3, nn_self=self3, ranks=rk3, title="Correlation histograms"),
+    ]
 
-    half = len(icl_feats) // 2
-    nn_dists_self = _compute_nn_distances(icl_feats[:half], icl_feats[half:], KNN_K)
-
-    # Merge with rankings
-    df = pd.DataFrame({"dataset": talent_names, "nn_dist": nn_dists})
-    df = df.merge(tabicl_ranks, on="dataset", how="inner")
-    print(f"Matched {len(df)} datasets to rankings")
-
-    plot_combined(
-        nn_dists_talent = df["nn_dist"].values,
-        nn_dists_self   = nn_dists_self,
-        rk              = df["rank"].values.astype(float),
-        auc             = df["AUC"].values.astype(float),
-        rel_auc         = df["relative_auc"].values.astype(float),
-        output_path     = args.output_dir / "rank_vs_coverage_combined.png",
-        n_bins          = args.n_bins,
-    )
+    print("\n=== Generating figure ===")
+    plot_combined(panels, args.output_dir / "rank_vs_coverage_combined.png", args.n_bins)
 
 
 if __name__ == "__main__":
