@@ -436,7 +436,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
         for ax2 in right_axes:
             for lbl in ax2.get_yticklabels():
                 lbl.set_bbox(dict(boxstyle="square,pad=0.15",
-                                  facecolor="white", edgecolor="none", alpha=0.85))
+                                  facecolor="white", edgecolor="none", alpha=1.0))
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
