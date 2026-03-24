@@ -109,7 +109,7 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
     idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n - 1)
     cts  = np.array([(idx == i).sum() for i in range(n)])
     density = cts / cts.max()
-    means = np.array([ranks[idx == i].mean() if (idx == i).sum() > 0 else np.nan for i in range(n)])
+    means = np.array([ranks[idx == i].mean() if (idx == i).sum() > 1 else np.nan for i in range(n)])
     stds  = np.array([ranks[idx == i].std()  if (idx == i).sum() > 1 else 0.0   for i in range(n)])
     return density, means, stds
 
