@@ -136,24 +136,35 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
 def _load_rankings() -> tuple[dict[str, float], dict[str, float], dict[str, float], list[str]]:
     """Returns (rank_map, rel_auc_map, rel_best_auc_map, datasets) from full-context CSV.
 
-    rel_auc_map      : tabicl_AUC / mean AUC across all models on that dataset
-    rel_best_auc_map : tabicl_AUC / best  AUC across all models on that dataset
+    rel_auc_map      : tabicl_AUC / mean AUC across *other* models on that dataset
+    rel_best_auc_map : tabicl_AUC / best  AUC across *other* models on that dataset
     """
     df = pd.read_csv(RANKINGS_CSV)
     df["AUC"] = df["AUC"].astype(float)
+
+    # TabICL rows
     tc = df[df["model"] == "tabicl"][["dataset", "rank", "AUC"]].copy()
     tc["rank"] = tc["rank"].astype(int)
 
-    mean_auc = df.groupby("dataset")["AUC"].mean()
-    best_auc = df.groupby("dataset")["AUC"].max()
+    # Exclude TabICL for baseline stats
+    df_no_tc = df[df["model"] != "tabicl"]
 
-    rank_map         = dict(zip(tc["dataset"], tc["rank"]))
-    rel_auc_map      = {ds: auc / mean_auc[ds]
-                        for ds, auc in zip(tc["dataset"], tc["AUC"])
-                        if ds in mean_auc and mean_auc[ds] > 0}
-    rel_best_auc_map = {ds: auc / best_auc[ds]
-                        for ds, auc in zip(tc["dataset"], tc["AUC"])
-                        if ds in best_auc and best_auc[ds] > 0}
+    mean_auc = df_no_tc.groupby("dataset")["AUC"].mean()
+    best_auc = df_no_tc.groupby("dataset")["AUC"].max()
+
+    rank_map = dict(zip(tc["dataset"], tc["rank"]))
+
+    rel_auc_map = {
+        ds: auc / mean_auc[ds]
+        for ds, auc in zip(tc["dataset"], tc["AUC"])
+        if ds in mean_auc and mean_auc[ds] > 0
+    }
+
+    rel_best_auc_map = {
+        ds: auc / best_auc[ds]
+        for ds, auc in zip(tc["dataset"], tc["AUC"])
+        if ds in best_auc and best_auc[ds] > 0
+    }
 
     print(f"Rankings: {len(rank_map)} datasets (full-context TabICL)")
     return rank_map, rel_auc_map, rel_best_auc_map, tc["dataset"].tolist()

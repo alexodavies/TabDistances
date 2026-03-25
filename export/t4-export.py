@@ -6,7 +6,7 @@ import random
 
 from tabdistances.data.t4.dataset import T4Dataset
 
-N_TABLES    = 100000
+N_TABLES    = 5000
 OUT_DIR     = Path("tables-t4")
 PARQUET_DIR = OUT_DIR / "parquet"
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)

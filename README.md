@@ -21,12 +21,13 @@ cd TabDistances
 pip install -e ".[dev]"
 ```
 
-For TabFM datasets, also install the Kaggle CLI and add credentials:
+To download datasets, run from the repo root:
 
 ```bash
-pip install kaggle
-# Place API token at ~/.kaggle/kaggle.json (chmod 600)
-python export/download_tabfm.py
+python fetch_data.py          # all sources (TabFM, T4, TabICL)
+python fetch_data.py --tabfm  # TabFM only (requires Kaggle CLI + ~/.kaggle/kaggle.json)
+python fetch_data.py --t4     # T4 only
+python fetch_data.py --icl    # TabICL only (generated locally, no download)
 ```
 
 ## Package structure
