@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PTaRL &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="AMFormer" href="amformer.html" />
+    <link rel="prev" title="Trompt" href="trompt.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>PTaRL</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>PTaRL</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/ptarl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ptarl">
+<h1><strong>PTaRL</strong><a class="headerlink" href="#ptarl" title="Permalink to this heading"></a></h1>
+<p>A regularization-based framework that enhances prediction by constructing and projecting into a prototype-based space.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one_epoch</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data_loader</span><span class="p">,</span> <span class="n">loss_func</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">regularize</span><span class="p">,</span> <span class="n">ot_weight</span><span class="p">,</span> <span class="n">diversity_weight</span><span class="p">,</span> <span class="n">r_weight</span><span class="p">,</span> <span class="n">diversity</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Runs one training epoch with optional OT (Optimal Transport) and diversity regularization.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model</strong> - Neural network model.</p></li>
+<li><p><strong>data_loader</strong> - Data loader for training.</p></li>
+<li><p><strong>loss_func</strong> - Loss function.</p></li>
+<li><p><strong>model_type</strong> <em>(str)</em> - Model type (e.g., ‘ot’ for optimal transport).</p></li>
+<li><p><strong>config</strong> - Configuration dictionary.</p></li>
+<li><p><strong>regularize</strong> <em>(bool)</em> - Whether to apply regularization.</p></li>
+<li><p><strong>ot_weight</strong> <em>(float)</em> - Weight for OT loss.</p></li>
+<li><p><strong>diversity_weight</strong> <em>(float)</em> - Weight for diversity loss.</p></li>
+<li><p><strong>r_weight</strong> <em>(float)</em> - Weight for regularization loss.</p></li>
+<li><p><strong>diversity</strong> <em>(bool)</em> - Whether to apply diversity regularization.</p></li>
+<li><p><strong>optimizer</strong> <em>(Optional)</em> - Optimizer for training.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>float</strong> - Average loss for the epoch.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one_epoch_val</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data_loader</span><span class="p">,</span> <span class="n">loss_func</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">is_regression</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Runs one validation epoch.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model</strong> - Neural network model.</p></li>
+<li><p><strong>data_loader</strong> - Data loader for validation.</p></li>
+<li><p><strong>loss_func</strong> - Loss function.</p></li>
+<li><p><strong>model_type</strong> <em>(str)</em> - Model type.</p></li>
+<li><p><strong>config</strong> - Configuration dictionary.</p></li>
+<li><p><strong>is_regression</strong> <em>(bool)</em> - Whether the task is regression.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>tuple</strong> - Predictions and ground truth labels.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fit_Ptarl</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">val_loader</span><span class="p">,</span> <span class="n">loss_func</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">regularize</span><span class="p">,</span> <span class="n">is_regression</span><span class="p">,</span> <span class="n">ot_weight</span><span class="p">,</span> <span class="n">diversity_weight</span><span class="p">,</span> <span class="n">r_weight</span><span class="p">,</span> <span class="n">diversity</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Fits a PTaRL model with training and validation.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>args</strong> - Command line arguments.</p></li>
+<li><p><strong>model</strong> - Neural network model.</p></li>
+<li><p><strong>train_loader</strong> - Training data loader.</p></li>
+<li><p><strong>val_loader</strong> - Validation data loader.</p></li>
+<li><p><strong>loss_func</strong> - Loss function.</p></li>
+<li><p><strong>model_type</strong> <em>(str)</em> - Model type.</p></li>
+<li><p><strong>config</strong> - Configuration dictionary.</p></li>
+<li><p><strong>regularize</strong> <em>(bool)</em> - Whether to apply regularization.</p></li>
+<li><p><strong>is_regression</strong> <em>(bool)</em> - Whether the task is regression.</p></li>
+<li><p><strong>ot_weight</strong> <em>(float)</em> - Weight for OT loss.</p></li>
+<li><p><strong>diversity_weight</strong> <em>(float)</em> - Weight for diversity loss.</p></li>
+<li><p><strong>r_weight</strong> <em>(float)</em> - Weight for regularization loss.</p></li>
+<li><p><strong>diversity</strong> <em>(bool)</em> - Whether to apply diversity regularization.</p></li>
+<li><p><strong>seed</strong> <em>(int)</em> - Random seed.</p></li>
+<li><p><strong>save_path</strong> <em>(str)</em> - Path to save model.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">test_loader</span><span class="p">,</span> <span class="n">no_ot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Tests a trained model.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model</strong> - Trained model.</p></li>
+<li><p><strong>test_loader</strong> - Test data loader.</p></li>
+<li><p><strong>no_ot</strong> <em>(bool, optional, Default is False)</em> - Whether to disable OT.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>tuple</strong> - Predictions and ground truth labels.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_topic</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Generates topics from trained model.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model</strong> - Trained model.</p></li>
+<li><p><strong>train_loader</strong> - Training data loader.</p></li>
+<li><p><strong>n_clusters</strong> <em>(int)</em> - Number of clusters/topics.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>np.ndarray</strong> - Generated topics.</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Hangting Ye, Wei Fan, Xiaozhuang Song, Shun Zheng, He Zhao, Dandan Guo, and Yi Chang. <strong>PTARL: Prototype-based Tabular Representation Learning via Space Calibration</strong>. In <em>Proceedings of the Twelfth International Conference on Learning Representations</em>, 2024. <a class="reference external" href="https://openreview.net/pdf?id=G32oY4Vnm8">https://openreview.net/pdf?id=G32oY4Vnm8</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trompt.html" class="btn btn-neutral float-left" title="Trompt" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="amformer.html" class="btn btn-neutral float-right" title="AMFormer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

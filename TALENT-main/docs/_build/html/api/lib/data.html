@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="num_embeddings" href="num_embeddings.html" />
+    <link rel="prev" title="TData" href="TData.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>Data</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>Data</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data">
+<h1><strong>Data</strong><a class="headerlink" href="#data" title="Permalink to this heading"></a></h1>
+<p>A collection of functions for loading, preprocessing, and preparing tabular data for machine learning tasks, including handling missing values, encoding features, and creating data loaders.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">dataname_to_numpy</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Loads tabular data from numpy files, including numerical features (N), categorical features (C), labels (y), and dataset metadata.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>dataset_name</strong> <em>(str)</em> - Name of the dataset.</p></li>
+<li><p><strong>dataset_path</strong> <em>(str)</em> - Path to the dataset directory.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Numerical features (N) as a dictionary with keys ‘train’, ‘val’, ‘test’ (or None if unavailable).
+- Categorical features (C) as a dictionary with keys ‘train’, ‘val’, ‘test’ (or None if unavailable).
+- Labels (y) as a dictionary with keys ‘train’, ‘val’, ‘test’.
+- Dataset metadata from ‘info.json’.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Splits loaded data into training/validation and test sets.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>dataset_name</strong> <em>(str)</em> - Name of the dataset.</p></li>
+<li><p><strong>dataset_path</strong> <em>(str)</em> - Path to the dataset directory.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Training/validation data (numerical, categorical, labels).
+- Test data (numerical, categorical, labels).
+- Dataset metadata.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">data_nan_process</span><span class="p">(</span><span class="n">N_data</span><span class="p">,</span> <span class="n">C_data</span><span class="p">,</span> <span class="n">num_nan_policy</span><span class="p">,</span> <span class="n">cat_nan_policy</span><span class="p">,</span> <span class="n">num_new_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">imputer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cat_new_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SimpleImputer</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Processes missing values in numerical and categorical features.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>N_data</strong> <em>(ArrayDict)</em> - Numerical features (may contain NaNs).</p></li>
+<li><p><strong>C_data</strong> <em>(ArrayDict)</em> - Categorical features (may contain NaNs).</p></li>
+<li><p><strong>num_nan_policy</strong> <em>(str)</em> - Strategy for numerical NaNs (‘mean’ or ‘median’).</p></li>
+<li><p><strong>cat_nan_policy</strong> <em>(str)</em> - Strategy for categorical NaNs (‘new’ or ‘most_frequent’).</p></li>
+<li><p><strong>num_new_value</strong> <em>(Optional[np.ndarray])</em> - Precomputed values to fill numerical NaNs.</p></li>
+<li><p><strong>imputer</strong> <em>(Optional[SimpleImputer])</em> - Pre-fit imputer for categorical features.</p></li>
+<li><p><strong>cat_new_value</strong> <em>(Optional[str])</em> - Value to fill categorical NaNs (for ‘new’ policy).</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Processed numerical features.
+- Processed categorical features.
+- Values used to fill numerical NaNs.
+- Fitted imputer for categorical features (if used).
+- Value used to fill categorical NaNs (if used).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">num_enc_process</span><span class="p">(</span><span class="n">N_data</span><span class="p">,</span> <span class="n">num_policy</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_regression</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">PiecewiseLinearEncoding</span><span class="p">,</span> <span class="n">UnaryEncoding</span><span class="p">,</span> <span class="n">BinsEncoding</span><span class="p">,</span> <span class="n">JohnsonEncoding</span><span class="p">]]]</span>
+</pre></div>
+</div>
+<p>Encodes numerical features using various strategies (e.g., piecewise linear, unary, bins).</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>N_data</strong> <em>(ArrayDict)</em> - Numerical features to encode.</p></li>
+<li><p><strong>num_policy</strong> <em>(str)</em> - Encoding strategy (e.g., ‘Q_PLE’ for quantile-based piecewise linear encoding).</p></li>
+<li><p><strong>n_bins</strong> <em>(int, optional, Default is 2)</em> - Number of bins for discretization.</p></li>
+<li><p><strong>y_train</strong> <em>(Optional[np.ndarray])</em> - Training labels (for target-based encoding).</p></li>
+<li><p><strong>is_regression</strong> <em>(bool, optional, Default is False)</em> - Whether the task is regression.</p></li>
+<li><p><strong>encoder</strong> <em>(Optional)</em> - Pre-fit encoder (if None, fits a new one).</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Encoded numerical features.
+- Fitted encoder.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">data_enc_process</span><span class="p">(</span><span class="n">N_data</span><span class="p">,</span> <span class="n">C_data</span><span class="p">,</span> <span class="n">cat_policy</span><span class="p">,</span> <span class="n">y_train</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ord_encoder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cat_encoder</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OrdinalEncoder</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OneHotEncoder</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Encodes categorical features using various strategies (e.g., one-hot, target encoding) and handles unknown categories.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>N_data</strong> <em>(ArrayDict)</em> - Numerical data (or None).</p></li>
+<li><p><strong>C_data</strong> <em>(ArrayDict)</em> - Categorical data (or None).</p></li>
+<li><p><strong>cat_policy</strong> <em>(str)</em> - Encoding strategy:
+- <cite>indices</cite>: Return ordinal indices without further encoding.
+- <cite>ordinal</cite>: Use ordinal encoding.
+- <cite>ohe</cite>/<cite>tabr_ohe</cite>: One-hot encoding (with <cite>tabr_ohe</cite> for TabR compatibility).
+- <cite>binary</cite>: Binary encoding (from <cite>category_encoders</cite>).
+- <cite>hash</cite>: Hashing encoding (from <cite>category_encoders</cite>).
+- <cite>loo</cite>: Leave-one-out encoding (supervised, from <cite>category_encoders</cite>).
+- <cite>target</cite>: Target encoding (supervised, from <cite>category_encoders</cite>).
+- <cite>catboost</cite>: CatBoost encoding (supervised, from <cite>category_encoders</cite>).</p></li>
+<li><p><strong>y_train</strong> <em>(Optional[np.ndarray])</em> - Training labels (for supervised encodings).</p></li>
+<li><p><strong>ord_encoder</strong> <em>(Optional[OrdinalEncoder])</em> - Pre-fitted ordinal encoder.</p></li>
+<li><p><strong>mode_values</strong> <em>(Optional[List[int]])</em> - Mode values for replacing unknown categories in validation/test sets.</p></li>
+<li><p><strong>cat_encoder</strong> <em>(Optional)</em> - Pre-fitted categorical encoder (e.g., <cite>OneHotEncoder</cite>).</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Processed numerical data (merged with encoded categoricals if applicable).
+- Unused (returns None if categoricals are merged into numerical data).
+- Fitted ordinal encoder.
+- Mode values for unknown categories.
+- Fitted categorical encoder.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">data_norm_process</span><span class="p">(</span><span class="n">N_data</span><span class="p">,</span> <span class="n">normalization</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">normalizer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TransformerMixin</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Applies normalization to numerical features.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>N_data</strong> <em>(ArrayDict)</em> - Numerical data (or None).</p></li>
+<li><p><strong>normalization</strong> <em>(str)</em> - Normalization strategy:
+- <cite>standard</cite>: StandardScaler (mean=0, std=1).
+- <cite>minmax</cite>: MinMaxScaler (scales to [0, 1]).
+- <cite>quantile</cite>: QuantileTransformer (normalizes to Gaussian distribution).
+- <cite>maxabs</cite>: MaxAbsScaler (scales by maximum absolute value).
+- <cite>power</cite>: PowerTransformer (Yeo-Johnson transformation).
+- <cite>robust</cite>: RobustScaler (resistant to outliers).
+- <cite>none</cite>: No normalization.</p></li>
+<li><p><strong>seed</strong> <em>(int)</em> - Random seed for reproducibility (used in <cite>QuantileTransformer</cite>).</p></li>
+<li><p><strong>normalizer</strong> <em>(Optional[TransformerMixin])</em> - Pre-fitted normalizer.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Normalized numerical data.
+- Fitted normalizer.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">data_label_process</span><span class="p">(</span><span class="n">y_data</span><span class="p">,</span> <span class="n">is_regression</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LabelEncoder</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Processes labels for regression or classification tasks.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>y_data</strong> <em>(ArrayDict)</em> - Label data.</p></li>
+<li><p><strong>is_regression</strong> <em>(bool)</em> - Whether the task is regression.</p></li>
+<li><p><strong>info</strong> <em>(Optional[Dict[str, Any]])</em> - Precomputed label statistics (mean, std for regression; classes for classification).</p></li>
+<li><p><strong>encoder</strong> <em>(Optional[LabelEncoder])</em> - Pre-fitted label encoder (for classification).</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tuple</strong> containing:
+- Processed labels (standardized for regression; encoded for classification).
+- Metadata (mean/std for regression; classes for classification).
+- Fitted label encoder (for classification).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">data_loader_process</span><span class="p">(</span><span class="n">is_regression</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">y_info</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">is_train</span><span class="p">,</span> <span class="n">is_float</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="ow">or</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">ArrayDict</span><span class="p">,</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Prepares PyTorch DataLoaders for training/validation or test data, with proper type casting and device placement.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>is_regression</strong> <em>(bool)</em> - Whether the task is regression (vs. classification).</p></li>
+<li><p><strong>X</strong> <em>(Tuple[ArrayDict, ArrayDict])</em> - Tuple of numerical and categorical data (each as <cite>ArrayDict</cite>).</p></li>
+<li><p><strong>Y</strong> <em>(ArrayDict)</em> - Label data.</p></li>
+<li><p><strong>y_info</strong> <em>(Dict[str, Any])</em> - Metadata about labels (e.g., mean/std for regression).</p></li>
+<li><p><strong>device</strong> <em>(torch.device)</em> - Target device (CPU/GPU) for data.</p></li>
+<li><p><strong>batch_size</strong> <em>(int)</em> - Batch size for the DataLoader.</p></li>
+<li><p><strong>is_train</strong> <em>(bool)</em> - If True, creates training and validation loaders; if False, creates a test loader.</p></li>
+<li><p><strong>is_float</strong> <em>(bool, optional, Default is False)</em> - If True, casts data to <cite>float32</cite>; otherwise uses <cite>float64</cite>.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><p>If <cite>is_train=True</cite>:
+- Tuple containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Processed numerical data (on device).</p></li>
+<li><p>Processed categorical data (on device).</p></li>
+<li><p>Processed labels (on device).</p></li>
+<li><p>Training DataLoader.</p></li>
+<li><p>Validation DataLoader.</p></li>
+<li><p>Loss function (MSE for regression, cross-entropy for classification).</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>If <cite>is_train=False</cite>:
+- Tuple containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Processed numerical data (on device).</p></li>
+<li><p>Processed categorical data (on device).</p></li>
+<li><p>Processed labels (on device).</p></li>
+<li><p>Test DataLoader.</p></li>
+<li><p>Loss function.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">to_tensors</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">ArrayDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Converts numpy arrays in an <cite>ArrayDict</cite> to PyTorch tensors.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> <em>(ArrayDict)</em> - Dictionary with keys like <cite>‘train’</cite>, <cite>‘val’</cite>, <cite>‘test’</cite> and numpy array values.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Dict[str, torch.Tensor]</strong> - Dictionary with the same keys, where numpy arrays are converted to PyTorch tensors.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_categories</span><span class="p">(</span><span class="n">X_cat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Computes the number of unique categories for each categorical feature.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>X_cat</strong> <em>(Optional[Dict[str, torch.Tensor]])</em> - Categorical data (keys: <cite>‘train’</cite>, etc.; values: tensors of shape <cite>(n_samples, n_features)</cite>).</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Optional[List[int]]</strong> - List where each element is the number of unique categories for the corresponding feature. Returns <cite>None</cite> if <cite>X_cat</cite> is <cite>None</cite>.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Dataset</span>
+</pre></div>
+</div>
+<p>A dataclass for storing tabular dataset information.</p>
+<p><strong>Fields:</strong></p>
+<ul class="simple">
+<li><p><strong>N</strong> <em>(Optional[ArrayDict])</em> - Numerical features (or None if not available).</p></li>
+<li><p><strong>C</strong> <em>(Optional[ArrayDict])</em> - Categorical features (or None if not available).</p></li>
+<li><p><strong>y</strong> <em>(ArrayDict)</em> - Labels for all splits.</p></li>
+<li><p><strong>info</strong> <em>(Dict[str, Any])</em> - Dataset metadata.</p></li>
+</ul>
+<p><strong>Properties:</strong></p>
+<ul class="simple">
+<li><p><strong>is_binclass</strong> <em>(bool)</em> - Whether the task is binary classification.</p></li>
+<li><p><strong>is_multiclass</strong> <em>(bool)</em> - Whether the task is multiclass classification.</p></li>
+<li><p><strong>is_regression</strong> <em>(bool)</em> - Whether the task is regression.</p></li>
+<li><p><strong>n_num_features</strong> <em>(int)</em> - Number of numerical features.</p></li>
+<li><p><strong>n_cat_features</strong> <em>(int)</em> - Number of categorical features.</p></li>
+<li><p><strong>n_features</strong> <em>(int)</em> - Total number of features.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="TData.html" class="btn btn-neutral float-left" title="TData" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="num_embeddings.html" class="btn btn-neutral float-right" title="num_embeddings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

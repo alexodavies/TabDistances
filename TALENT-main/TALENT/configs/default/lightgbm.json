@@ -1,0 +1,9 @@
+{
+    "lightgbm": {
+        "model": {
+            "n_estimators": 2000,
+            "verbose": -1
+        },
+        "fit": {}
+    }
+}

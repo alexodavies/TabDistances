@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabICL &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Periodic Tab DL" href="periodic_tab_dl.html" />
+    <link rel="prev" title="TabCaps" href="tabcaps.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>TabICL</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>TabICL</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/tabicl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tabicl">
+<h1><strong>TabICL</strong><a class="headerlink" href="#tabicl" title="Permalink to this heading"></a></h1>
+<p>A comparable tabular foundation model with performance on par with TabPFN v2.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabICLClassifier</span><span class="p">(</span><span class="n">ClassifierMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Tabular In-Context Learning classifier with scikit-learn interface.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int, optional, Default is 32)</em> - Number of estimators for ensemble predictions.</p></li>
+<li><p><strong>norm_methods</strong> <em>(Optional[str | List[str]], optional, Default is None)</em> - Normalization methods to apply.</p></li>
+<li><p><strong>feat_shuffle_method</strong> <em>(str, optional, Default is “latin”)</em> - Feature permutation strategy.</p></li>
+<li><p><strong>class_shift</strong> <em>(bool, optional, Default is True)</em> - Whether to apply cyclic shifts to class labels.</p></li>
+<li><p><strong>outlier_threshold</strong> <em>(float, optional, Default is 4.0)</em> - Z-score threshold for outlier detection.</p></li>
+<li><p><strong>softmax_temperature</strong> <em>(float, optional, Default is 0.9)</em> - Temperature for softmax function.</p></li>
+<li><p><strong>average_logits</strong> <em>(bool, optional, Default is True)</em> - Whether to average logits or probabilities.</p></li>
+<li><p><strong>use_hierarchical</strong> <em>(bool, optional, Default is True)</em> - Whether to enable hierarchical classification.</p></li>
+<li><p><strong>use_amp</strong> <em>(bool, optional, Default is True)</em> - Whether to use automatic mixed precision.</p></li>
+<li><p><strong>batch_size</strong> <em>(Optional[int], optional, Default is 8)</em> - Batch size for inference.</p></li>
+<li><p><strong>model_path</strong> <em>(Optional[str | Path], optional, Default is None)</em> - Path to pre-trained model.</p></li>
+<li><p><strong>allow_auto_download</strong> <em>(bool, optional, Default is True)</em> - Whether to allow auto-download.</p></li>
+<li><p><strong>checkpoint_version</strong> <em>(str, optional, Default is “tabicl-classifier-v1.1-0506.ckpt”)</em> - Checkpoint version.</p></li>
+<li><p><strong>device</strong> <em>(Optional[str | torch.device], optional, Default is None)</em> - Device for computation.</p></li>
+<li><p><strong>random_state</strong> <em>(int | None, optional, Default is 42)</em> - Random seed.</p></li>
+<li><p><strong>n_jobs</strong> <em>(Optional[int], optional, Default is None)</em> - Number of jobs for parallel processing.</p></li>
+<li><p><strong>verbose</strong> <em>(bool, optional, Default is False)</em> - Whether to print verbose output.</p></li>
+<li><p><strong>inference_config</strong> <em>(Optional[InferenceConfig | Dict], optional, Default is None)</em> - Inference configuration.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>fit(self, X, y)</strong> - Fit the classifier.</p></li>
+<li><p><strong>predict(self, X)</strong> - Predict class labels.</p></li>
+<li><p><strong>predict_proba(self, X)</strong> - Predict class probabilities.</p></li>
+<li><p><strong>_batch_forward(self, Xs, ys, shuffle_patterns=None)</strong> - Forward pass for batch processing.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TransformToNumerical</span>
+</pre></div>
+</div>
+<p>Transforms categorical features to numerical representations.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>norm_methods</strong> <em>(List[str])</em> - List of normalization methods.</p></li>
+<li><p><strong>feat_shuffle_method</strong> <em>(str)</em> - Feature shuffling method.</p></li>
+<li><p><strong>class_shift</strong> <em>(bool)</em> - Whether to apply class shifts.</p></li>
+<li><p><strong>outlier_threshold</strong> <em>(float)</em> - Outlier detection threshold.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>transform(self, X, y)</strong> - Transform input data.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EnsembleGenerator</span>
+</pre></div>
+</div>
+<p>Generates ensemble members with different transformations.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>n_estimators</strong> <em>(int)</em> - Number of ensemble members.</p></li>
+<li><p><strong>norm_methods</strong> <em>(List[str])</em> - Normalization methods.</p></li>
+<li><p><strong>feat_shuffle_method</strong> <em>(str)</em> - Feature shuffling method.</p></li>
+<li><p><strong>class_shift</strong> <em>(bool)</em> - Whether to apply class shifts.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>generate(self, X, y)</strong> - Generate ensemble members.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabICL</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabICL neural network model.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>config</strong> - Model configuration.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Model predictions.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InferenceConfig</span>
+</pre></div>
+</div>
+<p>Configuration for TabICL inference.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>max_classes</strong> <em>(int)</em> - Maximum number of classes.</p></li>
+<li><p><strong>max_features</strong> <em>(int)</em> - Maximum number of features.</p></li>
+<li><p><strong>model_dim</strong> <em>(int)</em> - Model dimension.</p></li>
+<li><p><strong>num_heads</strong> <em>(int)</em> - Number of attention heads.</p></li>
+<li><p><strong>num_layers</strong> <em>(int)</em> - Number of layers.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Computes softmax with temperature scaling.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+<li><p><strong>axis</strong> <em>(int, optional, Default is -1)</em> - Axis for softmax computation.</p></li>
+<li><p><strong>temperature</strong> <em>(float, optional, Default is 0.9)</em> - Temperature parameter.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Softmax output with temperature scaling.</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Jingang Qu and David Holzmüller and Gaël Varoquaux and Marine Le Morvan. <strong>TabICL: A Tabular Foundation Model for In-Context Learning on Large Data</strong>. arXiv:2502.05564 [cs.LG], 2025. <a class="reference external" href="https://arxiv.org/abs/2502.05564">https://arxiv.org/abs/2502.05564</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tabcaps.html" class="btn btn-neutral float-left" title="TabCaps" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="periodic_tab_dl.html" class="btn btn-neutral float-right" title="Periodic Tab DL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

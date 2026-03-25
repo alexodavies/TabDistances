@@ -15,3 +15,7 @@ psutil
 tqdm
 kaggle
 optuna
+wandb
+umap-learn
+pebble
+seaborn

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TALENT: A Tabular Analytics and Learning Toolbox &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How to Use TALENT" href="tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="#" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>TALENT: A Tabular Analytics and Learning Toolbox</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="talent-a-tabular-analytics-and-learning-toolbox">
+<h1>TALENT: A Tabular Analytics and Learning Toolbox<a class="headerlink" href="#talent-a-tabular-analytics-and-learning-toolbox" title="Permalink to this heading"></a></h1>
+<a class="reference internal image-reference" href="_images/TALENT-LOGO.png"><img alt="_images/TALENT-LOGO.png" class="align-center" src="_images/TALENT-LOGO.png" style="width: 1000px;" /></a>
+<p>Welcome to <strong>TALENT</strong>, a comprehensive machine learning toolbox designed to enhance model performance on tabular data.</p>
+<p>TALENT integrates advanced deep learning models, classical algorithms, and efficient hyperparameter tuning, offering robust preprocessing capabilities to optimize learning from tabular datasets. The toolbox is user-friendly and adaptable, catering to both novice and expert data scientists.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you use any content of this repo for your work, please make sure to cite the relevant papers as described in the <cite>Citing TALENT</cite> section below.</p>
+</div>
+</section>
+<section id="citing-talent">
+<h1>Citing TALENT<a class="headerlink" href="#citing-talent" title="Permalink to this heading"></a></h1>
+<p>If you use <strong>TALENT</strong> in your research, please consider citing the following works:</p>
+<div class="highlight-bibtex notranslate"><div class="highlight"><pre><span></span><span class="nc">@article</span><span class="p">{</span><span class="nl">ye2024closerlookdeeplearning</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">title</span><span class="p">=</span><span class="s">{A Closer Look at Deep Learning on Tabular Data}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">author</span><span class="p">=</span><span class="s">{Han-Jia Ye and Si-Yang Liu and Hao-Run Cai and Qi-Le Zhou and De-Chuan Zhan}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">journal</span><span class="p">=</span><span class="s">{arXiv preprint arXiv:2407.00956}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="nc">@article</span><span class="p">{</span><span class="nl">liu2024talenttabularanalyticslearning</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">title</span><span class="p">=</span><span class="s">{TALENT: A Tabular Analytics and Learning Toolbox}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">author</span><span class="p">=</span><span class="s">{Si-Yang Liu and Hao-Run Cai and Qi-Le Zhou and Han-Jia Ye}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">journal</span><span class="p">=</span><span class="s">{arXiv preprint arXiv:2407.04057}</span><span class="p">,</span><span class="w"></span>
+<span class="w">         </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="what-s-new">
+<h1>What’s New<a class="headerlink" href="#what-s-new" title="Permalink to this heading"></a></h1>
+<p>Here are the recent updates to <strong>TALENT</strong>:</p>
+<ul class="simple">
+<li><p>[2024-09]🌟 Add [Trompt](<a class="reference external" href="https://arxiv.org/abs/2305.18446">https://arxiv.org/abs/2305.18446</a>) (ICML 2023).</p></li>
+<li><p>[2024-09]🌟 Add [AMFormer](<a class="reference external" href="https://arxiv.org/abs/2402.02334">https://arxiv.org/abs/2402.02334</a>) (AAAI 2024).</p></li>
+<li><p>[2024-08]🌟 Add [GRANDE](<a class="reference external" href="https://arxiv.org/abs/2309.17130">https://arxiv.org/abs/2309.17130</a>) (ICLR 2024).</p></li>
+<li><p>[2024-08]🌟 Add [Excelformer](<a class="reference external" href="https://arxiv.org/abs/2301.02819">https://arxiv.org/abs/2301.02819</a>) (KDD 2024).</p></li>
+<li><p>[2024-08]🌟 Add [MLP_PLR](<a class="reference external" href="https://arxiv.org/abs/2203.05556">https://arxiv.org/abs/2203.05556</a>) (NeurIPS 2022).</p></li>
+<li><p>[2024-07]🌟 Add [RealMLP](<a class="reference external" href="https://arxiv.org/abs/2407.04491">https://arxiv.org/abs/2407.04491</a>).</p></li>
+<li><p>[2024-07]🌟 Add [ProtoGate](<a class="reference external" href="https://arxiv.org/abs/2306.12330">https://arxiv.org/abs/2306.12330</a>) (ICML 2024).</p></li>
+<li><p>[2024-07]🌟 Add [BiSHop](<a class="reference external" href="https://arxiv.org/abs/2404.03830">https://arxiv.org/abs/2404.03830</a>) (ICML 2024).</p></li>
+<li><p>[2024-06]🌟 Check out our new baseline [ModernNCA](<a class="reference external" href="https://arxiv.org/abs/2407.03257">https://arxiv.org/abs/2407.03257</a>), inspired by traditional <strong>Neighbor Component Analysis</strong>, which outperforms both tree-based and other deep tabular models, while also reducing training time and model size!</p></li>
+<li><p>[2024-06]🌟 Check out our [benchmark paper](<a class="reference external" href="https://arxiv.org/abs/2407.00956">https://arxiv.org/abs/2407.00956</a>) about tabular data, which provides comprehensive evaluations of classical and deep tabular methods based on our toolbox in a fair manner!</p></li>
+</ul>
+</section>
+<section id="contents">
+<h1>Contents<a class="headerlink" href="#contents" title="Permalink to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/lib.html">Library Components</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgments</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="How to Use TALENT" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

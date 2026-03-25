@@ -1,0 +1,7 @@
+**/__pycache__/
+
+**/log/
+**/stats/
+**/results_model/
+**/CONTRIBUTING.assets
+benchmark_dataset.zip

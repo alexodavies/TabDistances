@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Components &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Utils" href="utils.html" />
+    <link rel="prev" title="Experimental Results" href="../experimental_results.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Components</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-component-categories">Core Component Categories</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#utility-functions-and-classes">Utility Functions and Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline">Data Processing Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#method-infrastructure">Method Infrastructure</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="data.html">Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="method_base.html">Method Base</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Core Components</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-components">
+<h1>Core Components<a class="headerlink" href="#core-components" title="Permalink to this heading"></a></h1>
+<p>This section contains the core infrastructure components of TALENT that provide the foundation for all TALENT functionality. These components work together to provide a consistent and robust framework for tabular machine learning.</p>
+<p>The core components are organized into three main categories:</p>
+<p><strong>Essential Infrastructure:</strong></p>
+<ul class="simple">
+<li><p><strong>Utils</strong>: Essential utilities for training, evaluation, configuration management, and system operations</p></li>
+<li><p><strong>Data</strong>: Comprehensive data loading, preprocessing, transformation, and handling capabilities</p></li>
+<li><p><strong>Method Base</strong>: The foundational base class that all model implementations inherit from, providing unified interfaces</p></li>
+</ul>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p><strong>Unified Interface</strong>: All components follow consistent APIs and patterns</p></li>
+<li><p><strong>Extensibility</strong>: Easy to extend and customize for specific use cases</p></li>
+<li><p><strong>Robustness</strong>: Comprehensive error handling and validation</p></li>
+<li><p><strong>Performance</strong>: Optimized for efficiency in tabular data processing</p></li>
+<li><p><strong>Reproducibility</strong>: Built-in support for deterministic operations</p></li>
+</ul>
+<p><strong>Component Interactions:</strong></p>
+<p>The core components are designed to work seamlessly together:</p>
+<ol class="arabic simple">
+<li><p><strong>Data Component</strong> handles all data-related operations (loading, preprocessing, validation)</p></li>
+<li><p><strong>Utils Component</strong> provides supporting utilities (metrics, configuration, device management)</p></li>
+<li><p><strong>Method Base</strong> orchestrates the entire training/evaluation pipeline using Data and Utils</p></li>
+</ol>
+<p><strong>Design Principles:</strong></p>
+<ul class="simple">
+<li><p><strong>Separation of Concerns</strong>: Each component has well-defined responsibilities</p></li>
+<li><p><strong>Composition over Inheritance</strong>: Components are composed rather than deeply inherited</p></li>
+<li><p><strong>Configuration-Driven</strong>: Behavior is controlled through configuration rather than code changes</p></li>
+<li><p><strong>Type Safety</strong>: Comprehensive type annotations and validation</p></li>
+<li><p><strong>Performance Optimization</strong>: Efficient memory usage and computational patterns</p></li>
+</ul>
+<section id="core-component-categories">
+<h2>Core Component Categories<a class="headerlink" href="#core-component-categories" title="Permalink to this heading"></a></h2>
+<section id="utility-functions-and-classes">
+<h3>Utility Functions and Classes<a class="headerlink" href="#utility-functions-and-classes" title="Permalink to this heading"></a></h3>
+<p>The utils module provides essential infrastructure for:</p>
+<ul class="simple">
+<li><p><strong>Training Infrastructure</strong>: Optimizers, schedulers, and training loops</p></li>
+<li><p><strong>Evaluation Metrics</strong>: Comprehensive metric computation for all task types</p></li>
+<li><p><strong>Configuration Management</strong>: Loading, validation, and management of configurations</p></li>
+<li><p><strong>System Utilities</strong>: Device management, path operations, and environment setup</p></li>
+<li><p><strong>Reproducibility</strong>: Seed management and deterministic operations</p></li>
+</ul>
+</section>
+<section id="data-processing-pipeline">
+<h3>Data Processing Pipeline<a class="headerlink" href="#data-processing-pipeline" title="Permalink to this heading"></a></h3>
+<p>The data module implements a complete data processing pipeline:</p>
+<ul class="simple">
+<li><p><strong>Data Loading</strong>: Support for multiple formats and sources</p></li>
+<li><p><strong>Preprocessing</strong>: NaN handling, encoding, normalization, and feature engineering</p></li>
+<li><p><strong>Validation</strong>: Data integrity checks and format validation</p></li>
+<li><p><strong>Transformation</strong>: Feature transformations and augmentations</p></li>
+<li><p><strong>DataLoader Creation</strong>: Efficient batch loading for training and inference</p></li>
+</ul>
+</section>
+<section id="method-infrastructure">
+<h3>Method Infrastructure<a class="headerlink" href="#method-infrastructure" title="Permalink to this heading"></a></h3>
+<p>The method base provides the foundational infrastructure:</p>
+<ul class="simple">
+<li><p><strong>Abstract Base Classes</strong>: Common interfaces for all model implementations</p></li>
+<li><p><strong>Training Orchestration</strong>: Complete training loop management</p></li>
+<li><p><strong>Evaluation Framework</strong>: Standardized evaluation and metric computation</p></li>
+<li><p><strong>Checkpoint Management</strong>: Model saving, loading, and resuming</p></li>
+<li><p><strong>Configuration Integration</strong>: Seamless integration with configuration system</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#file-and-path-utilities">File and Path Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#random-seed-and-device-management">Random Seed and Device Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#configuration-management">Configuration Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#hyperparameter-optimization">Hyperparameter Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#argument-parsing">Argument Parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#results-display">Results Display</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#model-factory">Model Factory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#utility-classes">Utility Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#debugging-utilities">Debugging Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data.html#data-structures">Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#data-loading">Data Loading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#data-preprocessing">Data Preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#label-processing">Label Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#data-loading-for-training">Data Loading for Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#utility-functions">Utility Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html#constants">Constants</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="method_base.html">Method Base</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="method_base.html#utility-functions">Utility Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="method_base.html#core-method-class">Core Method Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="method_base.html#abstract-methods">Abstract Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="method_base.html#usage-example">Usage Example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../experimental_results.html" class="btn btn-neutral float-left" title="Experimental Results" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

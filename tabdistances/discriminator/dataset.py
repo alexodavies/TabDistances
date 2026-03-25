@@ -1,100 +1,116 @@
-"""Graph dataset loading and splitting for the source discriminator."""
+"""DataFrame dataset loading and splitting for the source discriminator."""
 
 from __future__ import annotations
 
-import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Union
 
-import networkx as nx
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split as _sklearn_split
+from tqdm import tqdm
 
-from tabdistances.columns.typing import ColumnType
+
+def _load_one(path: Path, label: int, max_rows: int) -> tuple[pd.DataFrame, int] | None:
+    try:
+        df = pd.read_parquet(path)
+        if max_rows and len(df) > max_rows:
+            df = df.sample(max_rows, random_state=42)
+        return df, label
+    except Exception as exc:
+        print(f"[LOAD ERROR] {path.name}: {exc}")
+        return None
 
 
-def load_graphs(
-    json_dir: Union[str, Path],
+def load_dataframes(
+    parquet_dir: Union[str, Path],
     label: int,
-) -> list[tuple[nx.DiGraph, int]]:
-    """Load graphs from a JSON export directory and assign a class label.
-
-    Reads every ``.json`` file produced by the export scripts
-    (``cleantab-export.py``, ``tabicl-export.py``, ``tabfm-export.py``) and
-    reconstructs ``nx.DiGraph`` objects with the same node and edge attributes
-    as :func:`tabdistances.graph.builder.build_graph` produces.
+    max_rows: int = 1000,
+    max_tables: int | None = None,
+    random_state: int = 42,
+    max_workers: int = 8,
+) -> list[tuple[pd.DataFrame, int]]:
+    """Load DataFrames from a Parquet export directory and assign a class label.
 
     Parameters
     ----------
-    json_dir : str or Path
-        Directory containing ``<name>.json`` graph files.
+    parquet_dir : str or Path
+        Directory containing ``<name>.parquet`` files produced by the export
+        scripts (``tabicl-export.py``, ``tabfm-export.py``, ``t4-export.py``).
     label : int
-        Class label to assign to every graph loaded from this directory.
+        Class label to assign to every table loaded from this directory.
+    max_rows : int, default=1000
+        Cap the number of rows per table (random sample without replacement).
+    max_tables : int or None, default=None
+        If set, subsample this many files before loading (avoids reading the
+        full directory when only a fraction is needed).
+    random_state : int, default=42
+        Seed for path subsampling.
+    max_workers : int, default=8
+        Number of threads for parallel file loading.
 
     Returns
     -------
-    list of (nx.DiGraph, int)
-        One pair per JSON file successfully loaded.
+    list of (pd.DataFrame, int)
+        One pair per Parquet file successfully loaded.
     """
-    json_dir = Path(json_dir)
-    pairs: list[tuple[nx.DiGraph, int]] = []
+    parquet_dir = Path(parquet_dir)
+    paths = sorted(parquet_dir.glob("*.parquet"))
+    if max_tables is not None and len(paths) > max_tables:
+        rng = np.random.default_rng(random_state)
+        paths = [paths[i] for i in rng.choice(len(paths), max_tables, replace=False)]
 
-    for path in sorted(json_dir.glob("*.json")):
-        try:
-            data = json.loads(path.read_text())
-            G = nx.DiGraph()
+    results: dict[Path, tuple[pd.DataFrame, int] | None] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_load_one, p, label, max_rows): p for p in paths}
+        with tqdm(total=len(futures), desc=f"Loading {parquet_dir.parent.name}", unit="table") as bar:
+            for future in as_completed(futures):
+                results[futures[future]] = future.result()
+                bar.update(1)
 
-            for node in data["nodes"]:
-                G.add_node(
-                    node["id"],
-                    col_type=ColumnType(node["col_type"]),
-                    type_int=np.array(node["type_int"]),
-                    histogram=np.array(node["histogram"]),
-                )
-
-            for edge in data["edges"]:
-                G.add_edge(edge["source"], edge["target"], weight=edge["weight"])
-
-            pairs.append((G, label))
-
-        except Exception as exc:
-            print(f"[LOAD ERROR] {path.name}: {exc}")
-
-    return pairs
+    # Preserve sorted order
+    return [results[p] for p in paths if results.get(p) is not None]
 
 
-class GraphDataset:
-    """Labelled collection of graphs from one or more source directories.
+class DataFrameDataset:
+    """Labelled collection of DataFrames from one or more source directories.
 
     Parameters
     ----------
     sources : dict[str, tuple[Path, int]]
-        Mapping of source name to ``(json_dir, label)`` pairs.  Example::
+        Mapping of source name to ``(parquet_dir, label)`` pairs.  Example::
 
-            GraphDataset({
-                "cleantablib": (Path("graphs/json"),        0),
-                "tabicl":      (Path("graphs-tabicl/json"), 1),
-                "tabfm":       (Path("graphs-tabfm/json"),  2),
+            DataFrameDataset({
+                "tabicl": (Path("tables-tabicl/parquet"), 0),
+                "tabfm":  (Path("tables-tabfm/parquet"),  1),
+                "t4":     (Path("tables-t4/parquet"),     2),
             })
+    max_rows : int, default=1000
+        Passed to :func:`load_dataframes`.
     """
 
-    def __init__(self, sources: dict[str, tuple[Union[str, Path], int]]) -> None:
-        self._graphs: list[nx.DiGraph] = []
+    def __init__(
+        self,
+        sources: dict[str, tuple[Union[str, Path], int]],
+        max_rows: int = 1000,
+    ) -> None:
+        self._dfs: list[pd.DataFrame] = []
         self._labels: list[int] = []
         self._names: list[str] = []
 
-        for source_name, (json_dir, label) in sources.items():
-            pairs = load_graphs(json_dir, label)
-            for g, lbl in pairs:
-                self._graphs.append(g)
+        for source_name, (parquet_dir, label) in sources.items():
+            pairs = load_dataframes(parquet_dir, label, max_rows=max_rows)
+            for df, lbl in pairs:
+                self._dfs.append(df)
                 self._labels.append(lbl)
                 self._names.append(source_name)
 
-            print(f"  {source_name}: {len(pairs)} graphs (label={label})")
+            print(f"  {source_name}: {len(pairs)} tables (label={label})")
 
     @property
-    def graphs(self) -> list[nx.DiGraph]:
-        return list(self._graphs)
+    def tables(self) -> list[pd.DataFrame]:
+        return list(self._dfs)
 
     @property
     def labels(self) -> np.ndarray:
@@ -105,13 +121,13 @@ class GraphDataset:
         return list(self._names)
 
     def __len__(self) -> int:
-        return len(self._graphs)
+        return len(self._dfs)
 
     def train_test_split(
         self,
         test_size: float = 0.2,
         random_state: int = 42,
-    ) -> tuple[list[nx.DiGraph], list[nx.DiGraph], np.ndarray, np.ndarray]:
+    ) -> tuple[list[pd.DataFrame], list[pd.DataFrame], np.ndarray, np.ndarray]:
         """Stratified train/test split.
 
         Returns
@@ -128,8 +144,8 @@ class GraphDataset:
             stratify=y,
         )
 
-        X_train = [self._graphs[i] for i in train_idx]
-        X_test  = [self._graphs[i] for i in test_idx]
+        X_train = [self._dfs[i] for i in train_idx]
+        X_test  = [self._dfs[i] for i in test_idx]
         y_train = y[train_idx]
         y_test  = y[test_idx]
 

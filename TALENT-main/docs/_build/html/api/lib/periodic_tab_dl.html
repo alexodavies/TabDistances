@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Periodic Tab DL &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Trompt" href="trompt.html" />
+    <link rel="prev" title="TabICL" href="tabicl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>Periodic Tab DL</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>Periodic Tab DL</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/periodic_tab_dl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="periodic-tab-dl">
+<h1><strong>Periodic Tab DL</strong><a class="headerlink" href="#periodic-tab-dl" title="Permalink to this heading"></a></h1>
+<p>Periodic Tab DL provides Fourier-based feature encoding and periodic neural networks for tabular data processing.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FourierEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Fourier Feature Encoder Layer with optional Random Fourier Features (RFF).</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_size</strong> <em>(int)</em> - Number of input features.</p></li>
+<li><p><strong>num_features_per_input</strong> <em>(int)</em> - Number of Fourier features per input feature.</p></li>
+<li><p><strong>kernel_size</strong> <em>(int, optional, Default is 1)</em> - Size of the kernel for local feature extraction.</p></li>
+<li><p><strong>scale_input</strong> <em>(bool, optional, Default is True)</em> - Whether to scale the input with learnable parameters.</p></li>
+<li><p><strong>init_frequency_range</strong> <em>(tuple, optional, Default is (0.0, 5.0))</em> - Range for frequency initialization.</p></li>
+<li><p><strong>use_feature_scaling</strong> <em>(bool, optional, Default is True)</em> - Whether to add learnable scaling for Fourier features.</p></li>
+<li><p><strong>use_convolution</strong> <em>(bool, optional, Default is True)</em> - Whether to apply convolution over input features.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘sin_cos’)</em> - Activation function (‘sin_cos’, ‘sin’, ‘cos’, ‘tanh’).</p></li>
+<li><p><strong>frequency_init</strong> <em>(str, optional, Default is ‘log’)</em> - Method for initializing frequencies.</p></li>
+<li><p><strong>frequency_scale</strong> <em>(float, optional, Default is None)</em> - Scaling factor for frequencies.</p></li>
+<li><p><strong>use_phase_shift</strong> <em>(bool, optional, Default is True)</em> - Whether to use learnable phase shifts.</p></li>
+<li><p><strong>use_learnable_amplitude</strong> <em>(bool, optional, Default is True)</em> - Whether to use learnable amplitude scaling.</p></li>
+<li><p><strong>use_rff</strong> <em>(bool, optional, Default is True)</em> - Whether to use Random Fourier Features.</p></li>
+<li><p><strong>rff_sigma</strong> <em>(float, optional, Default is 1.0)</em> - Bandwidth parameter for RFF.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor of shape (batch_size, input_size).</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Fourier encoded features.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FourierBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Fourier block for periodic neural networks.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>hidden_dim</strong> <em>(int)</em> - Hidden dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘relu’)</em> - Activation function.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Block output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FourierNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Fourier-based neural network for tabular data.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>hidden_dims</strong> <em>(List[int])</em> - List of hidden dimensions.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘relu’)</em> - Activation function.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Network output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabFourierNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Tabular Fourier network with feature encoding.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>hidden_dims</strong> <em>(List[int])</em> - List of hidden dimensions.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>fourier_params</strong> <em>(Dict)</em> - Fourier encoder parameters.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Network output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">OrthogonalPolynomial</span>
+</pre></div>
+</div>
+<p>Orthogonal polynomial basis functions.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>degree</strong> <em>(int)</em> - Polynomial degree.</p></li>
+<li><p><strong>basis_type</strong> <em>(str)</em> - Type of orthogonal basis.</p></li>
+</ul>
+<p><strong>Methods:</strong></p>
+<ul class="simple">
+<li><p><strong>evaluate(self, x)</strong> - Evaluate polynomial at given points.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PnPBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plug-and-Play neural network block.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>activation</strong> <em>(str)</em> - Activation function.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Block output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">AutoPnP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Automatic Plug-and-Play network architecture.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>hidden_dims</strong> <em>(List[int])</em> - List of hidden dimensions.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Network output.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tabicl.html" class="btn btn-neutral float-left" title="TabICL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trompt.html" class="btn btn-neutral float-right" title="Trompt" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

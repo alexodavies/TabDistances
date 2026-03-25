@@ -1,22 +1,33 @@
 [build-system]
 requires = ["setuptools>=61"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabdistances"
 version = "0.1.0"
-description = "Measure distances between sets of tabular datasets via graph representations"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "networkx",
     "scikit-learn>=1.2",
     "pandas",
     "numpy",
     "scipy",
+    "matplotlib",
+    "pyarrow",
+    "torch>=2.2",
+    "xgboost",
+    "einops>=0.7",
+    "psutil",
+    "tqdm",
+    "optuna",
+    "pebble",
+    "seaborn",
+    "umap-learn",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "jupyterlab"]
+data = ["kaggle", "wandb", "huggingface"]
 
 [tool.setuptools.packages.find]
 where = ["."]

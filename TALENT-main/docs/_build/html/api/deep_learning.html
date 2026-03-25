@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deep Learning Models &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Models" href="models.html" />
+    <link rel="prev" title="Linear Regression" href="classical_model/lr.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deep Learning Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html">Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#base-method-class-method-base-py">Base Method Class (method/base.py)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#method-implementations">Method Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#method-usage-guidelines">Method Usage Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Deep Learning Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/deep_learning.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="deep-learning-models">
+<h1>Deep Learning Models<a class="headerlink" href="#deep-learning-models" title="Permalink to this heading"></a></h1>
+<p>This section contains all deep learning architectures and their implementations in TALENT. TALENT provides 30+ state-of-the-art deep learning models specifically designed for tabular data:</p>
+<ul class="simple">
+<li><p><strong>Models</strong>: The actual neural network architectures and model definitions</p></li>
+<li><p><strong>Methods</strong>: Implementation classes that handle training, evaluation, and inference</p></li>
+</ul>
+<p>The deep learning module covers everything from simple MLPs to advanced transformer architectures, ensuring you have access to the latest research in tabular deep learning.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="models.html#basic-neural-networks">Basic Neural Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#transformer-based-models">Transformer-Based Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#advanced-tabular-models">Advanced Tabular Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#tree-based-neural-models">Tree-Based Neural Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#distance-based-models">Distance-Based Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#specialized-architectures">Specialized Architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#retrieval-based-models">Retrieval-Based Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#foundation-models">Foundation Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#regularization-methods">Regularization Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#activation-functions-reference">Activation Functions Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#model-usage-examples">Model Usage Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#model-selection-guidelines">Model Selection Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#base-method-class-method-base-py">Base Method Class (method/base.py)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#core-base-methods">Core Base Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#utility-functions">Utility Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#method-implementations">Method Implementations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#simple-methods-using-base-class-functions">Simple Methods (Using Base Class Functions)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#transformer-based-methods-using-base-class-functions">Transformer-Based Methods (Using Base Class Functions)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#advanced-methods-with-custom-data-processing">Advanced Methods with Custom Data Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#methods-with-custom-training-procedures">Methods with Custom Training Procedures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#methods-with-specialized-architectures">Methods with Specialized Architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#foundation-model-methods">Foundation Model Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="methods.html#method-usage-guidelines">Method Usage Guidelines</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="classical_model/lr.html" class="btn btn-neutral float-left" title="Linear Regression" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="models.html" class="btn btn-neutral float-right" title="Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

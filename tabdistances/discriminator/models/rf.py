@@ -1,4 +1,4 @@
-"""Random-forest discriminator using aggregate graph features."""
+"""Random-forest discriminator using aggregate DataFrame features."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from tabdistances.discriminator.models.aggregate import AggregateDiscriminator
 
 
 class RFDiscriminator(AggregateDiscriminator):
-    """Random forest over aggregate graph features.
+    """Random forest over aggregate DataFrame features.
 
     Parameters
     ----------

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabPFN &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TabR" href="tabr.html" />
+    <link rel="prev" title="TabNet" href="tabnet.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>TabPFN</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>TabPFN</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/tabpfn.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tabpfn">
+<h1><strong>TabPFN</strong><a class="headerlink" href="#tabpfn" title="Permalink to this heading"></a></h1>
+<p>A general model which involves the use of pre-trained deep neural networks that can be directly applied to any tabular task.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TransformerModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Main transformer model for TabPFN.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>encoder</strong> - Input encoder for features.</p></li>
+<li><p><strong>n_out</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>ninp</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>nhead</strong> <em>(int)</em> - Number of attention heads.</p></li>
+<li><p><strong>nhid</strong> <em>(int)</em> - Hidden dimension.</p></li>
+<li><p><strong>nlayers</strong> <em>(int)</em> - Number of transformer layers.</p></li>
+<li><p><strong>dropout</strong> <em>(float, optional, Default is 0.0)</em> - Dropout rate.</p></li>
+<li><p><strong>style_encoder</strong> - Style encoder for additional features.</p></li>
+<li><p><strong>y_encoder</strong> - Target encoder.</p></li>
+<li><p><strong>pos_encoder</strong> - Positional encoder.</p></li>
+<li><p><strong>decoder</strong> - Output decoder.</p></li>
+<li><p><strong>input_normalization</strong> <em>(bool, optional, Default is False)</em> - Whether to normalize input.</p></li>
+<li><p><strong>init_method</strong> - Weight initialization method.</p></li>
+<li><p><strong>pre_norm</strong> <em>(bool, optional, Default is False)</em> - Whether to use pre-normalization.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘gelu’)</em> - Activation function.</p></li>
+<li><p><strong>recompute_attn</strong> <em>(bool, optional, Default is False)</em> - Whether to recompute attention.</p></li>
+<li><p><strong>num_global_att_tokens</strong> <em>(int, optional, Default is 0)</em> - Number of global attention tokens.</p></li>
+<li><p><strong>full_attention</strong> <em>(bool, optional, Default is False)</em> - Whether to use full attention.</p></li>
+<li><p><strong>all_layers_same_init</strong> <em>(bool, optional, Default is False)</em> - Whether all layers have same initialization.</p></li>
+<li><p><strong>efficient_eval_masking</strong> <em>(bool, optional, Default is True)</em> - Whether to use efficient evaluation masking.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SeqBN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Sequential batch normalization layer.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d_model</strong> <em>(int)</em> - Model dimension.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TransformerEncoderDiffInit</span><span class="p">(</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Transformer encoder with different initialization for each layer.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>encoder_layer_creator</strong> - Function to create encoder layers.</p></li>
+<li><p><strong>num_layers</strong> <em>(int)</em> - Number of encoder layers.</p></li>
+<li><p><strong>norm</strong> - Layer normalization component.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">EmbeddingEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Embedding encoder for categorical features.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>num_embeddings</strong> <em>(int)</em> - Number of embeddings.</p></li>
+<li><p><strong>embedding_dim</strong> <em>(int)</em> - Embedding dimension.</p></li>
+<li><p><strong>padding_idx</strong> <em>(int, optional)</em> - Padding index.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearEncoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Linear encoder for numerical features.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TransformerEncoderLayer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Single transformer encoder layer.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>d_model</strong> <em>(int)</em> - Model dimension.</p></li>
+<li><p><strong>nhead</strong> <em>(int)</em> - Number of attention heads.</p></li>
+<li><p><strong>dim_feedforward</strong> <em>(int)</em> - Feedforward dimension.</p></li>
+<li><p><strong>dropout</strong> <em>(float, optional, Default is 0.1)</em> - Dropout rate.</p></li>
+<li><p><strong>activation</strong> <em>(str, optional, Default is ‘relu’)</em> - Activation function.</p></li>
+<li><p><strong>pre_norm</strong> <em>(bool, optional, Default is False)</em> - Whether to use pre-normalization.</p></li>
+<li><p><strong>recompute_attn</strong> <em>(bool, optional, Default is False)</em> - Whether to recompute attention.</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Noah Hollmann and Samuel Müller and Katharina Eggensperger and Frank Hutter. <strong>TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second</strong>. arXiv:2207.01848 [cs.LG], 2023. <a class="reference external" href="https://arxiv.org/abs/2207.01848">https://arxiv.org/abs/2207.01848</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tabnet.html" class="btn btn-neutral float-left" title="TabNet" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tabr.html" class="btn btn-neutral float-right" title="TabR" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabNet &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TabPFN" href="tabpfn.html" />
+    <link rel="prev" title="num_embeddings" href="num_embeddings.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>TabNet</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="amformer.html"><strong>AMFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>TabNet</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/tabnet.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tabnet">
+<h1><strong>TabNet</strong><a class="headerlink" href="#tabnet" title="Permalink to this heading"></a></h1>
+<p>A tree-mimic method using sequential attention for feature selection, offering interpretability and self-supervised learning capabilities.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabNetClassifier</span><span class="p">(</span><span class="n">TabModel</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabNet model for classification tasks.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>optimizer_fn</strong> <em>(torch.optim.Optimizer)</em> - PyTorch optimizer function.</p></li>
+<li><p><strong>optimizer_params</strong> <em>(dict)</em> - Parameters for the optimizer.</p></li>
+<li><p><strong>scheduler_fn</strong> <em>(torch.optim.lr_scheduler._LRScheduler)</em> - PyTorch scheduler function.</p></li>
+<li><p><strong>scheduler_params</strong> <em>(dict)</em> - Parameters for the scheduler.</p></li>
+<li><p><strong>mask_type</strong> <em>(str)</em> - Type of mask to use (‘sparsemax’ or ‘entmax’).</p></li>
+<li><p><strong>n_d</strong> <em>(int)</em> - Dimension of prediction layer.</p></li>
+<li><p><strong>n_a</strong> <em>(int)</em> - Dimension of attention layer.</p></li>
+<li><p><strong>n_steps</strong> <em>(int)</em> - Number of decision steps.</p></li>
+<li><p><strong>gamma</strong> <em>(float)</em> - Relaxation parameter for feature selection.</p></li>
+<li><p><strong>n_ind</strong> <em>(int)</em> - Number of independent features.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared features.</p></li>
+<li><p><strong>cat_idxs</strong> <em>(list)</em> - List of categorical feature indices.</p></li>
+<li><p><strong>cat_dims</strong> <em>(list)</em> - List of categorical feature dimensions.</p></li>
+<li><p><strong>cat_emb_dim</strong> <em>(int)</em> - Embedding dimension for categorical features.</p></li>
+<li><p><strong>n_independent</strong> <em>(int)</em> - Number of independent Gated Linear Units.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared Gated Linear Units.</p></li>
+<li><p><strong>epsilon</strong> <em>(float)</em> - Epsilon for numerical stability.</p></li>
+<li><p><strong>virtual_batch_size</strong> <em>(int)</em> - Virtual batch size for Ghost Batch Normalization.</p></li>
+<li><p><strong>momentum</strong> <em>(float)</em> - Momentum for batch normalization.</p></li>
+<li><p><strong>clip_value</strong> <em>(float)</em> - Gradient clipping value.</p></li>
+<li><p><strong>verbose</strong> <em>(int)</em> - Verbosity level.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabNetRegressor</span><span class="p">(</span><span class="n">TabModel</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabNet model for regression tasks.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>optimizer_fn</strong> <em>(torch.optim.Optimizer)</em> - PyTorch optimizer function.</p></li>
+<li><p><strong>optimizer_params</strong> <em>(dict)</em> - Parameters for the optimizer.</p></li>
+<li><p><strong>scheduler_fn</strong> <em>(torch.optim.lr_scheduler._LRScheduler)</em> - PyTorch scheduler function.</p></li>
+<li><p><strong>scheduler_params</strong> <em>(dict)</em> - Parameters for the scheduler.</p></li>
+<li><p><strong>mask_type</strong> <em>(str)</em> - Type of mask to use (‘sparsemax’ or ‘entmax’).</p></li>
+<li><p><strong>n_d</strong> <em>(int)</em> - Dimension of prediction layer.</p></li>
+<li><p><strong>n_a</strong> <em>(int)</em> - Dimension of attention layer.</p></li>
+<li><p><strong>n_steps</strong> <em>(int)</em> - Number of decision steps.</p></li>
+<li><p><strong>gamma</strong> <em>(float)</em> - Relaxation parameter for feature selection.</p></li>
+<li><p><strong>n_ind</strong> <em>(int)</em> - Number of independent features.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared features.</p></li>
+<li><p><strong>cat_idxs</strong> <em>(list)</em> - List of categorical feature indices.</p></li>
+<li><p><strong>cat_dims</strong> <em>(list)</em> - List of categorical feature dimensions.</p></li>
+<li><p><strong>cat_emb_dim</strong> <em>(int)</em> - Embedding dimension for categorical features.</p></li>
+<li><p><strong>n_independent</strong> <em>(int)</em> - Number of independent Gated Linear Units.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared Gated Linear Units.</p></li>
+<li><p><strong>epsilon</strong> <em>(float)</em> - Epsilon for numerical stability.</p></li>
+<li><p><strong>virtual_batch_size</strong> <em>(int)</em> - Virtual batch size for Ghost Batch Normalization.</p></li>
+<li><p><strong>momentum</strong> <em>(float)</em> - Momentum for batch normalization.</p></li>
+<li><p><strong>clip_value</strong> <em>(float)</em> - Gradient clipping value.</p></li>
+<li><p><strong>verbose</strong> <em>(int)</em> - Verbosity level.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabNetNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The main TabNet network architecture.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>n_d</strong> <em>(int)</em> - Dimension of prediction layer.</p></li>
+<li><p><strong>n_a</strong> <em>(int)</em> - Dimension of attention layer.</p></li>
+<li><p><strong>n_steps</strong> <em>(int)</em> - Number of decision steps.</p></li>
+<li><p><strong>gamma</strong> <em>(float)</em> - Relaxation parameter for feature selection.</p></li>
+<li><p><strong>n_ind</strong> <em>(int)</em> - Number of independent features.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared features.</p></li>
+<li><p><strong>cat_idxs</strong> <em>(list)</em> - List of categorical feature indices.</p></li>
+<li><p><strong>cat_dims</strong> <em>(list)</em> - List of categorical feature dimensions.</p></li>
+<li><p><strong>cat_emb_dim</strong> <em>(int)</em> - Embedding dimension for categorical features.</p></li>
+<li><p><strong>n_independent</strong> <em>(int)</em> - Number of independent Gated Linear Units.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared Gated Linear Units.</p></li>
+<li><p><strong>epsilon</strong> <em>(float)</em> - Epsilon for numerical stability.</p></li>
+<li><p><strong>virtual_batch_size</strong> <em>(int)</em> - Virtual batch size for Ghost Batch Normalization.</p></li>
+<li><p><strong>momentum</strong> <em>(float)</em> - Momentum for batch normalization.</p></li>
+<li><p><strong>mask_type</strong> <em>(str)</em> - Type of mask to use (‘sparsemax’ or ‘entmax’).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabNetNoEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>TabNet network without embeddings for numerical features only.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>n_d</strong> <em>(int)</em> - Dimension of prediction layer.</p></li>
+<li><p><strong>n_a</strong> <em>(int)</em> - Dimension of attention layer.</p></li>
+<li><p><strong>n_steps</strong> <em>(int)</em> - Number of decision steps.</p></li>
+<li><p><strong>gamma</strong> <em>(float)</em> - Relaxation parameter for feature selection.</p></li>
+<li><p><strong>n_ind</strong> <em>(int)</em> - Number of independent features.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared features.</p></li>
+<li><p><strong>n_independent</strong> <em>(int)</em> - Number of independent Gated Linear Units.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared Gated Linear Units.</p></li>
+<li><p><strong>epsilon</strong> <em>(float)</em> - Epsilon for numerical stability.</p></li>
+<li><p><strong>virtual_batch_size</strong> <em>(int)</em> - Virtual batch size for Ghost Batch Normalization.</p></li>
+<li><p><strong>momentum</strong> <em>(float)</em> - Momentum for batch normalization.</p></li>
+<li><p><strong>mask_type</strong> <em>(str)</em> - Type of mask to use (‘sparsemax’ or ‘entmax’).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TabNetDecoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Decoder for TabNet pretraining.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>input_dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>output_dim</strong> <em>(int)</em> - Output dimension.</p></li>
+<li><p><strong>n_d</strong> <em>(int)</em> - Dimension of prediction layer.</p></li>
+<li><p><strong>n_steps</strong> <em>(int)</em> - Number of decision steps.</p></li>
+<li><p><strong>gamma</strong> <em>(float)</em> - Relaxation parameter for feature selection.</p></li>
+<li><p><strong>n_ind</strong> <em>(int)</em> - Number of independent features.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared features.</p></li>
+<li><p><strong>n_independent</strong> <em>(int)</em> - Number of independent Gated Linear Units.</p></li>
+<li><p><strong>n_shared</strong> <em>(int)</em> - Number of shared Gated Linear Units.</p></li>
+<li><p><strong>epsilon</strong> <em>(float)</em> - Epsilon for numerical stability.</p></li>
+<li><p><strong>virtual_batch_size</strong> <em>(int)</em> - Virtual batch size for Ghost Batch Normalization.</p></li>
+<li><p><strong>momentum</strong> <em>(float)</em> - Momentum for batch normalization.</p></li>
+<li><p><strong>mask_type</strong> <em>(str)</em> - Type of mask to use (‘sparsemax’ or ‘entmax’).</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p>Sercan O. Arik and Tomas Pfister. <strong>TabNet: Attentive Interpretable Tabular Learning</strong>. arXiv:1908.07442 [cs.LG], 2020. <a class="reference external" href="https://arxiv.org/abs/1908.07442">https://arxiv.org/abs/1908.07442</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="num_embeddings.html" class="btn btn-neutral float-left" title="num_embeddings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tabpfn.html" class="btn btn-neutral float-right" title="TabPFN" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

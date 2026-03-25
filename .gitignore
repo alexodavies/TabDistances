@@ -12,6 +12,9 @@ build/
 venv/
 .env
 
+wandb/
+.claude
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
@@ -29,9 +32,29 @@ graphs/
 graphs-tabfm/
 graphs-tabicl/
 
+tables/
+tables-t4/
+tables-tabfm/
+tables-tabicl/
+t4.zip
+
 # macOS
 .DS_Store
 
 # IDE
 .vscode/
 .idea/
+
+benchmark_dataset.zip
+data/
+results/rank-coverage/*.png
+results/rank-coverage/*.pdf
+results/rank-coverage/*.csv
+
+results/column-coverage/*.png
+results/column-coverage/*.pdf
+results/column-coverage/*.csv
+
+results/correlation-coverage/*.png
+results/correlation-coverage/*.pdf
+results/correlation-coverage/*.csv

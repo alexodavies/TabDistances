@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMFormer &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TabPTM" href="tabptm.html" />
+    <link rel="prev" title="PTaRL" href="ptarl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classical_methods.html">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../lib.html">Library Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lib.html#common-features">Common Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../lib.html#available-components">Available Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="TData.html"><strong>TData</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data.html"><strong>Data</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="num_embeddings.html"><strong>num_embeddings</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabnet.html"><strong>TabNet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabpfn.html"><strong>TabPFN</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabr.html"><strong>TabR</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabm.html"><strong>TabM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmlp.html"><strong>RealMLP</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bishop.html"><strong>BiSHop</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="node.html"><strong>NODE</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="hyperfast.html"><strong>HyperFast</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="excelformer.html"><strong>ExcelFormer</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="danets.html"><strong>DANet</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabcaps.html"><strong>TabCaps</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tabicl.html"><strong>TabICL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="periodic_tab_dl.html"><strong>Periodic Tab DL</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="trompt.html"><strong>Trompt</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ptarl.html"><strong>PTaRL</strong></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><strong>AMFormer</strong></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tabptm.html"><strong>TabPTM</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="dnnr.html"><strong>DNNR</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../lib.html">Library Components</a> &raquo;</li>
+      <li><strong>AMFormer</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/lib/amformer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="amformer">
+<h1><strong>AMFormer</strong><a class="headerlink" href="#amformer" title="Permalink to this heading"></a></h1>
+<p>A token-based method which improves the transformer architecture for tabular data by incorporating parallel addition and multiplication attention mechanisms, utilizing prompt tokens to constrain feature interactions.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GEGLU</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>GEGLU (Gated Exponential Linear Unit) activation function.</p>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - GEGLU output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">FeedForward</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">mult</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Creates a feedforward network with GEGLU activation.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>dim</strong> <em>(int)</em> - Input/output dimension.</p></li>
+<li><p><strong>mult</strong> <em>(int, optional, Default is 4)</em> - Multiplier for hidden dimension.</p></li>
+<li><p><strong>dropout</strong> <em>(float, optional, Default is 0.)</em> - Dropout rate.</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>nn.Sequential</strong> - Feedforward network.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Attention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Multi-head attention mechanism.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>heads</strong> <em>(int, optional, Default is 8)</em> - Number of attention heads.</p></li>
+<li><p><strong>dim</strong> <em>(int, optional, Default is 64)</em> - Input dimension.</p></li>
+<li><p><strong>dropout</strong> <em>(float, optional, Default is 0.)</em> - Dropout rate.</p></li>
+<li><p><strong>inner_dim</strong> <em>(int, optional, Default is 0)</em> - Inner dimension (0 for same as dim).</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+<li><p><strong>attn_out</strong> <em>(bool, optional, Default is False)</em> - Whether to return attention weights.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Attention output, or tuple (output, attention_weights) if attn_out=True.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MemoryBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Memory block with grouped attention mechanism.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>token_num</strong> <em>(int)</em> - Number of tokens.</p></li>
+<li><p><strong>heads</strong> <em>(int)</em> - Number of attention heads.</p></li>
+<li><p><strong>dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>attn_dropout</strong> <em>(float)</em> - Attention dropout rate.</p></li>
+<li><p><strong>cluster</strong> <em>(bool)</em> - Whether to use clustering.</p></li>
+<li><p><strong>target_mode</strong> <em>(str)</em> - Target mode for attention.</p></li>
+<li><p><strong>groups</strong> <em>(int)</em> - Number of groups.</p></li>
+<li><p><strong>num_per_group</strong> <em>(int)</em> - Number of tokens per group.</p></li>
+<li><p><strong>use_cls_token</strong> <em>(bool)</em> - Whether to use CLS token.</p></li>
+<li><p><strong>sum_or_prod</strong> <em>(str, optional)</em> - Sum or product operation.</p></li>
+<li><p><strong>qk_relu</strong> <em>(bool, optional, Default is False)</em> - Whether to use ReLU in QK computation.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Memory block output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Transformer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Transformer model with memory blocks.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>dim</strong> <em>(int)</em> - Input dimension.</p></li>
+<li><p><strong>depth</strong> <em>(int)</em> - Number of transformer layers.</p></li>
+<li><p><strong>heads</strong> <em>(int)</em> - Number of attention heads.</p></li>
+<li><p><strong>attn_dropout</strong> <em>(float)</em> - Attention dropout rate.</p></li>
+<li><p><strong>ff_dropout</strong> <em>(float)</em> - Feedforward dropout rate.</p></li>
+<li><p><strong>use_cls_token</strong> <em>(bool)</em> - Whether to use CLS token.</p></li>
+<li><p><strong>groups</strong> <em>(int)</em> - Number of groups.</p></li>
+<li><p><strong>sum_num_per_group</strong> <em>(int)</em> - Number per group for sum operation.</p></li>
+<li><p><strong>prod_num_per_group</strong> <em>(int)</em> - Number per group for product operation.</p></li>
+<li><p><strong>cluster</strong> <em>(bool)</em> - Whether to use clustering.</p></li>
+<li><p><strong>target_mode</strong> <em>(str)</em> - Target mode.</p></li>
+<li><p><strong>token_num</strong> <em>(int)</em> - Number of tokens.</p></li>
+<li><p><strong>token_descent</strong> <em>(bool, optional, Default is False)</em> - Whether to use token descent.</p></li>
+<li><p><strong>use_prod</strong> <em>(bool, optional, Default is True)</em> - Whether to use product operation.</p></li>
+<li><p><strong>qk_relu</strong> <em>(bool, optional, Default is False)</em> - Whether to use ReLU in QK.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Input tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Transformer output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">NumericalEmbedder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Numerical feature embedder.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>dim</strong> <em>(int)</em> - Embedding dimension.</p></li>
+<li><p><strong>num_numerical_types</strong> <em>(int)</em> - Number of numerical feature types.</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p><strong>x</strong> <em>(Tensor)</em> - Numerical feature tensor.</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p><strong>Tensor</strong> - Embedded numerical features.</p></li>
+</ul>
+<p><strong>Referencses:</strong></p>
+<p>Cheng, Y., Hu, R., Ying, H., Shi, X., Wu, J., &amp; Lin, W. (2024). Arithmetic Feature Interaction Is Necessary for Deep Tabular Learning. arXiv:2402.02334. <a class="reference external" href="https://arxiv.org/abs/2402.02334">https://arxiv.org/abs/2402.02334</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ptarl.html" class="btn btn-neutral float-left" title="PTaRL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tabptm.html" class="btn btn-neutral float-right" title="TabPTM" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

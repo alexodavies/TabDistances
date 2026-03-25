@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base Class &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Support Vector Machine" href="svm.html" />
+    <link rel="prev" title="Classical Methods" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classical_methods.html">Classical Methods</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../classical_methods.html#overview">Overview</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../classical_methods.html#available-methods">Available Methods</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Classical Methods</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#available-methods">Available Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#common-features">Common Features</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#usage-example">Usage Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../classical_methods.html">Classical Methods</a> &raquo;</li>
+          <li><a href="index.html">Classical Methods</a> &raquo;</li>
+      <li>Base Class</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/classical_model/base.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="base-class">
+<h1>Base Class<a class="headerlink" href="#base-class" title="Permalink to this heading"></a></h1>
+<p>Base class for classical methods implementation.</p>
+<p>This section contains the abstract base class that defines the interface for all classical machine learning methods in TALENT. The base class provides common functionality for data preprocessing, model training, and evaluation.</p>
+<span class="target" id="module-TALENT.model.classical_methods.base"></span><dl class="py function">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.check_softmax">
+<span class="sig-prename descclassname"><span class="pre">TALENT.model.classical_methods.base.</span></span><span class="sig-name descname"><span class="pre">check_softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.check_softmax" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.classical_methods.base.</span></span><span class="sig-name descname"><span class="pre">classical_methods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods.construct_model">
+<span class="sig-name descname"><span class="pre">construct_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods.construct_model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods.data_format">
+<span class="sig-name descname"><span class="pre">data_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods.data_format" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods.fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods.metric">
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods.metric" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.base.classical_methods.reset_stats_withconfig">
+<span class="sig-name descname"><span class="pre">reset_stats_withconfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.base.classical_methods.reset_stats_withconfig" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.classical_methods.base.</span></span><span class="sig-name descname"><span class="pre">classical_methods</span></span></dt>
+<dd><p>Abstract base class for all classical machine learning methods in TALENT.</p>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p>Handles common data preprocessing including missing value imputation, categorical encoding, numerical encoding and binning, data normalization, and label processing</p></li>
+<li><p>Provides unified evaluation metrics calculation</p></li>
+<li><p>Supports both regression and classification tasks</p></li>
+<li><p>Automatically handles data format conversion between training and testing</p></li>
+<li><p>Manages model saving and loading functionality</p></li>
+</ul>
+<p><strong>Abstract Methods:</strong></p>
+<ul class="simple">
+<li><p><cite>construct_model()</cite>: Must be implemented by subclasses to create the specific model</p></li>
+<li><p><cite>fit()</cite>: Must be implemented by subclasses for model training</p></li>
+<li><p><cite>predict()</cite>: Must be implemented by subclasses for model prediction</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Initialize the classical method.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>args</strong> (<em>object</em>) – Configuration arguments containing model settings</p></li>
+<li><p><strong>is_regression</strong> (<em>bool</em>) – Whether the task is regression (True) or classification (False)</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">data_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Format data for training or testing.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>is_train</strong> (<em>bool, default=True</em>) – Whether processing training data or test data</p></li>
+<li><p><strong>N</strong> (<em>array-like, optional</em>) – Numerical features data</p></li>
+<li><p><strong>C</strong> (<em>array-like, optional</em>) – Categorical features data</p></li>
+<li><p><strong>y</strong> (<em>array-like, optional</em>) – Target labels</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">construct_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Construct the specific model instance.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model_config</strong> (<em>dict, optional</em>) – Model configuration parameters</p></li>
+</ul>
+<p><strong>Abstract Method:</strong> Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Train the model on the provided data.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> (<em>tuple</em>) – Tuple containing (N, C, y) where N is numerical features, C is categorical features, y is labels</p></li>
+<li><p><strong>info</strong> (<em>dict</em>) – Dataset information</p></li>
+<li><p><strong>train</strong> (<em>bool, default=True</em>) – Whether to train the model or just load from checkpoint</p></li>
+<li><p><strong>config</strong> (<em>dict, optional</em>) – Additional configuration parameters</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>time_cost</strong> (<em>float</em>) – Training time in seconds</p></li>
+</ul>
+<p><strong>Abstract Method:</strong> Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">reset_stats_withconfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Reset statistics with new configuration.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>config</strong> (<em>dict</em>) – Configuration parameters</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_info</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Calculate evaluation metrics.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>predictions</strong> (<em>array-like</em>) – Model predictions</p></li>
+<li><p><strong>labels</strong> (<em>array-like</em>) – True labels</p></li>
+<li><p><strong>y_info</strong> (<em>dict</em>) – Label information</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>vres</strong> (<em>tuple</em>) – Evaluation metrics values</p></li>
+<li><p><strong>metric_name</strong> (<em>tuple</em>) – Names of the evaluation metrics</p></li>
+</ul>
+<p><strong>Metrics:</strong></p>
+<ul class="simple">
+<li><p>For regression: returns MAE, R2, RMSE metrics</p></li>
+<li><p>For classification: returns Accuracy, Avg_Precision, Avg_Recall, F1 metrics</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<p><strong>References:</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">[1]</span> <span class="pre">TALENT</span> <span class="pre">Framework</span> <span class="pre">Documentation.</span> <span class="pre">Classical</span> <span class="pre">Methods</span> <span class="pre">Base</span> <span class="pre">Class.</span></code></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Classical Methods" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="svm.html" class="btn btn-neutral float-right" title="Support Vector Machine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

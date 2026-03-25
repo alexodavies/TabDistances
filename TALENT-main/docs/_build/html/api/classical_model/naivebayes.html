@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Naive Bayes &mdash; LAMDA-TALENT  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Nearest Centroid Method" href="ncm.html" />
+    <link rel="prev" title="LightGBM" href="lightgbm.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> LAMDA-TALENT
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">How to Use TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#cloning-the-repository">1. Cloning the Repository</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#running-experiments">2. Running Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#adding-new-methods">3. Adding New Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#configuring-hyperparameters">4. Configuring Hyperparameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#troubleshooting">5. Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html">Methods in TALENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#deep-learning-methods">Deep Learning Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#classical-methods">Classical Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methods.html#methodology-summary">Methodology Summary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dependencies</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html">Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#python-libraries">Python Libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dependencies.html#additional-notes">Additional Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Benchmark_Datasets</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html">Benchmark Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#available-datasets">Available Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#downloading-datasets">Downloading Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#dataset-structure">Dataset Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#placing-datasets">Placing Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#using-datasets">Using Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#custom-datasets">Custom Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#task-types">Task Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmark_datasets.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Experimental_Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html">Experimental Results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#evaluation-metrics">Evaluation Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#results-summary">Results Summary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../experimental_results.html#conclusion">Conclusion</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Docs</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core Components</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classical_methods.html">Classical Methods</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../classical_methods.html#overview">Overview</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../classical_methods.html#available-methods">Available Methods</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Classical Methods</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#available-methods">Available Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="index.html#common-features">Common Features</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#usage-example">Usage Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../deep_learning.html">Deep Learning Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib.html">Library Components</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Acknowledgements</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgments</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LAMDA-TALENT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../classical_methods.html">Classical Methods</a> &raquo;</li>
+          <li><a href="index.html">Classical Methods</a> &raquo;</li>
+      <li>Naive Bayes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/classical_model/naivebayes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="naive-bayes">
+<h1>Naive Bayes<a class="headerlink" href="#naive-bayes" title="Permalink to this heading"></a></h1>
+<p>Naive Bayes classical method implementation.</p>
+<p>This section contains the Naive Bayes implementation for classification tasks. Naive Bayes is a probabilistic classifier based on applying Bayes’ theorem with the “naive” assumption of conditional independence between every pair of features.</p>
+<span class="target" id="module-TALENT.model.classical_methods.naivebayes"></span><dl class="py class">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.naivebayes.NaiveBayesMethod">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.classical_methods.naivebayes.</span></span><span class="sig-name descname"><span class="pre">NaiveBayesMethod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.naivebayes.NaiveBayesMethod" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="ncm.html#TALENT.model.classical_methods.ncm.NCMMethod" title="TALENT.model.classical_methods.ncm.NCMMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">NCMMethod</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="TALENT.model.classical_methods.naivebayes.NaiveBayesMethod.construct_model">
+<span class="sig-name descname"><span class="pre">construct_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TALENT.model.classical_methods.naivebayes.NaiveBayesMethod.construct_model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TALENT.model.classical_methods.naivebayes.</span></span><span class="sig-name descname"><span class="pre">NaiveBayesMethod</span></span></dt>
+<dd><p>Naive Bayes method for classification tasks.</p>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p>Uses sklearn’s GaussianNB for classification</p></li>
+<li><p>Probabilistic classifier based on Bayes’ theorem</p></li>
+<li><p>Supports both binary and multiclass classification</p></li>
+<li><p>Automatically handles data preprocessing including normalization and encoding</p></li>
+<li><p>Saves trained model to pickle file for later use</p></li>
+<li><p>Provides probability predictions</p></li>
+</ul>
+<p><strong>Algorithm:</strong></p>
+<p>Naive Bayes is a probabilistic classifier based on applying Bayes’ theorem with the “naive” assumption of conditional independence between every pair of features given the value of the class variable.</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_regression</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Initialize the Naive Bayes method.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>args</strong> (<em>object</em>) – Configuration arguments containing model settings</p></li>
+<li><p><strong>is_regression</strong> (<em>bool</em>) – Whether the task is regression (True) or classification (False)</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">construct_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Construct the Naive Bayes model instance.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>model_config</strong> (<em>dict, optional</em>) – Model configuration parameters for Naive Bayes</p></li>
+</ul>
+<p><strong>Model Creation:</strong></p>
+<ul class="simple">
+<li><p>Creates <cite>GaussianNB</cite> classifier</p></li>
+<li><p>Configures parameters like priors, var_smoothing, etc.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Train the Naive Bayes model on the provided data.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> (<em>tuple</em>) – Tuple containing (N, C, y) where N is numerical features, C is categorical features, y is labels</p></li>
+<li><p><strong>info</strong> (<em>dict</em>) – Dataset information</p></li>
+<li><p><strong>train</strong> (<em>bool, default=True</em>) – Whether to train the model or just load from checkpoint</p></li>
+<li><p><strong>config</strong> (<em>dict, optional</em>) – Additional configuration parameters</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>time_cost</strong> (<em>float</em>) – Training time in seconds</p></li>
+</ul>
+<p><strong>Training Process:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Data Preprocessing:</strong> Handles missing values, categorical encoding, normalization</p></li>
+<li><p><strong>Model Training:</strong> Fits the Naive Bayes model</p></li>
+<li><p><strong>Model Saving:</strong> Saves the trained model to disk for later use</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>Make predictions using the trained Naive Bayes model.</p>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><strong>data</strong> (<em>tuple</em>) – Tuple containing (N, C, y) where N is numerical features, C is categorical features, y is labels</p></li>
+<li><p><strong>info</strong> (<em>dict</em>) – Dataset information</p></li>
+<li><p><strong>model_name</strong> (<em>str</em>) – Name of the model for saving/loading</p></li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul class="simple">
+<li><p><strong>test_logit</strong> (<em>array-like</em>) – Test predictions (probabilities for classification)</p></li>
+</ul>
+<p><strong>Prediction Process:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Data Preprocessing:</strong> Applies same preprocessing as training data</p></li>
+<li><p><strong>Model Loading:</strong> Loads the trained Naive Bayes model</p></li>
+<li><p><strong>Prediction:</strong> Generates probability predictions using Bayes’ theorem</p></li>
+<li><p><strong>Output:</strong> Returns probabilities for classification</p></li>
+</ol>
+</dd></dl>
+
+</dd></dl>
+
+<p><strong>Evaluation Metrics:</strong></p>
+<ul class="simple">
+<li><p><strong>For classification:</strong> returns Accuracy, Avg_Precision, Avg_Recall, F1 metrics</p></li>
+</ul>
+<p><strong>References:</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">[1]</span> <span class="pre">Rish,</span> <span class="pre">I.</span> <span class="pre">(2001).</span> <span class="pre">An</span> <span class="pre">empirical</span> <span class="pre">study</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">naive</span> <span class="pre">Bayes</span> <span class="pre">classifier.</span> <span class="pre">In</span> <span class="pre">IJCAI</span> <span class="pre">2001</span> <span class="pre">workshop</span> <span class="pre">on</span> <span class="pre">empirical</span> <span class="pre">methods</span> <span class="pre">in</span> <span class="pre">artificial</span> <span class="pre">intelligence</span> <span class="pre">(Vol.</span> <span class="pre">3,</span> <span class="pre">No.</span> <span class="pre">22,</span> <span class="pre">pp.</span> <span class="pre">41-46).</span></code></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lightgbm.html" class="btn btn-neutral float-left" title="LightGBM" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ncm.html" class="btn btn-neutral float-right" title="Nearest Centroid Method" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Read the Docs core team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
