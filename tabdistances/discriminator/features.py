@@ -25,8 +25,12 @@ Feature layout (70 dimensions)
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Iterable, Iterator
+
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from tabdistances.columns.node_features import get_histogram
 from tabdistances.columns.typing import ColumnType, infer_col_types
@@ -124,6 +128,83 @@ FEATURE_MODES: dict[str, list[int]] = {
     "scalar_only": list(range(1, _N_SCALAR)),          # 9 scalar moments / correlations
     "hist_only":   list(range(_N_SCALAR, FEATURE_DIM)),# 60 histogram features
 }
+
+
+def featurize_tables(
+    tables: Iterable[tuple[int, str, pd.DataFrame]],
+    cache_path: Path | None = None,
+    max_rows: int = 512,
+    desc: str = "Featurising tables",
+) -> tuple[list[str], np.ndarray]:
+    """Compute :func:`df_to_vec` for each table, with optional disk caching.
+
+    Loads previously cached feature vectors from *cache_path* (if it exists)
+    and only computes the missing ones.  The updated cache is written back
+    automatically.
+
+    Parameters
+    ----------
+    tables : iterable of (index, name, df)
+        Any ``iter_tables()``-compatible source — e.g. ``CleanTabLibDataset``,
+        ``TabFMDataset``, ``T4Dataset``, or ``iter_prior_tables()``.
+    cache_path : Path or None
+        Path to a ``.npz`` file for caching.  If ``None``, results are not
+        cached to disk.
+    max_rows : int
+        Cap each table at this many rows before featurisation.
+    desc : str
+        Label shown on the tqdm progress bar.
+
+    Returns
+    -------
+    names : list[str]
+        Table identifiers, one per row of *feats*.
+    feats : np.ndarray, shape (n, FEATURE_DIM)
+        Aggregate feature matrix.
+
+    Examples
+    --------
+    >>> from tabdistances import CleanTabLibDataset, featurize_tables
+    >>> from tabdistances.config import Paths
+    >>> names, feats = featurize_tables(
+    ...     CleanTabLibDataset().iter_tables(),
+    ...     cache_path=Paths.CACHE / "cleantablib_feats.npz",
+    ... )
+    >>> feats.shape
+    (n_tables, 70)
+    """
+    # ------------------------------------------------------------------ load cache
+    cached: dict[str, np.ndarray] = {}
+    if cache_path is not None and Path(cache_path).exists():
+        data = np.load(cache_path, allow_pickle=True)
+        cached = {name: data["feats"][i] for i, name in enumerate(data["names"].tolist())}
+
+    # ------------------------------------------------------------------ compute missing
+    new_names: list[str] = []
+    new_feats: list[np.ndarray] = []
+    all_names = list(cached.keys())
+    cached_set = set(all_names)
+
+    for _, name, df in tqdm(tables, desc=desc):
+        if name in cached_set:
+            continue
+        feat = df_to_vec(df.iloc[:max_rows])
+        cached[name] = feat
+        new_names.append(name)
+        new_feats.append(feat)
+
+    # ------------------------------------------------------------------ update cache
+    if cache_path is not None and new_names:
+        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            cache_path,
+            names=np.array(list(cached.keys())),
+            feats=np.array(list(cached.values())),
+        )
+
+    names = list(cached.keys())
+    feats = np.array(list(cached.values())) if names else np.zeros((0, FEATURE_DIM))
+    return names, feats
 
 
 def select_features(

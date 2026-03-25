@@ -133,22 +133,39 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
 # Rankings
 # ------------------------------------------------------------------
 
-def _load_rankings() -> tuple[dict[str, float], list[str]]:
-    """Returns (rank_map {dataset: rank}, datasets list) from full-context CSV."""
+def _load_rankings() -> tuple[dict[str, float], dict[str, float], dict[str, float], list[str]]:
+    """Returns (rank_map, rel_auc_map, rel_best_auc_map, datasets) from full-context CSV.
+
+    rel_auc_map      : tabicl_AUC / mean AUC across all models on that dataset
+    rel_best_auc_map : tabicl_AUC / best  AUC across all models on that dataset
+    """
     df = pd.read_csv(RANKINGS_CSV)
-    tc = df[df["model"] == "tabicl"][["dataset", "rank"]].copy()
+    df["AUC"] = df["AUC"].astype(float)
+    tc = df[df["model"] == "tabicl"][["dataset", "rank", "AUC"]].copy()
     tc["rank"] = tc["rank"].astype(int)
-    rank_map = dict(zip(tc["dataset"], tc["rank"]))
+
+    mean_auc = df.groupby("dataset")["AUC"].mean()
+    best_auc = df.groupby("dataset")["AUC"].max()
+
+    rank_map         = dict(zip(tc["dataset"], tc["rank"]))
+    rel_auc_map      = {ds: auc / mean_auc[ds]
+                        for ds, auc in zip(tc["dataset"], tc["AUC"])
+                        if ds in mean_auc and mean_auc[ds] > 0}
+    rel_best_auc_map = {ds: auc / best_auc[ds]
+                        for ds, auc in zip(tc["dataset"], tc["AUC"])
+                        if ds in best_auc and best_auc[ds] > 0}
+
     print(f"Rankings: {len(rank_map)} datasets (full-context TabICL)")
-    return rank_map, tc["dataset"].tolist()
+    return rank_map, rel_auc_map, rel_best_auc_map, tc["dataset"].tolist()
 
 
 # ------------------------------------------------------------------
 # Panel 1 — table feature vectors
 # ------------------------------------------------------------------
 
-def _load_table_panel(rank_map: dict, datasets: list[str], rng: np.random.Generator):
-    """Returns (nn_dists_talent, nn_dists_self, ranks)."""
+def _load_table_panel(rank_map: dict, rel_auc_map: dict, rel_best_auc_map: dict,
+                      datasets: list[str], rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks, rel_aucs, rel_best_aucs)."""
     # TALENT table features — load from cache, compute any missing entries
     cached: dict[str, np.ndarray] = {}
     if TALENT_FEATS_CACHE.exists():
@@ -191,8 +208,10 @@ def _load_table_panel(rank_map: dict, datasets: list[str], rng: np.random.Genera
         print(f"  Table feats: cache updated ({len(cached)} total) -> {TALENT_FEATS_CACHE}")
 
     names        = [ds for ds in datasets if ds in cached]
-    talent_feats = np.stack([cached[ds] for ds in names])
-    ranks        = np.array([rank_map[n] for n in names], dtype=float)
+    talent_feats  = np.stack([cached[ds] for ds in names])
+    ranks         = np.array([rank_map[n]                    for n in names], dtype=float)
+    rel_aucs      = np.array([rel_auc_map.get(n, np.nan)     for n in names], dtype=float)
+    rel_best_aucs = np.array([rel_best_auc_map.get(n, np.nan) for n in names], dtype=float)
     print(f"  Table feats: {len(names)} TALENT datasets")
 
     # ICL table features
@@ -204,15 +223,16 @@ def _load_table_panel(rank_map: dict, datasets: list[str], rng: np.random.Genera
     nn_dists = _nn_distances(talent_feats, icl_feats, KNN_K)
     half = len(icl_feats) // 2
     nn_self  = _nn_distances(icl_feats[:half], icl_feats[half:], KNN_K)
-    return nn_dists, nn_self, ranks
+    return nn_dists, nn_self, ranks, rel_aucs, rel_best_aucs
 
 
 # ------------------------------------------------------------------
 # Panel 2 — column histograms
 # ------------------------------------------------------------------
 
-def _load_column_panel(rank_map: dict, rng: np.random.Generator):
-    """Returns (nn_dists_talent, nn_dists_self, ranks) at column level."""
+def _load_column_panel(rank_map: dict, rel_auc_map: dict, rel_best_auc_map: dict,
+                       rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks, rel_aucs, rel_best_aucs) at column level."""
     # TALENT column hists
     if not TALENT_COL_CACHE.exists():
         raise FileNotFoundError(f"Cache missing: {TALENT_COL_CACHE}  "
@@ -236,13 +256,16 @@ def _load_column_panel(rank_map: dict, rng: np.random.Generator):
     # Filter talent cols to those with rank data
     mask = np.array([ds in rank_map for ds in col_datasets])
     talent_hists_m = talent_hists[mask]
-    ranks = np.array([rank_map[ds] for ds in col_datasets[mask]], dtype=float)
+    matched_ds     = col_datasets[mask]
+    ranks         = np.array([rank_map[ds]                    for ds in matched_ds], dtype=float)
+    rel_aucs      = np.array([rel_auc_map.get(ds, np.nan)     for ds in matched_ds], dtype=float)
+    rel_best_aucs = np.array([rel_best_auc_map.get(ds, np.nan) for ds in matched_ds], dtype=float)
 
     nn_dists = _nn_distances(talent_hists_m, icl_hists, KNN_K)
     half = len(icl_hists) // 2
     nn_self  = _nn_distances(icl_hists[:half], icl_hists[half:], KNN_K)
     print(f"  Col hists: {mask.sum()} columns matched to ranks")
-    return nn_dists, nn_self, ranks
+    return nn_dists, nn_self, ranks, rel_aucs, rel_best_aucs
 
 
 # ------------------------------------------------------------------
@@ -335,8 +358,9 @@ def _load_tabicl_corr_hists() -> np.ndarray:
     return arr
 
 
-def _load_corr_panel(rank_map: dict, datasets: list[str], rng: np.random.Generator):
-    """Returns (nn_dists_talent, nn_dists_self, ranks) at table level."""
+def _load_corr_panel(rank_map: dict, rel_auc_map: dict, rel_best_auc_map: dict,
+                     datasets: list[str], rng: np.random.Generator):
+    """Returns (nn_dists_talent, nn_dists_self, ranks, rel_aucs, rel_best_aucs) at table level."""
     talent_hists, names = _load_talent_corr_hists(datasets)
     tabicl_hists = _load_tabicl_corr_hists()
 
@@ -346,21 +370,27 @@ def _load_corr_panel(rank_map: dict, datasets: list[str], rng: np.random.Generat
     print(f"  Corr hists: {len(tabicl_hists)} TabICL tables used as reference")
 
     mask  = np.array([n in rank_map for n in names])
-    hists_m = talent_hists[mask]
-    ranks   = np.array([rank_map[n] for n in np.array(names)[mask]], dtype=float)
+    hists_m    = talent_hists[mask]
+    matched_ns = np.array(names)[mask]
+    ranks         = np.array([rank_map[n]                    for n in matched_ns], dtype=float)
+    rel_aucs      = np.array([rel_auc_map.get(n, np.nan)     for n in matched_ns], dtype=float)
+    rel_best_aucs = np.array([rel_best_auc_map.get(n, np.nan) for n in matched_ns], dtype=float)
 
     nn_dists = _nn_distances(hists_m, tabicl_hists, KNN_K)
     half = len(tabicl_hists) // 2
     nn_self  = _nn_distances(tabicl_hists[:half], tabicl_hists[half:], KNN_K)
     print(f"  Corr hists: {mask.sum()} tables matched to ranks")
-    return nn_dists, nn_self, ranks
+    return nn_dists, nn_self, ranks, rel_aucs, rel_best_aucs
 
 
 # ------------------------------------------------------------------
 # Figure
 # ------------------------------------------------------------------
 
-def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> None:
+def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
+                  metric_label: str = "Mean rank",
+                  y_label: str = "TabICL mean rank",
+                  invert_y: bool = True) -> None:
     """panels: list of dicts with keys nn_dists, nn_self, ranks, title."""
     with mpl.rc_context(_PAPER_RC):
         fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6), sharey=True,
@@ -396,15 +426,17 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             hi = means + stds
             ax2.plot(bin_centers[mask], means[mask],
                      color=_RED, lw=1.5, marker="o", ms=3,
-                     label="Mean rank")
+                     label=metric_label)
             ax2.fill_between(bin_centers[mask], lo[mask], hi[mask],
                              color=_RED, alpha=0.2)
-            ax2.invert_yaxis()
+            if invert_y:
+                ax2.invert_yaxis()
 
             # Right-axis label and ticks only on the last panel
-            ax2.set_ylabel("TabICL mean rank", color=_RED,
+            ax2.set_ylabel(y_label, color=_RED,
                            visible=(col == len(panels) - 1))
-            ax2.yaxis.set_major_locator(MaxNLocator(integer=True, prune="upper"))
+            ax2.yaxis.set_major_locator(
+                MaxNLocator(integer=invert_y, nbins=5, prune="upper"))
             ax2.tick_params(axis="y", labelcolor=_RED,
                             labelleft=False, labelright=False,
                             direction="in")
@@ -416,7 +448,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
         # Single 3-column legend below all axes
         h_left, l_left = axes[0].get_legend_handles_labels()   # TALENT + self
         h_right = [right_axes[0].get_legend_handles_labels()[0][0]]
-        l_right = ["Mean rank"]
+        l_right = [metric_label]
 
         fig.legend(
             h_left + h_right,
@@ -436,7 +468,8 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30) -> No
             ylim  = sorted(ax2.get_ylim())   # sort: inverted axis has ylim[0] > ylim[1]
             for loc in ax2.yaxis.get_majorticklocs():
                 if ylim[0] <= loc <= ylim[1]:
-                    ax2.text(0.97, loc, str(int(round(loc))),
+                    label = str(int(round(loc))) if invert_y else f"{loc:.2f}"
+                    ax2.text(0.97, loc, label,
                              transform=trans, ha="right", va="center",
                              fontsize=7, color=_RED, zorder=10, bbox=_bbox)
             if hasattr(ax2, "_corr_r"):
@@ -463,25 +496,68 @@ def main() -> None:
 
     rng = np.random.default_rng(RANDOM_STATE)
 
-    rank_map, datasets = _load_rankings()
+    rank_map, rel_auc_map, rel_best_auc_map, datasets = _load_rankings()
 
     print("\n=== Panel 1: table feature vectors ===")
-    nn1, self1, rk1 = _load_table_panel(rank_map, datasets, rng)
+    nn1, self1, rk1, ra1, rb1 = _load_table_panel(
+        rank_map, rel_auc_map, rel_best_auc_map, datasets, rng)
 
     print("\n=== Panel 2: column histograms ===")
-    nn2, self2, rk2 = _load_column_panel(rank_map, rng)
+    nn2, self2, rk2, ra2, rb2 = _load_column_panel(
+        rank_map, rel_auc_map, rel_best_auc_map, rng)
 
     print("\n=== Panel 3: correlation histograms ===")
-    nn3, self3, rk3 = _load_corr_panel(rank_map, datasets, rng)
+    nn3, self3, rk3, ra3, rb3 = _load_corr_panel(
+        rank_map, rel_auc_map, rel_best_auc_map, datasets, rng)
 
-    panels = [
-        dict(nn_dists=nn1, nn_self=self1, ranks=rk1, title="Table features"),
-        dict(nn_dists=nn2, nn_self=self2, ranks=rk2, title="Column histograms"),
-        dict(nn_dists=nn3, nn_self=self3, ranks=rk3, title="Correlation histograms"),
+    titles = ["Table features", "Column histograms", "Correlation histograms"]
+
+    # Figure 1: mean rank (original)
+    panels_rank = [
+        dict(nn_dists=nn, nn_self=ns, ranks=rk, title=t)
+        for nn, ns, rk, t in zip(
+            [nn1, nn2, nn3], [self1, self2, self3], [rk1, rk2, rk3], titles)
     ]
 
-    print("\n=== Generating figure ===")
-    plot_combined(panels, args.output_dir / "rank_vs_coverage_combined.png", args.n_bins)
+    # Figure 2: relative AUC (tabicl / mean across all models)
+    panels_rel_auc = [
+        dict(nn_dists=nn, nn_self=ns, ranks=ra, title=t)
+        for nn, ns, ra, t in zip(
+            [nn1, nn2, nn3], [self1, self2, self3], [ra1, ra2, ra3], titles)
+    ]
+
+    # Figure 3: relative AUC vs best model
+    panels_rel_best = [
+        dict(nn_dists=nn, nn_self=ns, ranks=rb, title=t)
+        for nn, ns, rb, t in zip(
+            [nn1, nn2, nn3], [self1, self2, self3], [rb1, rb2, rb3], titles)
+    ]
+
+    print("\n=== Generating figures ===")
+    plot_combined(
+        panels_rank,
+        args.output_dir / "rank_vs_coverage_combined.png",
+        args.n_bins,
+        metric_label="Mean rank",
+        y_label="TabICL mean rank",
+        invert_y=True,
+    )
+    plot_combined(
+        panels_rel_auc,
+        args.output_dir / "rel_auc_vs_coverage_combined.png",
+        args.n_bins,
+        metric_label="Rel. AUC (vs mean)",
+        y_label="TabICL AUC / mean AUC",
+        invert_y=False,
+    )
+    plot_combined(
+        panels_rel_best,
+        args.output_dir / "rel_best_auc_vs_coverage_combined.png",
+        args.n_bins,
+        metric_label="Rel. AUC (vs best)",
+        y_label="TabICL AUC / best AUC",
+        invert_y=False,
+    )
 
 
 if __name__ == "__main__":

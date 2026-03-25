@@ -41,15 +41,24 @@ class T4Dataset:
         self.split = split
         self.token = token
 
-    def _chunk_zip_paths(self) -> list[str]:
-        """Return sorted list of chunk zip file paths in the HF repo."""
-        all_files = list(list_repo_files(
+    def _chunk_zip_paths(self, max_chunks: int | None = None) -> list[str]:
+        """Return chunk zip file paths from the HF repo.
+
+        ``list_repo_files`` returns a generator; we stop consuming it as soon
+        as we have *max_chunks* zip paths so we never page through the full
+        3.1M-file listing.
+        """
+        zips: list[str] = []
+        for f in list_repo_files(
             self.HF_REPO,
             repo_type="dataset",
             token=self.token,
-        ))
-        zips = sorted(f for f in all_files if f.endswith(".zip"))
-        return zips
+        ):
+            if f.endswith(".zip"):
+                zips.append(f)
+                if max_chunks is not None and len(zips) >= max_chunks:
+                    break
+        return sorted(zips)
 
     def iter_tables(
         self,
@@ -74,9 +83,7 @@ class T4Dataset:
         df : pd.DataFrame
             The deserialized tabular data.
         """
-        chunk_paths = self._chunk_zip_paths()
-        if max_chunks is not None:
-            chunk_paths = chunk_paths[:max_chunks]
+        chunk_paths = self._chunk_zip_paths(max_chunks=max_chunks)
 
         global_idx = 0
 

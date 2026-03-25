@@ -29,9 +29,13 @@ def test_histogram_length():
     assert get_histogram(col).shape == (30,)
 
 
-def test_histogram_sums_to_one():
+def test_histogram_is_cumulative():
+    # get_histogram returns np.cumsum(counts)/total — a CDF, not a PDF.
+    # The last bin must be exactly 1.0; intermediate values must be non-decreasing.
     col = pd.Series(np.random.default_rng(0).normal(size=200))
-    np.testing.assert_almost_equal(get_histogram(col).sum(), 1.0)
+    hist = get_histogram(col)
+    np.testing.assert_almost_equal(hist[-1], 1.0)
+    assert np.all(np.diff(hist) >= 0)
 
 
 def test_histogram_empty_column():

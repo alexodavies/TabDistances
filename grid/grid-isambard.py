@@ -72,6 +72,7 @@ except ImportError:
 
 from tqdm import tqdm
 
+from tabdistances.config import GRID_PARAM_SPACE
 from tabdistances.data.priors.tabicl.dataset import SCMPrior
 from tabdistances.discriminator.dataset import load_dataframes
 from tabdistances.discriminator.features import df_to_vec, select_features, FEATURE_MODES
@@ -124,25 +125,8 @@ FEATURE_MODE  = "full"   # feature selection mode: "full" | "scalar_only" | "his
 # kill the subprocess after this many seconds and record AUC=1.0.
 TRIAL_TIMEOUT = 300   # seconds
 
-# --- Parameter space ----------------------------------------------
-PARAM_SPACE = {
-    # Shared: active for all prior types
-    "max_classes":             ("int",   2,    20),
-    "cat_prob":                ("float", 0.0,  0.6),
-    "multiclass_ordered_prob": ("float", 0.0,  1.0),
-    "balanced":                ("cat",   [False, True]),
-    "replay_small":            ("cat",   [False, True]),
-    # Conditional: prior_type always varies
-    "prior_type":              ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
-    # Conditional: tree_model active for tree_scm and mix_scm only
-    "tree_model":              ("cat",   ["decision_tree", "extra_trees",
-                                          "random_forest", "xgboost"]),
-    # Conditional: mix_prob_mlp active for mix_scm only
-    "mix_prob_mlp":            ("float", 0.0,  1.0),
-    # Conditional: tree_depth_lambda and tree_n_estimators_lambda active for tree_scm and mix_scm only
-    "tree_depth_lambda":       ("float", 0.3,  1.0),
-    "tree_n_estimators_lambda":("float", 0.3,  1.0),
-}
+# --- Parameter space (imported from tabdistances.config) ----------
+PARAM_SPACE = GRID_PARAM_SPACE  # edit in tabdistances/config.py, not here
 
 
 # ------------------------------------------------------------------

@@ -12,6 +12,9 @@ build/
 venv/
 .env
 
+wandb/
+.claude
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

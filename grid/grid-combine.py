@@ -28,20 +28,8 @@ except ImportError:
 
 WANDB_PROJECT = "tabicl-coverage-search"
 
-# Must match PARAM_SPACE in grid-isambard.py
-PARAM_SPACE = {
-    "max_classes":              ("int",   2,    20),
-    "cat_prob":                 ("float", 0.0,  0.6),
-    "multiclass_ordered_prob":  ("float", 0.0,  1.0),
-    "balanced":                 ("cat",   [False, True]),
-    "replay_small":             ("cat",   [False, True]),
-    "prior_type":               ("cat",   ["mlp_scm", "tree_scm", "mix_scm"]),
-    "tree_model":               ("cat",   ["decision_tree", "extra_trees",
-                                           "random_forest", "xgboost"]),
-    "mix_prob_mlp":             ("float", 0.0,  1.0),
-    "tree_depth_lambda":        ("float", 0.3,  1.0),
-    "tree_n_estimators_lambda": ("float", 0.3,  1.0),
-}
+from tabdistances.config import GRID_PARAM_SPACE
+PARAM_SPACE = GRID_PARAM_SPACE  # edit in tabdistances/config.py, not here
 
 _CAT_PARAMS   = [k for k, s in PARAM_SPACE.items() if s[0] == "cat"]
 _FLOAT_PARAMS = [k for k, s in PARAM_SPACE.items() if s[0] in ("float", "int")]

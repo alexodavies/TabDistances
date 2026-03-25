@@ -13,7 +13,9 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:pypi.org)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(ls -la /Users/qj19962/Fellowship/TabDistances/*.py)"
     ]
   }
 }
