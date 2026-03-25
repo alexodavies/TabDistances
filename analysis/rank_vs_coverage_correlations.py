@@ -42,7 +42,6 @@ warnings.filterwarnings("ignore")
 _ROOT = Path(__file__).resolve().parent.parent
 
 SOURCES = {
-    # "CleanTabLib": Path("tables/parquet"),
     "TabICL": _ROOT / "tables-tabicl/parquet",
     "TabFM":  _ROOT / "tables-tabfm/parquet",
     "T4":     _ROOT / "tables-t4/parquet",
@@ -58,10 +57,9 @@ CORR_HIST_CACHE = CACHE_DIR / "talent_corr_hists.npz"
 KNN_K        = 5
 RANDOM_STATE = 42
 COLORS = {
-    "CleanTabLib": "#4C72B0",
-    "TabICL":      "#DD8452",
-    "TabFM":       "#55A868",
-    "T4":          "#C44E52",
+    "TabICL": "#DD8452",
+    "TabFM":  "#55A868",
+    "T4":     "#C44E52",
 }
 
 N_BINS            = 50       # histogram bins over [-1, 1]

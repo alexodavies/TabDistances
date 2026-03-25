@@ -51,7 +51,7 @@ try:
 except ImportError:
     _WANDB_AVAILABLE = False
 
-from tabdistances.columns.node_features import get_histogram
+from tabdistances.columns.column_features import get_histogram
 import analysis.coverage_analysis as _ca
 from analysis.coverage_analysis import (
     _PAPER_RC, KNN_K, RANDOM_STATE,

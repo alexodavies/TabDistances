@@ -2,7 +2,7 @@
 """
 characterise.py — Interpretable characterisation metrics across three table sources.
 
-Computes structural and statistical metrics for CleanTabLib, TabICL, and TabFM tables,
+Computes structural and statistical metrics for TabICL, TabFM, and T4 tables,
 then compares distributions across sources using summary statistics and Wasserstein-1 distances.
 
 Structural
@@ -43,16 +43,14 @@ warnings.filterwarnings("ignore")
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 SOURCES = {
-    # "CleanTabLib": Path("tables/parquet"),
-    "TabICL":      Path("tables-tabicl/parquet"),
+    "TabICL": Path("tables-tabicl/parquet"),
     "TabFM":       Path("tables-tabfm/parquet"),
     "T4":          Path("tables-t4/parquet"),
 }
 COLORS = {
-    "CleanTabLib": "#4C72B0",
-    "TabICL":      "#DD8452",
-    "TabFM":       "#55A868",
-    "T4":          "#C44E52",
+    "TabICL": "#DD8452",
+    "TabFM":  "#55A868",
+    "T4":     "#C44E52",
 }
 
 MAX_TABLES = 100_000   # cap per source for speed; set to None to use all

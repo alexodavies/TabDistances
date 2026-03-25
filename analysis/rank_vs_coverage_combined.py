@@ -37,7 +37,6 @@ from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from tabdistances.discriminator.features import df_to_vec, FEATURE_MODES
-from tabdistances.columns.node_features import get_histogram
 
 # ------------------------------------------------------------------
 # CONFIG  (mirrors paths used by the individual rank_vs_coverage* scripts)

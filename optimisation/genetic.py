@@ -1,6 +1,6 @@
 """Genetic optimisation of TabICL prior parameters.
 
-Runs one independent GA per real-data source (cleantablib, tabfm).
+Runs one independent GA per real-data source (tabfm, t4).
 Each GA maximises k-NN coverage: the fraction of real tables whose nearest
 synthetic neighbours fall within the synthetic set's internal distance
 threshold.  Higher coverage means the prior's output spans more of the
@@ -10,8 +10,8 @@ Usage
 -----
 Populate the real-data table directories first, then run::
 
-    python cleantab-export.py
-    python tabfm-export.py
+    python fetch_data.py --tabfm
+    python fetch_data.py --t4
     python genetic.py
 
 Configuration
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     missing = [n for n, p in REAL_SOURCES.items() if not any(p.glob("*.parquet"))]
     if missing:
         print("Missing real-data tables for:", ", ".join(missing))
-        print("Run cleantab-export.py and tabfm-export.py first.")
+        print("Run fetch_data.py first.")
         sys.exit(1)
 
     # Load / compute real feature vectors once per source

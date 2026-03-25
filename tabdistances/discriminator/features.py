@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from tabdistances.columns.node_features import get_histogram
+from tabdistances.columns.column_features import get_histogram
 from tabdistances.columns.typing import ColumnType, infer_col_types
 
 _N_HIST_BINS = 30
@@ -145,8 +145,8 @@ def featurize_tables(
     Parameters
     ----------
     tables : iterable of (index, name, df)
-        Any ``iter_tables()``-compatible source — e.g. ``CleanTabLibDataset``,
-        ``TabFMDataset``, ``T4Dataset``, or ``iter_prior_tables()``.
+        Any ``iter_tables()``-compatible source — e.g. ``TabFMDataset``,
+        ``T4Dataset``, or ``iter_prior_tables()``.
     cache_path : Path or None
         Path to a ``.npz`` file for caching.  If ``None``, results are not
         cached to disk.
@@ -164,11 +164,11 @@ def featurize_tables(
 
     Examples
     --------
-    >>> from tabdistances import CleanTabLibDataset, featurize_tables
+    >>> from tabdistances import TabFMDataset, featurize_tables
     >>> from tabdistances.config import Paths
     >>> names, feats = featurize_tables(
-    ...     CleanTabLibDataset().iter_tables(),
-    ...     cache_path=Paths.CACHE / "cleantablib_feats.npz",
+    ...     TabFMDataset().iter_tables(),
+    ...     cache_path=Paths.CACHE / "tabfm_feats.npz",
     ... )
     >>> feats.shape
     (n_tables, 70)

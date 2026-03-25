@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from tabdistances.columns.typing import ColumnType
-from tabdistances.columns.node_features import get_type_int, get_histogram
+from tabdistances.columns.column_features import get_type_int, get_histogram
 
 
 def test_numeric_type_int():

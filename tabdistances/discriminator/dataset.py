@@ -37,7 +37,7 @@ def load_dataframes(
     ----------
     parquet_dir : str or Path
         Directory containing ``<name>.parquet`` files produced by the export
-        scripts (``cleantab-export.py``, ``tabicl-export.py``, ``tabfm-export.py``).
+        scripts (``tabicl-export.py``, ``tabfm-export.py``, ``t4-export.py``).
     label : int
         Class label to assign to every table loaded from this directory.
     max_rows : int, default=1000
@@ -82,9 +82,9 @@ class DataFrameDataset:
         Mapping of source name to ``(parquet_dir, label)`` pairs.  Example::
 
             DataFrameDataset({
-                "cleantablib": (Path("tables/parquet"),        0),
-                "tabicl":      (Path("tables-tabicl/parquet"), 1),
-                "tabfm":       (Path("tables-tabfm/parquet"),  2),
+                "tabicl": (Path("tables-tabicl/parquet"), 0),
+                "tabfm":  (Path("tables-tabfm/parquet"),  1),
+                "t4":     (Path("tables-t4/parquet"),     2),
             })
     max_rows : int, default=1000
         Passed to :func:`load_dataframes`.

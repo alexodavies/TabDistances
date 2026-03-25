@@ -27,7 +27,6 @@ TabICL
   ``tables-tabicl/parquet/``.
   Skipped if ``tables-tabicl/parquet/`` already contains >= --icl-tables files.
 
-CleanTabLib is streamed on demand and needs no download.
 """
 
 import argparse

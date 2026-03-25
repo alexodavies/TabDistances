@@ -669,7 +669,7 @@ if __name__ == "__main__":
     missing = [n for n, p in REAL_SOURCES.items() if not any(p.glob("*.parquet"))]
     if missing:
         print("Missing real-data tables for:", ", ".join(missing), flush=True)
-        print("Run cleantab-export.py and tabfm-export.py first.", flush=True)
+        print("Run fetch_data.py first.", flush=True)
         sys.exit(1)
 
     print(f"Pre-computing / loading real-data features  (N_REAL={N_REAL}, MAX_ROWS={MAX_ROWS}) ...", flush=True)

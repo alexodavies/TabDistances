@@ -52,7 +52,7 @@ try:
 except ImportError:
     _WANDB_AVAILABLE = False
 
-from tabdistances.columns.node_features import get_histogram
+from tabdistances.columns.column_features import get_histogram
 
 # ------------------------------------------------------------------
 # CONFIG

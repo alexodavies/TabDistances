@@ -32,7 +32,7 @@
 
 ---
 
-## test_node_features.py — column encoding
+## test_column_features.py — column encoding
 
 | Test | What it checks |
 |---|---|

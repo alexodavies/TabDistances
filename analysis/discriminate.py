@@ -6,13 +6,9 @@ for each comparison.
 
 Usage
 -----
-Run from the repository root after populating the Parquet directories with the
-export scripts::
+Run from the repository root after populating the Parquet directories::
 
-    python cleantab-export.py
-    python tabicl-export.py
-    python tabfm-export.py
-    python t4-export.py
+    python fetch_data.py
     python discriminate.py
 
 The MODEL variable below is the only thing to change when swapping in a
@@ -38,10 +34,9 @@ import wandb
 MODEL = SmallTabICLDiscriminator
 
 SOURCES = {
-    # "cleantablib": Path("tables/parquet"),
-    "tabicl":      Path("tables-tabicl/parquet"),
-    "tabfm":       Path("tables-tabfm/parquet"),
-    "t4":          Path("tables-t4/parquet"),
+    "tabicl": Path("tables-tabicl/parquet"),
+    "tabfm":  Path("tables-tabfm/parquet"),
+    "t4":     Path("tables-t4/parquet"),
 }
 TEST_SIZE    = 0.2
 RANDOM_STATE = 42
@@ -55,11 +50,7 @@ print(f"sources: {SOURCES}")
 missing = [name for name, path in SOURCES.items() if not any(path.glob("*.parquet"))]
 if missing:
     print("No tables found for:", ", ".join(missing))
-    print("Run the export scripts first:")
-    print("  python cleantab-export.py")
-    print("  python tabicl-export.py")
-    print("  python tabfm-export.py")
-    print("  python t4-export.py")
+    print("Run fetch_data.py first.")
     sys.exit(1)
 
 # ------------------------------------------------------------------

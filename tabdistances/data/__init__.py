@@ -6,10 +6,9 @@ data identically.
 
 Available loaders
 -----------------
-``CleanTabLibDataset``   — ~10k real-world tables streamed from HuggingFace
-``TabFMDataset``         — 338 Kaggle datasets (requires downloaded CSVs)
-``T4Dataset``            — ~3.1M web-scraped tables streamed from HuggingFace
-``SCMPrior``             — synthetic tables via structural causal models (TabICL)
+``TabFMDataset``  — 338 Kaggle datasets (requires downloaded CSVs)
+``T4Dataset``     — ~3.1M web-scraped tables streamed from HuggingFace
+``SCMPrior``      — synthetic tables via structural causal models (TabICL)
 
 For SCMPrior, use :func:`iter_prior_tables` to get the same ``iter_tables()``
 interface instead of working with the raw tensor output of ``get_batch()``.
