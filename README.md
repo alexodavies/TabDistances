@@ -15,7 +15,7 @@ Each table is encoded as a fixed-length 70-dimensional feature vector capturing 
 ## Setup
 
 ```bash
-git clone <repo>
+git clone https://github.com/alexodavies/TabDistances.git
 cd TabDistances
 pip install -e ".[dev]"
 ```
