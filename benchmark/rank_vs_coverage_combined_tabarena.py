@@ -136,7 +136,7 @@ ICL_DIR           = _ROOT / "tables-tabicl/parquet"
 ICL_FEATS_CACHE   = CACHE / "real_feats_icl_25000_512_v2.npz"
 TABICL_CORR_CACHE = CACHE / "tabicl_corr_hists.npz"
 
-TABICL_METHOD   = "TABICL (default)"
+TABICL_METHOD   = "TABICL_GPU (default)"
 TABARENA_RESULTS_CACHE = CACHE / "tabarena_results.csv"
 
 MAX_ROWS     = 512
