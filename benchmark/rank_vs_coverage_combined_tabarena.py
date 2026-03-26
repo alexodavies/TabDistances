@@ -739,6 +739,58 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
     print(f"  Saved {output_path}")
 
 
+def plot_scatter(panels: list[dict], output_path: Path,
+                 metric_label: str = "Mean rank",
+                 y_label: str = "TabICL mean rank",
+                 invert_y: bool = True) -> None:
+    """3-panel scatter: one point per dataset, x = kNN distance, y = metric."""
+    with mpl.rc_context(_PAPER_RC):
+        fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6), sharey=True,
+                                 constrained_layout=False)
+        fig.subplots_adjust(left=0.09, right=0.97, bottom=0.26, top=0.91,
+                            wspace=0.08)
+
+        for col, (ax, p) in enumerate(zip(axes, panels)):
+            nn = p["nn_dists"]
+            rk = p["ranks"]
+            valid = ~(np.isnan(nn) | np.isnan(rk))
+            x, y = nn[valid], rk[valid]
+
+            ax.scatter(x, y, color=_BLUE, s=10, alpha=0.45, linewidths=0, zorder=2)
+
+            if len(x) >= 2:
+                z1 = np.polyfit(x, y, 1)
+                x_grid = np.linspace(x.min(), x.max(), 200)
+                ax.plot(x_grid, np.polyval(z1, x_grid),
+                        color=_RED, lw=1.4, linestyle="--", zorder=3)
+                r = np.corrcoef(x, y)[0, 1]
+                _bbox = dict(boxstyle="square,pad=0.15", facecolor="white",
+                             edgecolor="none", alpha=0.85)
+                ax.text(0.97, 0.97, f"$r = {r:.2f}$",
+                        transform=ax.transAxes, ha="right", va="top",
+                        fontsize=7, color="black", zorder=10, bbox=_bbox)
+
+            if invert_y:
+                ax.invert_yaxis()
+
+            ax.set_xlabel("Mean k-NN distance (normalised)")
+            ax.set_title(p["title"])
+            if col == 0:
+                ax.set_ylabel(y_label)
+
+        fig.legend(
+            [mpl.lines.Line2D([0], [0], color=_RED, lw=1.4, linestyle="--")],
+            ["Linear trend"],
+            loc="lower center", ncols=1,
+            bbox_to_anchor=(0.5, 0.01), frameon=True, borderaxespad=0.5,
+        )
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+    print(f"  Saved {output_path}")
+
+
 def plot_auc_kde(panels: list[dict], output_path: Path) -> None:
     """3-panel KDE: x = kNN distance to ICL prior, y = AUC."""
     from scipy.stats import gaussian_kde, pearsonr, spearmanr
@@ -914,6 +966,27 @@ def main() -> None:
         panels_rel_best,
         args.output_dir / "rel_best_auc_vs_coverage_combined.png",
         args.n_bins,
+        metric_label="Rel. AUC (vs best)",
+        y_label="TabICL AUC / best AUC",
+        invert_y=False,
+    )
+    plot_scatter(
+        panels_rank,
+        args.output_dir / "rank_scatter_combined.png",
+        metric_label="Mean rank",
+        y_label="TabICL mean rank",
+        invert_y=True,
+    )
+    plot_scatter(
+        panels_rel_auc,
+        args.output_dir / "rel_auc_scatter_combined.png",
+        metric_label="Rel. AUC (vs mean)",
+        y_label="TabICL AUC / mean AUC",
+        invert_y=False,
+    )
+    plot_scatter(
+        panels_rel_best,
+        args.output_dir / "rel_best_auc_scatter_combined.png",
         metric_label="Rel. AUC (vs best)",
         y_label="TabICL AUC / best AUC",
         invert_y=False,
