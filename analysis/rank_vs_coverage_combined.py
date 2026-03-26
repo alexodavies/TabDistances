@@ -20,7 +20,6 @@ Usage
 
 import argparse
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -36,7 +35,7 @@ from sklearn.neighbors import BallTree
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
-from tabdistances.discriminator.features import df_to_vec, FEATURE_MODES
+from tabdistances.discriminator.features import df_to_vec
 
 # ------------------------------------------------------------------
 # CONFIG  (mirrors paths used by the individual rank_vs_coverage* scripts)
@@ -511,17 +510,23 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
 
 
 # ------------------------------------------------------------------
-# Scatter figure: TabICL AUC vs baseline AUC as a function of kNN distance
+# KDE figure: TabICL AUC vs baseline AUC as a function of kNN distance
 # ------------------------------------------------------------------
 
-def plot_auc_scatter(panels: list[dict], output_path: Path) -> None:
-    """3-panel scatter: x = kNN distance to ICL prior, y = AUC.
+def plot_auc_kde(panels: list[dict], output_path: Path) -> None:
+    """3-panel KDE: x = kNN distance to ICL prior, y = AUC.
 
-    Each TALENT dataset is one point.  Two series per panel:
-      • Blue  — TabICL AUC
-      • Orange — mean baseline AUC across all other models
+    Each panel shows a 2-D kernel density estimate for TabICL AUC (blue) and
+    mean baseline AUC (orange) over the TALENT datasets, plus a linear trend
+    line for each series.  Pearson and Spearman correlations are printed to
+    stdout and annotated on each panel.
     """
+    from scipy.stats import gaussian_kde, pearsonr, spearmanr
+
     _ORANGE = "#e67e22"
+    _N_GRID = 200
+
+    print("\n=== AUC vs kNN distance correlations ===")
 
     with mpl.rc_context(_PAPER_RC):
         fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6), sharey=True,
@@ -537,18 +542,52 @@ def plot_auc_scatter(panels: list[dict], output_path: Path) -> None:
             valid = ~(np.isnan(ticl) | np.isnan(base) | np.isnan(nn))
             nn, ticl, base = nn[valid], ticl[valid], base[valid]
 
-            ax.scatter(nn, base,  color=_ORANGE, s=10, alpha=0.7,
-                       linewidths=0, label="Mean baseline AUC", zorder=2)
-            ax.scatter(nn, ticl,  color=_BLUE,   s=10, alpha=0.7,
-                       linewidths=0, label="TabICL AUC",         zorder=3)
+            x_grid = np.linspace(nn.min(), nn.max(), _N_GRID)
 
-            # Trend lines (degree-1 polynomial)
-            for vals, color in [(base, _ORANGE), (ticl, _BLUE)]:
-                if len(vals) >= 2:
-                    z = np.polyfit(nn, vals, 1)
-                    x_line = np.linspace(nn.min(), nn.max(), 100)
-                    ax.plot(x_line, np.polyval(z, x_line),
-                            color=color, lw=1.2, linestyle="--", alpha=0.8)
+            for vals, color, label in [
+                (base, _ORANGE, "Mean baseline AUC"),
+                (ticl, _BLUE,   "TabICL AUC"),
+            ]:
+                # KDE evaluated on a grid of y values at each x slice would
+                # require a 2-D density; instead we draw a 1-D KDE of y
+                # conditioned on binned x — but the simpler and equally
+                # informative approach is a 2-D KDE contour.
+                xy   = np.vstack([nn, vals])
+                kde  = gaussian_kde(xy, bw_method="scott")
+                xg, yg = np.meshgrid(
+                    np.linspace(nn.min(),  nn.max(),  _N_GRID),
+                    np.linspace(vals.min(), vals.max(), _N_GRID),
+                )
+                z = kde(np.vstack([xg.ravel(), yg.ravel()])).reshape(_N_GRID, _N_GRID)
+                ax.contourf(xg, yg, z, levels=6,
+                            colors=[color], alpha=0.12)
+                ax.contour(xg, yg, z, levels=6,
+                           colors=[color], linewidths=0.6, alpha=0.7)
+                # Invisible scatter point just for the legend handle
+                ax.scatter([], [], color=color, s=12, label=label)
+
+                # Linear trend
+                z1 = np.polyfit(nn, vals, 1)
+                ax.plot(x_grid, np.polyval(z1, x_grid),
+                        color=color, lw=1.2, linestyle="--", alpha=0.9)
+
+            # Correlation stats
+            pr_ticl, _ = pearsonr(nn, ticl)
+            sr_ticl, _ = spearmanr(nn, ticl)
+            pr_base, _ = pearsonr(nn, base)
+            sr_base, _ = spearmanr(nn, base)
+
+            print(f"  {p['title']}")
+            print(f"    TabICL AUC    — Pearson r={pr_ticl:+.3f}  Spearman ρ={sr_ticl:+.3f}")
+            print(f"    Baseline AUC  — Pearson r={pr_base:+.3f}  Spearman ρ={sr_base:+.3f}")
+
+            # Annotate panel with Pearson r for each series
+            _bbox = dict(boxstyle="square,pad=0.15", facecolor="white",
+                         edgecolor="none", alpha=0.85)
+            ax.text(0.97, 0.97,
+                    f"$r_{{\\rm ICL}}={pr_ticl:+.2f}$\n$r_{{\\rm base}}={pr_base:+.2f}$",
+                    transform=ax.transAxes, ha="right", va="top",
+                    fontsize=6, color="black", bbox=_bbox)
 
             ax.set_xlabel("Mean k-NN distance (normalised)")
             if col == 0:
@@ -647,7 +686,7 @@ def main() -> None:
         y_label="TabICL AUC / best AUC",
         invert_y=False,
     )
-    plot_auc_scatter(
+    plot_auc_kde(
         panels_auc_scatter,
         args.output_dir / "auc_scatter_vs_coverage.png",
     )
