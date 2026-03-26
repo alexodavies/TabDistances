@@ -13,7 +13,8 @@ venv/
 .env
 
 wandb/
-.claude
+.claude/
+.pytest_cache/
 
 # Jupyter
 .ipynb_checkpoints/
