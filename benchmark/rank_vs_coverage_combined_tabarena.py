@@ -156,25 +156,37 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
 # ------------------------------------------------------------------
 
 def _download_tabarena_results() -> Path:
-    """Download TabArena results via the tabarena package and cache locally."""
+    """Download TabArena results via the tabarena package and cache locally.
+
+    Requires the evaluation-only tabarena install (no AutoGluon needed):
+        git clone https://github.com/autogluon/tabarena.git
+        cd tabarena
+        uv pip install --prerelease=allow -e "./tabarena"
+
+    Results are fetched as a DataFrame with columns:
+        dataset, fold, method, metric_error, metric_error_val,
+        time_train_s, time_infer_s, seed, problem_type, metric
+    """
     if TABARENA_RESULTS_CACHE.exists():
         print(f"  TabArena results: using cache {TABARENA_RESULTS_CACHE}")
         return TABARENA_RESULTS_CACHE
 
     try:
-        from tabarena.api import load_results  # type: ignore
+        from tabarena.evaluation.evaluator import TabArenaEvaluator  # type: ignore
     except ImportError:
         raise ImportError(
-            "The `tabarena` package is not installed. "
-            "See https://github.com/autogluon/tabarena for installation instructions, "
-            "or supply --results-csv with a local results CSV."
+            "The `tabarena` package is not installed.\n"
+            "  git clone https://github.com/autogluon/tabarena.git\n"
+            "  cd tabarena && uv pip install --prerelease=allow -e './tabarena'\n"
+            "Or supply --results-csv with a locally saved CSV."
         )
 
-    print("  Downloading TabArena results via tabarena API …")
-    df = load_results()
+    print("  Downloading TabArena results …")
+    evaluator = TabArenaEvaluator()
+    df = evaluator.load_results()
     CACHE.mkdir(parents=True, exist_ok=True)
     df.to_csv(TABARENA_RESULTS_CACHE, index=False)
-    print(f"  Saved results to {TABARENA_RESULTS_CACHE}")
+    print(f"  Saved to {TABARENA_RESULTS_CACHE}")
     return TABARENA_RESULTS_CACHE
 
 
@@ -182,11 +194,47 @@ def _download_tabarena_results() -> Path:
 # OpenML dataset download
 # ------------------------------------------------------------------
 
-def _download_dataset_openml(dataset: str, data_dir: Path) -> bool:
-    """Fetch a dataset from OpenML by name, save as parquet. Returns True on success."""
+TABARENA_SUITE   = "tabarena-v0.1"
+TASK_MAP_CACHE   = CACHE / "tabarena_task_map.json"
+
+
+def _get_task_map() -> dict[str, int]:
+    """Return {dataset_name: openml_task_id} for the TabArena benchmark suite.
+
+    The mapping is built once from the OpenML suite and cached locally.
+    """
+    import json
+    import openml  # type: ignore
+
+    if TASK_MAP_CACHE.exists():
+        with open(TASK_MAP_CACHE) as f:
+            return json.load(f)
+
+    print(f"  Fetching TabArena task list from OpenML suite '{TABARENA_SUITE}' …")
+    suite = openml.study.get_suite(TABARENA_SUITE)
+    task_map: dict[str, int] = {}
+    for task_id in tqdm(suite.tasks, desc="Resolving task names"):
+        try:
+            task = openml.tasks.get_task(task_id, download_data=False)
+            ds   = task.get_dataset()
+            task_map[ds.name] = task_id
+        except Exception as e:
+            print(f"    Warning: could not resolve task {task_id}: {e}")
+
+    CACHE.mkdir(parents=True, exist_ok=True)
+    with open(TASK_MAP_CACHE, "w") as f:
+        json.dump(task_map, f, indent=2)
+    print(f"  Task map cached ({len(task_map)} datasets) -> {TASK_MAP_CACHE}")
+    return task_map
+
+
+def _download_dataset_openml(dataset: str, data_dir: Path,
+                              task_map: dict[str, int] | None = None) -> bool:
+    """Fetch a TabArena dataset from OpenML by task ID, save numeric cols as parquet."""
     out = data_dir / f"{dataset}.parquet"
     if out.exists():
         return True
+
     try:
         import openml  # type: ignore
     except ImportError:
@@ -194,21 +242,25 @@ def _download_dataset_openml(dataset: str, data_dir: Path) -> bool:
             "The `openml` package is not installed. "
             "Run `pip install openml` or provide --arena-data-dir with local files."
         )
+
+    if task_map is None:
+        task_map = _get_task_map()
+
+    task_id = task_map.get(dataset)
+    if task_id is None:
+        print(f"    OpenML: '{dataset}' not in TabArena suite, skipping")
+        return False
+
     try:
-        results = openml.datasets.list_datasets(output_format="dataframe")
-        row = results[results["name"] == dataset]
-        if row.empty:
-            print(f"    OpenML: dataset '{dataset}' not found, skipping")
-            return False
-        did = int(row.iloc[0]["did"])
-        ds = openml.datasets.get_dataset(did, download_data=True)
-        X, _, _, _ = ds.get_data(dataset_format="dataframe")
+        task = openml.tasks.get_task(task_id)
+        ds   = task.get_dataset()
+        X, _, _, _ = ds.get_data(target=task.target_name, dataset_format="dataframe")
         num = X.select_dtypes(include="number")
         data_dir.mkdir(parents=True, exist_ok=True)
         num.to_parquet(out, index=False)
         return True
     except Exception as e:
-        print(f"    OpenML: failed to download '{dataset}': {e}")
+        print(f"    OpenML: failed to download '{dataset}' (task {task_id}): {e}")
         return False
 
 
@@ -711,8 +763,9 @@ def main() -> None:
 
     if args.download_datasets:
         print(f"\n=== Downloading missing datasets from OpenML -> {args.arena_data_dir} ===")
+        task_map = _get_task_map()
         for ds in tqdm(datasets, desc="OpenML downloads"):
-            _download_dataset_openml(ds, args.arena_data_dir)
+            _download_dataset_openml(ds, args.arena_data_dir, task_map)
 
     print("\n=== Panel 1: table feature vectors ===")
     nn1, self1, rk1, ra1, rb1, ticl1, base1 = _load_table_panel(
