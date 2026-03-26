@@ -218,32 +218,43 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
 def _download_tabarena_results() -> Path:
     """Download TabArena results via the tabarena package and cache locally.
 
-    Requires the evaluation-only tabarena install (no AutoGluon needed):
+    Requires the tabarena install:
         git clone https://github.com/autogluon/tabarena.git
-        cd tabarena
-        uv pip install --prerelease=allow -e "./tabarena"
+        cd tabarena && pip install -e ./bencheval && pip install -e ./tabarena
 
     Results are fetched as a DataFrame with columns:
-        dataset, fold, method, metric_error, metric_error_val,
-        time_train_s, time_infer_s, seed, problem_type, metric
+        dataset, fold, method, metric_error, time_train_s, time_infer_s,
+        seed, problem_type, metric
     """
     if TABARENA_RESULTS_CACHE.exists():
         print(f"  TabArena results: using cache {TABARENA_RESULTS_CACHE}")
         return TABARENA_RESULTS_CACHE
 
     try:
-        from tabarena.evaluation.evaluator import TabArenaEvaluator  # type: ignore
+        from tabarena.nips2025_utils.tabarena_context import TabArenaContext  # type: ignore
     except ImportError:
         raise ImportError(
             "The `tabarena` package is not installed.\n"
             "  git clone https://github.com/autogluon/tabarena.git\n"
-            "  cd tabarena && uv pip install --prerelease=allow -e './tabarena'\n"
+            "  cd tabarena && pip install -e ./bencheval && pip install -e ./tabarena\n"
             "Or supply --results-csv with a locally saved CSV."
         )
 
+    # Fix namespace-package collision: if tabarena was imported as a namespace
+    # package (tabarena.__file__ is None), patch __file__ so TabArenaContext
+    # can locate its bundled metadata files.
+    import tabarena as _ta
+    if _ta.__file__ is None:
+        import tabarena.nips2025_utils.tabarena_context as _ctx_mod
+        from pathlib import Path as _Path
+        _ta.__file__ = str(_Path(_ctx_mod.__file__).parent.parent / "__init__.py")
+
     print("  Downloading TabArena results …")
-    evaluator = TabArenaEvaluator()
-    df = evaluator.load_results()
+    ctx = TabArenaContext()
+    df = ctx.load_results_paper(download_results="auto")
+    # Normalise column name: new API uses 'framework', script expects 'method'
+    if "framework" in df.columns and "method" not in df.columns:
+        df = df.rename(columns={"framework": "method"})
     CACHE.mkdir(parents=True, exist_ok=True)
     df.to_csv(TABARENA_RESULTS_CACHE, index=False)
     print(f"  Saved to {TABARENA_RESULTS_CACHE}")

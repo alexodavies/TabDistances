@@ -65,6 +65,7 @@ results/correlation-coverage/*.pdf
 results/correlation-coverage/*.csv
 
 # TabArena downloaded data and cached features
+taberena/
 data/tabarena/
 cache/tabarena_*.npz
 cache/tabarena_results.csv
