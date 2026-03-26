@@ -777,7 +777,7 @@ def plot_auc_kde(panels: list[dict], output_path: Path) -> None:
                 z = kde(np.vstack([xg.ravel(), yg.ravel()])).reshape(_N_GRID, _N_GRID)
                 # ax.contour(xg, yg, z, levels=6, colors=[color], alpha=0.12)
                 ax.contour(xg, yg, z, levels=6, colors=[color], linewidths=0.6, alpha=0.7)
-                ax.scatter(nn, vals, color=color, s=8, alpha=0.25, linewidths=0, zorder=2)
+                ax.scatter(nn, vals, color=color, s=4, alpha=0.2, linewidths=0, zorder=2)
                 ax.scatter([], [], color=color, s=12, label=label)
 
                 z1 = np.polyfit(nn, vals, 1)
