@@ -206,8 +206,8 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
     cts  = np.array([(idx == i).sum() for i in range(n_bins)])
     density = cts.astype(float)
     density /= density.max() if density.max() > 0 else 1.0
-    means = np.array([rk[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n_bins)])
-    stds  = np.array([rk[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n_bins)])
+    means = np.array([np.nanmean(rk[idx == i]) if cts[i] > 0 else np.nan for i in range(n_bins)])
+    stds  = np.array([np.nanstd(rk[idx == i])  if cts[i] > 1 else 0.0   for i in range(n_bins)])
     return bins, bin_centers, density, means, stds, x_lo, x_hi
 
 
@@ -352,42 +352,50 @@ def _load_rankings(results_csv: Path) -> tuple[dict, dict, dict, dict, dict, lis
              .mean()
              .reset_index())
 
-    # Convert metric_error → AUC (works for roc_auc; for other metrics the
-    # direction may differ but the rank computation is symmetric)
-    agg["auc"] = 1.0 - agg["metric_error"]
-
     # Rank methods per dataset (lower metric_error = better = lower rank)
     agg["rank"] = (agg.groupby("dataset")["metric_error"]
                       .rank(method="min", ascending=True))
 
-    tc = agg[agg["method"] == TABICL_METHOD][["dataset", "rank", "auc"]].copy()
+    tc = agg[agg["method"] == TABICL_METHOD][["dataset", "rank"]].copy()
     if tc.empty:
         raise ValueError(
             f"No rows found for method '{TABICL_METHOD}' in {results_csv}. "
             f"Available methods: {sorted(agg['method'].unique().tolist())}"
         )
 
-    others = agg[agg["method"] != TABICL_METHOD]
-    mean_auc = others.groupby("dataset")["auc"].mean()
-    best_auc = others.groupby("dataset")["auc"].max()
+    rank_map = dict(zip(tc["dataset"], tc["rank"].astype(int)))
 
-    rank_map       = dict(zip(tc["dataset"], tc["rank"].astype(int)))
-    tabicl_auc_map = dict(zip(tc["dataset"], tc["auc"]))
+    # AUC maps: only valid for classification datasets (metric_error = 1 - roc_auc)
+    cls_datasets = set(
+        df[df["metric"].str.contains("roc_auc", na=False)]["dataset"].unique()
+    ) if "metric" in df.columns else set(
+        df[df["problem_type"].isin(["binary", "multiclass"])]["dataset"].unique()
+    )
+    agg_cls = agg[agg["dataset"].isin(cls_datasets)].copy()
+    agg_cls["auc"] = 1.0 - agg_cls["metric_error"]
+
+    tc_cls = agg_cls[agg_cls["method"] == TABICL_METHOD][["dataset", "auc"]].copy()
+    others_cls = agg_cls[agg_cls["method"] != TABICL_METHOD]
+    mean_auc = others_cls.groupby("dataset")["auc"].mean()
+    best_auc = others_cls.groupby("dataset")["auc"].max()
+
+    tabicl_auc_map = dict(zip(tc_cls["dataset"], tc_cls["auc"]))
     mean_auc_map   = mean_auc.to_dict()
 
     rel_auc_map = {
         ds: auc / mean_auc[ds]
-        for ds, auc in zip(tc["dataset"], tc["auc"])
+        for ds, auc in zip(tc_cls["dataset"], tc_cls["auc"])
         if ds in mean_auc and mean_auc[ds] > 0
     }
     rel_best_auc_map = {
         ds: auc / best_auc[ds]
-        for ds, auc in zip(tc["dataset"], tc["auc"])
+        for ds, auc in zip(tc_cls["dataset"], tc_cls["auc"])
         if ds in best_auc and best_auc[ds] > 0
     }
 
     datasets = tc["dataset"].tolist()
-    print(f"Rankings: {len(rank_map)} TabArena datasets (TABICL method: '{TABICL_METHOD}')")
+    print(f"Rankings: {len(rank_map)} TabArena datasets ({len(tabicl_auc_map)} classification), "
+          f"TABICL method: '{TABICL_METHOD}'")
     return rank_map, rel_auc_map, rel_best_auc_map, tabicl_auc_map, mean_auc_map, datasets
 
 
