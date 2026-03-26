@@ -150,14 +150,17 @@ CORR_EDGES   = np.linspace(-1.0, 1.0, N_CORR_BINS + 1)
 MIN_NUM_COLS = 2
 
 _PAPER_RC = {
-    "font.size":       8,
-    "axes.titlesize":  9,
-    "axes.labelsize":  8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
-    "lines.linewidth": 1.5,
-    "figure.dpi":      300,
+    "font.size":        8,
+    "axes.titlesize":   9,
+    "axes.labelsize":   8,
+    "xtick.labelsize":  7,
+    "ytick.labelsize":  7,
+    "legend.fontsize":  7,
+    "lines.linewidth":  1.5,
+    "figure.dpi":       300,
+    "figure.facecolor": "white",
+    "axes.facecolor":   "white",
+    "savefig.facecolor": "white",
 }
 
 _BLUE   = "#2980b9"
@@ -774,6 +777,7 @@ def plot_auc_kde(panels: list[dict], output_path: Path) -> None:
                 z = kde(np.vstack([xg.ravel(), yg.ravel()])).reshape(_N_GRID, _N_GRID)
                 ax.contourf(xg, yg, z, levels=6, colors=[color], alpha=0.12)
                 ax.contour(xg, yg, z, levels=6, colors=[color], linewidths=0.6, alpha=0.7)
+                ax.scatter(nn, vals, color=color, s=8, alpha=0.25, linewidths=0, zorder=2)
                 ax.scatter([], [], color=color, s=12, label=label)
 
                 z1 = np.polyfit(nn, vals, 1)
