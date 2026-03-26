@@ -260,7 +260,7 @@ def _draw_pca(ax, X_2d: np.ndarray, labels: np.ndarray, var: np.ndarray,
                    c=color, label=label, alpha=alpha, s=8, linewidths=0)
     ax.set_xlabel(f"PC1  ({var[0]:.1%} variance)")
     ax.set_ylabel(f"PC2  ({var[1]:.1%} variance)")
-    title = f"PCA: {label_ref} vs {label_cand}"
+    # title = f"PCA: {label_ref} vs {label_cand}"
     if title_suffix:
         title += f"  [{title_suffix}]"
     ax.set_title(title)

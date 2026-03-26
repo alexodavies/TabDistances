@@ -312,7 +312,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         fig, axes = plt.subplots(1, 3, figsize=(6.5, 3.5))
         for ax, mode in zip(axes, modes_ordered):
             _draw_per_feature_ks(ax, mode_data[mode]["ks"]["df_ks"], top_n=10)
-            ax.set_title(_MODE_LABELS[mode])
+            # ax.set_title(_MODE_LABELS[mode])
         plt.tight_layout()
         _save_and_log(fig, "combined_per_feature_ks", None, tag)
 
@@ -320,7 +320,7 @@ def _plot_combined_per_pair(pair_key: str, mode_data: dict, modes_ordered: list)
         for ax, mode in zip(axes, modes_ordered):
             d = mode_data[mode]["boot"]
             _draw_bootstrap_auc(ax, d["boot_aucs"], d["ci_lo"], d["ci_hi"])
-            ax.set_title(_MODE_LABELS[mode])
+            # ax.set_title(_MODE_LABELS[mode])
         plt.tight_layout()
         _save_and_log(fig, "combined_bootstrap_auc", None, tag)
 
