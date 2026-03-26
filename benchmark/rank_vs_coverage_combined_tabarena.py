@@ -194,7 +194,7 @@ def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
     bins1 = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
     idx1  = np.clip(np.digitize(nn_dists, bins1) - 1, 0, n_bins - 1)
     cts1  = np.array([(idx1 == i).sum() for i in range(n_bins)])
-    nz    = np.where(cts1 > 1)[0]
+    nz    = np.where(cts1 > 0)[0]
     x_lo  = bins1[nz[0]]      if len(nz) else bins1[0]
     x_hi  = bins1[nz[-1] + 1] if len(nz) else bins1[-1]
 
@@ -646,7 +646,8 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
                   metric_label: str = "Mean rank",
                   y_label: str = "TabICL mean rank",
                   invert_y: bool = True,
-                  query_label: str = "TabArena datasets") -> None:
+                  query_label: str = "TabArena datasets",
+                  clip_lo: float | None = None) -> None:
     with mpl.rc_context(_PAPER_RC):
         fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6), sharey=True,
                                  constrained_layout=False)
@@ -673,7 +674,7 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
             ax2 = ax1.twinx()
             right_axes.append(ax2)
             mask = ~np.isnan(means)
-            lo = np.clip(means - stds, 1, None)
+            lo = means - stds if clip_lo is None else np.clip(means - stds, clip_lo, None)
             hi = means + stds
             ax2.plot(bin_centers[mask], means[mask],
                      color=_RED, lw=1.5, marker="o", ms=3,
@@ -887,6 +888,7 @@ def main() -> None:
         metric_label="Mean rank",
         y_label="TabICL mean rank",
         invert_y=True,
+        clip_lo=1,
     )
     plot_combined(
         panels_rel_auc,
