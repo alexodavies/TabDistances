@@ -55,7 +55,7 @@ T4_DIR     = Path("tables-t4/parquet")
 T4_CACHE   = Path("cache/real_feats_t4_5000_512_v2.npz")
 ICL_CACHE  = Path("cache/real_feats_icl_25000_512_v2.npz")
 
-N_SAMPLE   = 25000
+N_SAMPLE   = 5000
 OUTPUT_DIR = Path("coverage-results-ablation")
 
 # Ablation grid
