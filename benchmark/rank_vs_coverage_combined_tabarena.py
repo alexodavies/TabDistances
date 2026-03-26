@@ -67,6 +67,66 @@ from tabdistances.discriminator.features import df_to_vec
 from tabdistances.columns.column_features import get_histogram
 
 # ------------------------------------------------------------------
+# ICL prior cache builders (self-contained — no TALENT data needed)
+# ------------------------------------------------------------------
+
+def _build_icl_feats_cache(rng: np.random.Generator) -> np.ndarray:
+    """Featurise TabICL parquet tables and write ICL_FEATS_CACHE. Returns array."""
+    if not ICL_DIR.exists():
+        raise FileNotFoundError(
+            f"TabICL parquet dir not found: {ICL_DIR}\n"
+            f"Run:  python fetch_data.py --icl"
+        )
+    paths = np.array(sorted(ICL_DIR.glob("*.parquet")))
+    rng.shuffle(paths)
+    feats, errors = [], 0
+    for p in tqdm(paths, desc="Featurising TabICL tables"):
+        try:
+            df = pd.read_parquet(p).select_dtypes(include="number")
+            if df.shape[0] == 0 or df.shape[1] == 0:
+                errors += 1
+                continue
+            feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
+        except Exception:
+            errors += 1
+        if len(feats) >= N_ICL:
+            break
+    print(f"  Featurised {len(feats)} TabICL tables ({errors} skipped)")
+    arr = np.array(feats)
+    CACHE.mkdir(parents=True, exist_ok=True)
+    np.savez(ICL_FEATS_CACHE, feats=arr)
+    print(f"  Cached -> {ICL_FEATS_CACHE}")
+    return arr
+
+
+def _build_icl_col_cache(n_query: int, rng: np.random.Generator) -> np.ndarray:
+    """Build column-histogram cache for the ICL prior. Returns array."""
+    if not ICL_DIR.exists():
+        raise FileNotFoundError(
+            f"TabICL parquet dir not found: {ICL_DIR}\n"
+            f"Run:  python fetch_data.py --icl"
+        )
+    all_files = sorted(ICL_DIR.glob("*.parquet"))
+    rng_local = np.random.default_rng(RANDOM_STATE)
+    rng_local.shuffle(all_files := np.array(all_files))
+    hists = []
+    for p in tqdm(all_files, desc="ICL column histograms"):
+        try:
+            df = pd.read_parquet(p).select_dtypes(include="number").iloc[:MAX_ROWS]
+            for col in df.columns:
+                hists.append(get_histogram(df[col]))
+            if len(hists) >= n_query * 10:   # build a large pool to sample from
+                break
+        except Exception:
+            pass
+    arr = np.array(hists)
+    out = CACHE / f"icl_col_hists_{n_query}.npz"
+    CACHE.mkdir(parents=True, exist_ok=True)
+    np.savez(out, hists=arr)
+    print(f"  ICL col hists cached ({len(arr)} cols) -> {out}")
+    return arr
+
+# ------------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------------
 _ROOT  = Path(__file__).resolve().parent.parent
@@ -375,7 +435,11 @@ def _load_table_panel(rank_map, rel_auc_map, rel_best_auc_map,
     mean_aucs     = np.array([mean_auc_map.get(n, np.nan)      for n in names], dtype=float)
     print(f"  Table feats: {len(names)} TabArena datasets")
 
-    icl_all = np.load(ICL_FEATS_CACHE)["feats"]
+    if ICL_FEATS_CACHE.exists():
+        icl_all = np.load(ICL_FEATS_CACHE)["feats"]
+    else:
+        print(f"  Table feats: ICL cache missing, building from {ICL_DIR} …")
+        icl_all = _build_icl_feats_cache(rng)
     idx = rng.choice(len(icl_all), size=min(N_ICL, len(icl_all)), replace=False)
     icl_feats = icl_all[idx]
     print(f"  Table feats: {len(icl_feats)} ICL vectors")
@@ -422,17 +486,16 @@ def _load_column_panel(rank_map, rel_auc_map, rel_best_auc_map,
     n_arena = len(arena_hists)
     icl_col_cache = CACHE / f"icl_col_hists_{n_arena}.npz"
     if not icl_col_cache.exists():
-        # Fall back to any existing icl_col_hists_*.npz
+        # Fall back to any existing icl_col_hists_*.npz (built by TALENT pipeline)
         existing = sorted(CACHE.glob("icl_col_hists_*.npz"))
         if existing:
             icl_col_cache = existing[-1]
             print(f"  Col hists: using existing ICL col cache {icl_col_cache.name}")
-        else:
-            raise FileNotFoundError(
-                f"No ICL column histogram cache found. "
-                f"Run benchmark/rank_vs_coverage_combined_talent.py first to build it."
-            )
-    icl_hists = np.load(icl_col_cache)["hists"]
+    if icl_col_cache.exists():
+        icl_hists = np.load(icl_col_cache)["hists"]
+    else:
+        print(f"  Col hists: ICL cache missing, building from {ICL_DIR} …")
+        icl_hists = _build_icl_col_cache(n_arena, rng)
     idx = rng.choice(len(icl_hists), size=min(n_arena, len(icl_hists)), replace=False)
     icl_hists = icl_hists[idx]
     print(f"  Col hists: {len(icl_hists)} ICL columns")

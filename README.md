@@ -264,19 +264,23 @@ Each script accepts `--talent-dir`, `--tabicl-dir`, `--mode`, and `--k` flags; r
 
 **Step 3 (optional) — Replicate the analysis on TabArena datasets.**
 
-TabArena covers 51 real-world datasets with 16 methods including TabICL, and does not require running any models.  Only the evaluation-only install is needed (no AutoGluon, no GPU):
+TabArena covers 51 real-world datasets with 16 methods including TabICL.  It does not require running any models — only the evaluation-only install is needed (no AutoGluon, no GPU).
+
+**Prerequisites** (one-time):
 
 ```bash
+# 1. Generate the TabICL synthetic tables (needed for the ICL prior caches)
+python fetch_data.py --icl
+
+# 2. Install the tabarena evaluation package
 git clone https://github.com/autogluon/tabarena.git
-cd tabarena
-uv pip install --prerelease=allow -e "./tabarena"
-cd ..
-pip install openml   # for automatic dataset download
+cd tabarena && uv pip install --prerelease=allow -e "./tabarena" && cd ..
+
+# 3. Install openml for dataset download
+pip install openml
 ```
 
-Datasets are fetched from OpenML using the official `tabarena-v0.1` benchmark suite — this resolves the exact dataset versions and split definitions TabArena used, so names match the results CSV precisely.  On first run the task→dataset mapping is cached to `cache/tabarena_task_map.json`.
-
-Then run the combined figure script:
+**Run the analysis:**
 
 ```bash
 python benchmark/rank_vs_coverage_combined_tabarena.py \
@@ -285,16 +289,14 @@ python benchmark/rank_vs_coverage_combined_tabarena.py \
     --output-dir results/rank-coverage-tabarena
 ```
 
-Or point to a results CSV you have already saved:
+On first run the script:
 
-```bash
-python benchmark/rank_vs_coverage_combined_tabarena.py \
-    --results-csv /path/to/tabarena_results.csv \
-    --arena-data-dir /path/to/tabarena/datasets \
-    --output-dir results/rank-coverage-tabarena
-```
+1. Downloads TabArena results via the tabarena package
+2. Resolves the 51 datasets via the `tabarena-v0.1` OpenML benchmark suite (exact task IDs, so names match the results CSV)
+3. Builds the TabICL prior caches from `tables-tabicl/parquet/` if not already present from the TALENT pipeline
+4. Computes coverage and writes figures to `results/rank-coverage-tabarena/`
 
-The script reuses the TabICL prior caches already built by the TALENT pipeline, so no extra data fetching is required beyond the dataset files themselves.
+All intermediate artefacts are cached so subsequent runs are fast.  If you already have a results CSV saved locally, skip `--download-results` and pass `--results-csv /path/to/file.csv` instead.
 
 ---
 
