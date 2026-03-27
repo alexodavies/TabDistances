@@ -102,29 +102,32 @@ def _nn_distances(query: np.ndarray, ref: np.ndarray, k: int) -> np.ndarray:
     return dists.mean(axis=1)
 
 
-def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
-                n_bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
-    """Bin TALENT data, zero out singleton bins, then rebin over trimmed range."""
-    # Pass 1: find the non-singleton range
-    bins1 = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
-    idx1  = np.clip(np.digitize(nn_dists, bins1) - 1, 0, n_bins - 1)
-    cts1  = np.array([(idx1 == i).sum() for i in range(n_bins)])
-    nz    = np.where(cts1 > 1)[0]
-    x_lo  = bins1[nz[0]]      if len(nz) else bins1[0]
-    x_hi  = bins1[nz[-1] + 1] if len(nz) else bins1[-1]
+def _trim_distances(nn_dists: np.ndarray, ranks: np.ndarray,
+                    nn_self: np.ndarray,
+                    lo_pct: float = 0.0, hi_pct: float = 95.0,
+                    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Clip to the [lo_pct, hi_pct] percentile range of nn_dists.
 
-    # Pass 2: rebin only the data within [x_lo, x_hi]
-    inner = (nn_dists >= x_lo) & (nn_dists <= x_hi)
-    nd, rk = nn_dists[inner], ranks[inner]
-    bins = np.linspace(x_lo, x_hi, n_bins + 1)
+    nn_self is filtered to the same window so both histograms share the x-axis.
+    """
+    lo, hi = np.percentile(nn_dists, [lo_pct, hi_pct])
+    mask = (nn_dists >= lo) & (nn_dists <= hi)
+    self_mask = (nn_self >= lo) & (nn_self <= hi)
+    return nn_dists[mask], ranks[mask], nn_self[self_mask]
+
+
+def _bin_metric(nn_dists: np.ndarray, ranks: np.ndarray,
+                n_bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Bin pre-trimmed distances into n_bins equal-width bins."""
+    bins = np.linspace(nn_dists.min(), nn_dists.max(), n_bins + 1)
     bin_centers = (bins[:-1] + bins[1:]) / 2
-    idx  = np.clip(np.digitize(nd, bins) - 1, 0, n_bins - 1)
+    idx  = np.clip(np.digitize(nn_dists, bins) - 1, 0, n_bins - 1)
     cts  = np.array([(idx == i).sum() for i in range(n_bins)])
     density = cts.astype(float)
     density /= density.max() if density.max() > 0 else 1.0
-    means = np.array([rk[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n_bins)])
-    stds  = np.array([rk[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n_bins)])
-    return bins, bin_centers, density, means, stds, x_lo, x_hi
+    means = np.array([ranks[idx == i].mean() if cts[i] > 0 else np.nan for i in range(n_bins)])
+    stds  = np.array([ranks[idx == i].std()  if cts[i] > 1 else 0.0   for i in range(n_bins)])
+    return bins, bin_centers, density, means, stds
 
 
 # ------------------------------------------------------------------
@@ -426,18 +429,19 @@ def plot_combined(panels: list[dict], output_path: Path, n_bins: int = 30,
 
         right_axes = []
         for col, (ax1, p) in enumerate(zip(axes, panels)):
-            bins, bin_centers, talent_density, means, stds, x_lo, x_hi = \
-                _bin_metric(p["nn_dists"], p["ranks"], n_bins)
+            nd, rk, ns = _trim_distances(p["nn_dists"], p["ranks"], p["nn_self"])
+            bins, bin_centers, talent_density, means, stds = \
+                _bin_metric(nd, rk, n_bins)
 
-            # Self-distance density (clipped to TALENT bins)
-            si_idx     = np.clip(np.digitize(p["nn_self"], bins) - 1, 0, n_bins - 1)
+            # Self-distance density (already clipped to the trimmed window)
+            si_idx     = np.clip(np.digitize(ns, bins) - 1, 0, n_bins - 1)
             si_cts     = np.array([(si_idx == i).sum() for i in range(n_bins)])
-            si_density = si_cts / si_cts.max()
+            si_density = si_cts / (si_cts.max() if si_cts.max() > 0 else 1.0)
 
             # Left: density histograms
             _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
             _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
-            ax1.set_xlim(x_lo, x_hi)
+            ax1.set_xlim(bins[0], bins[-1])
             ax1.set_xlabel("Mean k-NN distance (normalised)")
             if col == 0:
                 ax1.set_ylabel("Relative density")
