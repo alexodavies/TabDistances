@@ -613,10 +613,12 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    results_group = parser.add_mutually_exclusive_group(required=True)
+    results_group = parser.add_mutually_exclusive_group(required=False)
     results_group.add_argument("--results-csv", type=Path,
                                help="TabArena results CSV (columns: "
-                                    "dataset, method, metric_error, fold, seed)")
+                                    "dataset, method, metric_error, fold, seed). "
+                                    f"Defaults to the shared cache at cache/tabarena_results.csv "
+                                    f"if it already exists.")
     results_group.add_argument("--download-results", action="store_true",
                                help="Download results via the tabarena Python package")
 
@@ -641,7 +643,13 @@ def main() -> None:
 
     # --- TabArena panel ---
     print("\n=== Panel 2: TabArena datasets (pymfe) ===")
-    results_csv = args.results_csv if args.results_csv else _download_tabarena_results()
+    if args.results_csv:
+        results_csv = args.results_csv
+    elif TABARENA_RESULTS_CACHE.exists():
+        results_csv = TABARENA_RESULTS_CACHE
+        print(f"  TabArena results: using shared cache {TABARENA_RESULTS_CACHE}")
+    else:
+        results_csv = _download_tabarena_results()
     arena_rank_map, arena_datasets = _load_tabarena_rankings(results_csv)
 
     if args.download_datasets:
