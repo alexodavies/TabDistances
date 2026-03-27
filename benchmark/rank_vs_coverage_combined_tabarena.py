@@ -874,10 +874,11 @@ def plot_auc_kde(panels: list[dict], output_path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    results_group = parser.add_mutually_exclusive_group(required=True)
+    results_group = parser.add_mutually_exclusive_group(required=False)
     results_group.add_argument("--results-csv", type=Path,
                                help="TabArena results CSV (columns: "
-                                    "dataset, method, metric_error, fold, seed)")
+                                    "dataset, method, metric_error, fold, seed). "
+                                    "Defaults to cache/tabarena_results.csv if it exists.")
     results_group.add_argument("--download-results", action="store_true",
                                help="Download results via the tabarena Python package")
 

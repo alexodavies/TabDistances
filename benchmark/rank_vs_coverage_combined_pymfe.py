@@ -65,10 +65,12 @@ TABICL_METHOD          = "TABICL_GPU (default)"
 PYMFE_ICL_CACHE    = CACHE / "pymfe_icl_feats.npz"
 PYMFE_GROUPS       = ["general", "statistical", "info-theory"]
 
-MAX_ROWS     = 512
-KNN_K        = 5
-N_ICL        = 25_000
-RANDOM_STATE = 42
+MAX_ROWS      = 512
+KNN_K         = 5
+N_ICL         = 2_000   # pymfe vectors are richer than histograms; smaller pool suffices
+RANDOM_STATE  = 42
+PYMFE_TIMEOUT = 60      # seconds per dataset before skipping
+N_JOBS        = -1      # parallel workers; -1 = os.cpu_count()
 
 _PAPER_RC = {
     "font.size":        8,
@@ -140,6 +142,50 @@ def _align_pymfe_vecs(vecs: list[np.ndarray]) -> np.ndarray:
 
 
 # ------------------------------------------------------------------
+# Parallel workers  (module-level so they are picklable)
+# ------------------------------------------------------------------
+
+def _icl_path_worker(path_str: str) -> np.ndarray | None:
+    """Read one ICL parquet file and return its pymfe vector (or None)."""
+    try:
+        df = pd.read_parquet(path_str).select_dtypes(include="number").iloc[:MAX_ROWS]
+        if df.shape[0] < 2 or df.shape[1] < 2:
+            return None
+        return _pymfe_vec(df.iloc[:, :-1].to_numpy(dtype=float),
+                          df.iloc[:, -1].to_numpy())
+    except Exception:
+        return None
+
+
+def _xy_worker(args: tuple) -> np.ndarray | None:
+    """Compute pymfe vector from a (X, y) tuple."""
+    X, y = args
+    return _pymfe_vec(X, y)
+
+
+def _run_parallel(fn, items, desc: str) -> list:
+    """Run fn(item) in parallel with PYMFE_TIMEOUT per item.
+
+    Returns a list of results in the same order as *items*; failed or timed-out
+    items yield None.
+    """
+    import os
+    from multiprocessing import Pool
+
+    workers = os.cpu_count() if N_JOBS < 0 else N_JOBS
+    results = [None] * len(items)
+    with Pool(processes=workers) as pool:
+        handles = [(i, pool.apply_async(fn, (item,)))
+                   for i, item in enumerate(items)]
+        for i, ar in tqdm(handles, desc=desc):
+            try:
+                results[i] = ar.get(timeout=PYMFE_TIMEOUT)
+            except Exception:
+                pass
+    return results
+
+
+# ------------------------------------------------------------------
 # Shared utilities
 # ------------------------------------------------------------------
 
@@ -202,23 +248,11 @@ def _build_icl_pymfe_cache(rng: np.random.Generator) -> np.ndarray:
         )
     paths = np.array(sorted(ICL_DIR.glob("*.parquet")))
     rng.shuffle(paths)
-    feats, errors = [], 0
-    for p in tqdm(paths, desc="pymfe: ICL prior tables"):
-        try:
-            df = pd.read_parquet(p).select_dtypes(include="number").iloc[:MAX_ROWS]
-            if df.shape[0] < 2 or df.shape[1] < 2:
-                errors += 1
-                continue
-            X = df.iloc[:, :-1].to_numpy(dtype=float)
-            y = df.iloc[:, -1].to_numpy()
-            v = _pymfe_vec(X, y)
-            if v is not None:
-                feats.append(v)
-        except Exception:
-            errors += 1
-        if len(feats) >= N_ICL:
-            break
-    print(f"  pymfe ICL: {len(feats)} tables featurised ({errors} skipped)")
+    # Only dispatch as many files as needed (with some headroom for failures)
+    candidate_paths = [str(p) for p in paths[:N_ICL * 2]]
+    raw = _run_parallel(_icl_path_worker, candidate_paths, desc="pymfe: ICL prior tables")
+    feats = [v for v in raw if v is not None][:N_ICL]
+    print(f"  pymfe ICL: {len(feats)} tables featurised ({len(raw) - len(feats)} skipped/failed)")
     arr = _align_pymfe_vecs(feats)
     CACHE.mkdir(parents=True, exist_ok=True)
     np.savez(PYMFE_ICL_CACHE, feats=arr)
@@ -371,11 +405,11 @@ def _load_talent_panel(rank_map: dict, datasets: list[str],
     missing = [ds for ds in datasets if ds not in cached]
     if missing:
         print(f"  pymfe TALENT: computing {len(missing)} missing datasets …")
-        skipped = 0
-        for ds in tqdm(missing, desc="pymfe: TALENT datasets"):
+        # Pre-load arrays in the main process (small, bounded by MAX_ROWS)
+        xy_items, valid_ds = [], []
+        for ds in missing:
             ds_path = TALENT_DIR / ds
             if not ds_path.exists():
-                skipped += 1
                 continue
             X_parts, y_parts = [], []
             for split in ("train", "val", "test"):
@@ -387,20 +421,20 @@ def _load_talent_panel(rank_map: dict, datasets: list[str],
                     if npy_y.exists():
                         y_parts.append(np.load(npy_y, allow_pickle=True).ravel())
             if not X_parts:
-                skipped += 1
                 continue
             X = np.concatenate(X_parts, axis=0)[:MAX_ROWS]
-            if y_parts:
-                y = np.concatenate(y_parts)[:MAX_ROWS]
-            else:
-                y = X[:, -1]  # fallback: last column
+            y = np.concatenate(y_parts)[:MAX_ROWS] if y_parts else X[:, -1]
+            if not y_parts:
                 X = X[:, :-1]
-            v = _pymfe_vec(X, y)
+            xy_items.append((X, y))
+            valid_ds.append(ds)
+
+        raw = _run_parallel(_xy_worker, xy_items, desc="pymfe: TALENT datasets")
+        skipped = sum(1 for v in raw if v is None)
+        for ds, v in zip(valid_ds, raw):
             if v is not None:
                 cached[ds] = v
-            else:
-                skipped += 1
-        print(f"  pymfe TALENT: computed {len(missing) - skipped} ({skipped} skipped)")
+        print(f"  pymfe TALENT: computed {len(valid_ds) - skipped} ({len(missing) - len(valid_ds) + skipped} skipped)")
         CACHE.mkdir(parents=True, exist_ok=True)
         vecs = list(cached.values())
         np.savez(cache_path,
@@ -462,20 +496,21 @@ def _load_tabarena_panel(rank_map: dict, datasets: list[str],
     missing = [ds for ds in datasets if ds not in cached]
     if missing:
         print(f"  pymfe TabArena: computing {len(missing)} missing datasets …")
-        skipped = 0
-        for ds in tqdm(missing, desc="pymfe: TabArena datasets"):
+        xy_items, valid_ds = [], []
+        for ds in missing:
             df = _load_dataset_df(ds, data_dir)
             if df is None or df.shape[0] < 2 or df.shape[1] < 2:
-                skipped += 1
                 continue
             df = df.iloc[:MAX_ROWS]
-            X = df.iloc[:, :-1].to_numpy(dtype=float)
-            y = df.iloc[:, -1].to_numpy()
-            v = _pymfe_vec(X, y)
+            xy_items.append((df.iloc[:, :-1].to_numpy(dtype=float),
+                             df.iloc[:, -1].to_numpy()))
+            valid_ds.append(ds)
+
+        raw = _run_parallel(_xy_worker, xy_items, desc="pymfe: TabArena datasets")
+        skipped = sum(1 for v in raw if v is None)
+        for ds, v in zip(valid_ds, raw):
             if v is not None:
                 cached[ds] = v
-            else:
-                skipped += 1
         print(f"  pymfe TabArena: computed {len(missing) - skipped} ({skipped} skipped)")
         CACHE.mkdir(parents=True, exist_ok=True)
         vecs = list(cached.values())
