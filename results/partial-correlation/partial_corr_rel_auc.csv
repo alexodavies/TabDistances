@@ -1,0 +1,13 @@
+Representation,Covariates,N,partial_r,partial_p
+Table features,universal,0,,
+Table features,full,0,,
+Col histograms,universal,0,,
+Col histograms,full,0,,
+Corr histograms,universal,0,,
+Corr histograms,full,0,,
+TabICL col emb,universal,0,,
+TabICL col emb,full,0,,
+TabICL row emb,universal,0,,
+TabICL row emb,full,0,,
+TabICL combined emb,universal,0,,
+TabICL combined emb,full,0,,

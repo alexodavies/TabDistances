@@ -1,0 +1,7 @@
+Representation,TALENT N,TALENT Recall,TALENT Precision,TALENT Pearson_r,TALENT Pearson_p,TabArena N,TabArena Recall,TabArena Precision,TabArena Pearson_r,TabArena Pearson_p
+Table features,164,0.1707,0.9884,0.0127,0.8723,46,0.0435,0.9997,0.0749,0.7049
+Col histograms,164,0.2435,0.973,-0.041,0.6019,0,,,,
+Corr histograms,91,0.3077,0.9949,0.0447,0.6741,30,0.2667,0.9975,0.226,0.3672
+TabICL col emb,164,0.2256,0.7827,-0.0209,0.7909,0,,,,
+TabICL row emb,164,0.6585,0.8407,-0.066,0.4011,0,,,,
+TabICL combined emb,164,0.5976,0.822,-0.0672,0.3927,0,,,,
