@@ -120,13 +120,11 @@ def _df_to_embedding(
     X_np = ((X_np - col_mean) / col_std).clip(-5.0, 5.0)
 
     X = torch.tensor(X_np, dtype=torch.float32, device=device).unsqueeze(0)  # (1, T, H)
-    T = X.shape[1]
 
     with torch.no_grad():
-        y_dummy = torch.zeros(1, T, device=device, dtype=X.dtype)
-        emb     = col_embedder(X, y_dummy, embed_with_test=True)  # (1, T, H+C, E)
-        row_rep = row_interactor(emb)                              # (1, T, EMB_DIM)
-        vec     = row_rep.mean(dim=1).squeeze(0)                   # (EMB_DIM,)
+        emb     = col_embedder(X)       # (1, T, H+C, E)
+        row_rep = row_interactor(emb)   # (1, T, EMB_DIM)
+        vec     = row_rep.mean(dim=1).squeeze(0)  # (EMB_DIM,)
 
     return vec.cpu().numpy()
 
