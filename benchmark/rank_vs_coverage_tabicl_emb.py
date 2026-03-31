@@ -352,54 +352,66 @@ def _load_panel(
 
 
 # ------------------------------------------------------------------
-# Figure (single-panel version of plot_combined)
+# Figure — 3-panel combined (mirrors rank_vs_coverage_combined_talent.py)
 # ------------------------------------------------------------------
 
-def plot_single(
-    nn_dists: np.ndarray,
-    nn_self: np.ndarray,
-    ranks: np.ndarray,
+def plot_combined(
+    panels: list[dict],
     output_path: Path,
     n_bins: int = 30,
-    title: str = "TabICL embeddings",
-    metric_label: str = "Mean rank",
-    y_label: str = "TabICL mean rank",
-    invert_y: bool = True,
 ) -> None:
-    nd, rk, ns = _trim_distances(nn_dists, ranks, nn_self)
-    bins, bin_centers, talent_density, means, stds = _bin_metric(nd, rk, n_bins)
-
-    si_idx     = np.clip(np.digitize(ns, bins) - 1, 0, n_bins - 1)
-    si_cts     = np.array([(si_idx == i).sum() for i in range(n_bins)])
-    si_density = si_cts / (si_cts.max() if si_cts.max() > 0 else 1.0)
-
+    """panels: list of dicts with keys nn_dists, nn_self, ranks,
+    metric_label, y_label, invert_y, title."""
     with mpl.rc_context(_PAPER_RC):
-        fig, ax1 = plt.subplots(1, 1, figsize=(3.0, 2.6))
-        fig.subplots_adjust(left=0.13, right=0.87, bottom=0.26, top=0.91)
+        fig, axes = plt.subplots(1, len(panels), figsize=(7.0, 2.6), sharey=False,
+                                 constrained_layout=False)
+        if len(panels) == 1:
+            axes = [axes]
+        fig.subplots_adjust(left=0.07, right=0.93, bottom=0.26, top=0.91, wspace=0.35)
 
-        _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
-        _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
-        ax1.set_xlim(bins[0], bins[-1])
-        ax1.set_xlabel("Mean k-NN distance (normalised)")
-        ax1.set_ylabel("Relative density")
-        ax1.set_title(title)
+        right_axes = []
+        for col, (ax1, p) in enumerate(zip(axes, panels)):
+            nd, rk, ns = _trim_distances(p["nn_dists"], p["ranks"], p["nn_self"])
+            bins, bin_centers, talent_density, means, stds = _bin_metric(nd, rk, n_bins)
 
-        ax2 = ax1.twinx()
-        mask = ~np.isnan(means)
-        lo = np.clip(means - stds, 1, None)
-        hi = means + stds
-        ax2.plot(bin_centers[mask], means[mask],
-                 color=_RED, lw=1.5, marker="o", ms=3, label=metric_label)
-        ax2.fill_between(bin_centers[mask], lo[mask], hi[mask],
-                         color=_RED, alpha=0.2)
-        if invert_y:
-            ax2.invert_yaxis()
-        ax2.set_ylabel(y_label, color=_RED)
-        ax2.yaxis.set_major_locator(MaxNLocator(integer=invert_y, nbins=5, prune="upper"))
-        ax2.tick_params(axis="y", labelcolor=_RED)
+            si_idx     = np.clip(np.digitize(ns, bins) - 1, 0, n_bins - 1)
+            si_cts     = np.array([(si_idx == i).sum() for i in range(n_bins)])
+            si_density = si_cts / (si_cts.max() if si_cts.max() > 0 else 1.0)
 
-        h_left,  l_left  = ax1.get_legend_handles_labels()
-        h_right, l_right = ax2.get_legend_handles_labels()
+            _stairs(ax1, talent_density, bins, _BLUE,   "TALENT datasets")
+            _stairs(ax1, si_density,     bins, _PURPLE, "TabICL Prior (self)")
+            ax1.set_xlim(bins[0], bins[-1])
+            ax1.set_xlabel("Mean k-NN distance (normalised)")
+            if col == 0:
+                ax1.set_ylabel("Relative density")
+            ax1.set_title(p["title"])
+
+            invert_y    = p["invert_y"]
+            metric_label = p["metric_label"]
+            y_label      = p["y_label"]
+
+            ax2 = ax1.twinx()
+            right_axes.append(ax2)
+            mask = ~np.isnan(means)
+            lo = np.clip(means - stds, 1, None) if invert_y else means - stds
+            hi = means + stds
+            ax2.plot(bin_centers[mask], means[mask],
+                     color=_RED, lw=1.5, marker="o", ms=3, label=metric_label)
+            ax2.fill_between(bin_centers[mask], lo[mask], hi[mask],
+                             color=_RED, alpha=0.2)
+            if invert_y:
+                ax2.invert_yaxis()
+            ax2.set_ylabel(y_label, color=_RED)
+            ax2.yaxis.set_major_locator(MaxNLocator(integer=invert_y, nbins=5, prune="upper"))
+            ax2.tick_params(axis="y", labelcolor=_RED)
+
+            if mask.sum() >= 2:
+                r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
+                right_axes[-1]._corr_r = r
+
+        h_left, l_left = axes[0].get_legend_handles_labels()
+        h_right = [right_axes[0].get_legend_handles_labels()[0][0]]
+        l_right = [panels[0]["metric_label"]]
         fig.legend(
             h_left + h_right,
             l_left + l_right,
@@ -413,20 +425,20 @@ def plot_single(
         fig.canvas.draw()
         _bbox = dict(boxstyle="square,pad=0.15", facecolor="white", edgecolor="none", alpha=1.0)
         _trans_yd = mpl.transforms.blended_transform_factory
-        trans = _trans_yd(ax2.transAxes, ax2.transData)
-        ylim  = sorted(ax2.get_ylim())
-        for loc in ax2.yaxis.get_majorticklocs():
-            if ylim[0] <= loc <= ylim[1]:
-                label_txt = str(int(round(loc))) if invert_y else f"{loc:.2f}"
-                ax2.text(0.97, loc, label_txt,
-                         transform=trans, ha="right", va="center",
-                         fontsize=7, color=_RED, zorder=10, bbox=_bbox)
-
-        if mask.sum() >= 2:
-            r = np.corrcoef(bin_centers[mask], means[mask])[0, 1]
-            ax2.text(0.5, 0.03, f"$r = {r:.2f}$",
-                     transform=ax2.transAxes, va="bottom", ha="center",
-                     fontsize=7, color="black", zorder=10, bbox=_bbox)
+        for ax2, p in zip(right_axes, panels):
+            invert_y = p["invert_y"]
+            trans = _trans_yd(ax2.transAxes, ax2.transData)
+            ylim  = sorted(ax2.get_ylim())
+            for loc in ax2.yaxis.get_majorticklocs():
+                if ylim[0] <= loc <= ylim[1]:
+                    label_txt = str(int(round(loc))) if invert_y else f"{loc:.2f}"
+                    ax2.text(0.97, loc, label_txt,
+                             transform=trans, ha="right", va="center",
+                             fontsize=7, color=_RED, zorder=10, bbox=_bbox)
+            if hasattr(ax2, "_corr_r"):
+                ax2.text(0.5, 0.03, f"$r = {ax2._corr_r:.2f}$",
+                         transform=ax2.transAxes, va="bottom", ha="center",
+                         fontsize=7, color="black", zorder=10, bbox=_bbox)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -462,33 +474,18 @@ def main() -> None:
     )
 
     print("\n=== Generating figures ===")
-    plot_single(
-        nn_dists, nn_self, ranks,
-        args.output_dir / "rank_vs_coverage_tabicl_emb.png",
-        n_bins=args.n_bins,
-        title="TabICL embeddings",
-        metric_label="Mean rank",
-        y_label="TabICL mean rank",
-        invert_y=True,
-    )
-    plot_single(
-        nn_dists, nn_self, rel_aucs,
-        args.output_dir / "rel_auc_vs_coverage_tabicl_emb.png",
-        n_bins=args.n_bins,
-        title="TabICL embeddings",
-        metric_label="Rel. AUC (vs mean)",
-        y_label="TabICL AUC / mean AUC",
-        invert_y=False,
-    )
-    plot_single(
-        nn_dists, nn_self, rel_best_aucs,
-        args.output_dir / "rel_best_auc_vs_coverage_tabicl_emb.png",
-        n_bins=args.n_bins,
-        title="TabICL embeddings",
-        metric_label="Rel. AUC (vs best)",
-        y_label="TabICL AUC / best AUC",
-        invert_y=False,
-    )
+    panels = [
+        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=ranks,
+             title="Mean rank", metric_label="Mean rank",
+             y_label="TabICL mean rank", invert_y=True),
+        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=rel_aucs,
+             title="Rel. AUC (vs mean)", metric_label="Rel. AUC (vs mean)",
+             y_label="TabICL AUC / mean AUC", invert_y=False),
+        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=rel_best_aucs,
+             title="Rel. AUC (vs best)", metric_label="Rel. AUC (vs best)",
+             y_label="TabICL AUC / best AUC", invert_y=False),
+    ]
+    plot_combined(panels, args.output_dir / "rank_vs_coverage_tabicl_emb.png", args.n_bins)
 
 
 if __name__ == "__main__":
