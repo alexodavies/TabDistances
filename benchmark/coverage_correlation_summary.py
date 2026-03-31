@@ -536,23 +536,29 @@ def main() -> None:
         ("rel_best", "Rel AUC vs best",     "Pearson_r (rel_best)", "Pearson_p (rel_best)"),
     ]
 
-    for mkey, mtitle, rcol, pcol in metrics:
-        tbl = master[["Representation", "Benchmark", "N",
-                       "Recall", "Precision", rcol, pcol]].copy()
-        tbl = tbl.rename(columns={rcol: "Pearson_r", pcol: "Pearson_p"})
+    repr_order = list(dict.fromkeys(r["Representation"] for r in rows))
+    bench_order = ["TALENT", "TabArena"]
 
-        # Pivot so TALENT and TabArena are side by side
-        tbl_wide = tbl.pivot(index="Representation", columns="Benchmark",
-                             values=["N", "Recall", "Precision", "Pearson_r", "Pearson_p"])
-        tbl_wide.columns = [f"{b} {m}" for m, b in tbl_wide.columns]
-        tbl_wide = tbl_wide.reindex(
-            [r["Representation"] for r in rows
-             if r["Representation"] in tbl_wide.index and
-             rows.index(r) < len([rr for rr in rows if rr["Benchmark"] == "TALENT"]) * 2]
-        )
-        # simpler: just reindex by insertion order
-        repr_order = list(dict.fromkeys(r["Representation"] for r in rows))
-        tbl_wide = tbl_wide.reindex([r for r in repr_order if r in tbl_wide.index])
+    for mkey, mtitle, rcol, pcol in metrics:
+        # Build wide table manually: one row per representation, columns per benchmark
+        wide_rows = []
+        for rep in repr_order:
+            row_out: dict = {"Representation": rep}
+            for bench in bench_order:
+                match = [r for r in rows if r["Representation"] == rep and r["Benchmark"] == bench]
+                if match:
+                    r = match[0]
+                    row_out[f"{bench} N"]         = r["N"]
+                    row_out[f"{bench} Recall"]    = r["Recall"]
+                    row_out[f"{bench} Precision"] = r["Precision"]
+                    row_out[f"{bench} Pearson_r"] = r[rcol]
+                    row_out[f"{bench} Pearson_p"] = r[pcol]
+                else:
+                    for col in ("N", "Recall", "Precision", "Pearson_r", "Pearson_p"):
+                        row_out[f"{bench} {col}"] = float("nan")
+            wide_rows.append(row_out)
+
+        tbl_wide = pd.DataFrame(wide_rows).set_index("Representation")
 
         out_path = out_dir / f"summary_{mkey}.csv"
         tbl_wide.to_csv(out_path)
