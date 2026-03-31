@@ -1,9 +1,15 @@
 """Rank-vs-coverage using pre-trained TabICL intermediate representations.
 
-Embeds each dataset through the pre-trained TabICL foundation model's first two
-stages (ColEmbedding → RowInteraction → mean-pool) to produce a 512-dim table
-vector, then measures k-NN distance from each TALENT dataset to the TabICL
-ICL prior pool in that representation space.
+For each TALENT dataset, embeds it through the pre-trained TabICL foundation
+model and measures k-NN distance to the ICL prior pool under three
+representation spaces:
+
+  (1) Combined  — ColEmbedding → RowInteraction → mean-pool  (640-dim = 128+512)
+  (2) Col only  — ColEmbedding mean-pooled over rows & features  (128-dim)
+  (3) Row only  — RowInteraction mean-pooled over rows  (512-dim)
+
+One output figure per performance metric (mean rank, rel. AUC vs mean,
+rel. AUC vs best), each showing all three representations as panels.
 
 Usage
 -----
@@ -45,14 +51,16 @@ RANKINGS_CSV = _ROOT / "results/tabicl-rankings-full-context.csv"
 TALENT_DIR   = _ROOT / "data"
 ICL_DIR      = _ROOT / "tables-tabicl/parquet"
 
-TALENT_TABICL_EMB_CACHE = CACHE / "talent_tabicl_emb_512.npz"
-ICL_TABICL_EMB_CACHE    = CACHE / "icl_tabicl_emb_25000_512.npz"
+TALENT_TABICL_EMB_CACHE = CACHE / "talent_tabicl_emb_colrow.npz"
+ICL_TABICL_EMB_CACHE    = CACHE / "icl_tabicl_emb_25000_colrow.npz"
 
-MAX_ROWS     = 512
-KNN_K        = 5
-N_ICL        = 25_000
-RANDOM_STATE = 42
-EMB_DIM      = 512   # row_num_cls(4) * embed_dim(128)
+MAX_ROWS      = 512
+KNN_K         = 5
+N_ICL         = 25_000
+RANDOM_STATE  = 42
+COL_DIM       = 128   # embed_dim
+ROW_DIM       = 512   # row_num_cls(4) * embed_dim(128)
+COMBINED_DIM  = COL_DIM + ROW_DIM  # 640
 
 _PAPER_RC = {
     "font.size":       8,
@@ -96,15 +104,13 @@ def _df_to_embedding(
     row_interactor,
     device=None,  # ignored; actual device inferred from model
     max_rows: int = MAX_ROWS,
-) -> np.ndarray:
-    """Preprocess a DataFrame and return a (EMB_DIM,) numpy embedding.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Preprocess a DataFrame and return (col_vec, row_vec).
 
-    Preprocessing mirrors SmallTabICLDiscriminator._df_to_tensor():
-      - cap rows
-      - inf → NaN
-      - TransformToNumerical
-      - nan/inf → 0
-      - per-column standardize + clip to [-5, 5]
+    col_vec : (COL_DIM,) = col_embedder output, mean over rows & features
+    row_vec : (ROW_DIM,) = row_interactor output, mean over rows
+
+    Preprocessing mirrors SmallTabICLDiscriminator._df_to_tensor().
     """
     if len(df) > max_rows:
         df = df.sample(max_rows, random_state=42)
@@ -128,10 +134,11 @@ def _df_to_embedding(
 
     with torch.no_grad():
         emb     = col_embedder(X, mgr_config=mgr_cfg)    # (1, T, H+C, E)
-        row_rep = row_interactor(emb, mgr_config=mgr_cfg) # (1, T, EMB_DIM)
-        vec     = row_rep.mean(dim=1).squeeze(0)           # (EMB_DIM,)
+        row_rep = row_interactor(emb, mgr_config=mgr_cfg) # (1, T, ROW_DIM)
 
-    return vec.cpu().numpy()
+    col_vec = emb.mean(dim=(1, 2)).squeeze(0).cpu().numpy()      # (COL_DIM,)
+    row_vec = row_rep.mean(dim=1).squeeze(0).cpu().numpy()        # (ROW_DIM,)
+    return col_vec, row_vec
 
 
 # ------------------------------------------------------------------
@@ -224,19 +231,25 @@ def _compute_talent_embeddings(
     col_embedder,
     row_interactor,
     device: str,
-) -> dict[str, np.ndarray]:
-    """Compute or load cached TALENT dataset embeddings."""
-    cached: dict[str, np.ndarray] = {}
-    if TALENT_TABICL_EMB_CACHE.exists():
-        data   = np.load(TALENT_TABICL_EMB_CACHE, allow_pickle=True)
-        if len(data["feats"]) > 0:
-            cached = {n: data["feats"][i] for i, n in enumerate(data["names"].tolist())
-                      if n in set(datasets)}
-            print(f"  TALENT embs: cache hit {len(cached)}/{len(datasets)} datasets")
-        else:
-            print("  TALENT embs: cache exists but is empty, recomputing …")
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    """Compute or load cached TALENT dataset col+row embeddings.
 
-    missing = [ds for ds in datasets if ds not in cached]
+    Returns (cached_col, cached_row) dicts mapping dataset name → vector.
+    """
+    cached_col: dict[str, np.ndarray] = {}
+    cached_row: dict[str, np.ndarray] = {}
+    if TALENT_TABICL_EMB_CACHE.exists():
+        data = np.load(TALENT_TABICL_EMB_CACHE, allow_pickle=True)
+        if "feats_col" in data and len(data["feats_col"]) > 0:
+            names_list = data["names"].tolist()
+            ds_set = set(datasets)
+            cached_col = {n: data["feats_col"][i] for i, n in enumerate(names_list) if n in ds_set}
+            cached_row = {n: data["feats_row"][i] for i, n in enumerate(names_list) if n in ds_set}
+            print(f"  TALENT embs: cache hit {len(cached_col)}/{len(datasets)} datasets")
+        else:
+            print("  TALENT embs: cache exists but is empty or old format, recomputing …")
+
+    missing = [ds for ds in datasets if ds not in cached_col]
     if missing:
         print(f"  TALENT embs: computing {len(missing)} missing datasets …")
         skipped = 0
@@ -262,18 +275,22 @@ def _compute_talent_embeddings(
                 skipped += 1
                 continue
             try:
-                cached[ds] = _df_to_embedding(df, col_embedder, row_interactor, device)
+                col_vec, row_vec = _df_to_embedding(df, col_embedder, row_interactor)
+                cached_col[ds] = col_vec
+                cached_row[ds] = row_vec
             except Exception as e:
                 print(f"    [WARN] {ds}: {e}")
                 skipped += 1
         print(f"  TALENT embs: computed {len(missing) - skipped} ({skipped} skipped)")
         CACHE.mkdir(parents=True, exist_ok=True)
+        names_out = list(cached_col.keys())
         np.savez(TALENT_TABICL_EMB_CACHE,
-                 names=np.array(list(cached.keys())),
-                 feats=np.array(list(cached.values())))
+                 names=np.array(names_out),
+                 feats_col=np.array([cached_col[n] for n in names_out]),
+                 feats_row=np.array([cached_row[n] for n in names_out]))
         print(f"  TALENT embs: cache saved -> {TALENT_TABICL_EMB_CACHE}")
 
-    return cached
+    return cached_col, cached_row
 
 
 def _compute_icl_embeddings(
@@ -281,14 +298,17 @@ def _compute_icl_embeddings(
     row_interactor,
     device: str,
     n_icl: int,
-) -> np.ndarray:
-    """Compute or load cached ICL prior embeddings."""
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute or load cached ICL prior col+row embeddings.
+
+    Returns (col_arr, row_arr) each of shape (N, DIM).
+    """
     if ICL_TABICL_EMB_CACHE.exists():
         data = np.load(ICL_TABICL_EMB_CACHE)
-        if len(data["feats"]) > 0:
-            print(f"  ICL embs: loaded {len(data['feats'])} vectors from cache")
-            return data["feats"]
-        print("  ICL embs: cache exists but is empty, recomputing …")
+        if "feats_col" in data and len(data["feats_col"]) > 0:
+            print(f"  ICL embs: loaded {len(data['feats_col'])} vectors from cache")
+            return data["feats_col"], data["feats_row"]
+        print("  ICL embs: cache exists but is empty or old format, recomputing …")
 
     paths = sorted(ICL_DIR.glob("*.parquet"))
     if not paths:
@@ -297,24 +317,25 @@ def _compute_icl_embeddings(
     rng   = np.random.default_rng(RANDOM_STATE)
     paths = rng.choice(paths, size=min(n_icl, len(paths)), replace=False).tolist()
 
-    embs = []
-    skipped = 0
+    cols, rows, skipped = [], [], 0
     for p in tqdm(paths, desc="Embedding ICL prior tables"):
         try:
             df = pd.read_parquet(p)
-            # Drop label column if present (last column by convention)
             if df.shape[1] > 1:
                 df = df.iloc[:, :-1]
-            embs.append(_df_to_embedding(df, col_embedder, row_interactor, device))
-        except Exception as e:
+            col_vec, row_vec = _df_to_embedding(df, col_embedder, row_interactor)
+            cols.append(col_vec)
+            rows.append(row_vec)
+        except Exception:
             skipped += 1
-    print(f"  ICL embs: embedded {len(embs)} tables ({skipped} skipped)")
+    print(f"  ICL embs: embedded {len(cols)} tables ({skipped} skipped)")
 
-    arr = np.array(embs)
+    col_arr = np.array(cols)
+    row_arr = np.array(rows)
     CACHE.mkdir(parents=True, exist_ok=True)
-    np.savez(ICL_TABICL_EMB_CACHE, feats=arr)
+    np.savez(ICL_TABICL_EMB_CACHE, feats_col=col_arr, feats_row=row_arr)
     print(f"  ICL embs: cache saved -> {ICL_TABICL_EMB_CACHE}")
-    return arr
+    return col_arr, row_arr
 
 
 def _load_panel(
@@ -330,25 +351,43 @@ def _load_panel(
     device: str,
     n_icl: int,
 ):
-    talent_cached = _compute_talent_embeddings(datasets, col_embedder, row_interactor, device)
-    icl_all       = _compute_icl_embeddings(col_embedder, row_interactor, device, n_icl)
+    """Returns distances for all three representation spaces plus metadata.
 
-    names         = [ds for ds in datasets if ds in talent_cached]
-    talent_embs   = np.stack([talent_cached[ds] for ds in names])
+    Returns
+    -------
+    nn_col, nn_row, nn_combined : np.ndarray  — kNN distances (TALENT → ICL)
+    self_col, self_row, self_combined : np.ndarray  — kNN self-distances (ICL → ICL)
+    ranks, rel_aucs, rel_best_aucs : np.ndarray  — performance metrics per dataset
+    """
+    talent_col, talent_row = _compute_talent_embeddings(datasets, col_embedder, row_interactor, device)
+    icl_col_all, icl_row_all = _compute_icl_embeddings(col_embedder, row_interactor, device, n_icl)
+
+    names         = [ds for ds in datasets if ds in talent_col]
+    t_col         = np.stack([talent_col[ds] for ds in names])
+    t_row         = np.stack([talent_row[ds] for ds in names])
+    t_combined    = np.hstack([t_col, t_row])
+
     ranks         = np.array([rank_map[n]                      for n in names], dtype=float)
     rel_aucs      = np.array([rel_auc_map.get(n, np.nan)       for n in names], dtype=float)
     rel_best_aucs = np.array([rel_best_auc_map.get(n, np.nan)  for n in names], dtype=float)
-    tabicl_aucs   = np.array([tabicl_auc_map.get(n, np.nan)    for n in names], dtype=float)
-    mean_aucs     = np.array([mean_auc_map.get(n, np.nan)       for n in names], dtype=float)
 
-    idx      = rng.choice(len(icl_all), size=min(n_icl, len(icl_all)), replace=False)
-    icl_embs = icl_all[idx]
-    print(f"  Panel: {len(talent_embs)} TALENT datasets, {len(icl_embs)} ICL tables")
+    idx = rng.choice(len(icl_col_all), size=min(n_icl, len(icl_col_all)), replace=False)
+    i_col      = icl_col_all[idx]
+    i_row      = icl_row_all[idx]
+    i_combined = np.hstack([i_col, i_row])
+    print(f"  {len(names)} TALENT datasets, {len(i_col)} ICL tables")
 
-    nn_dists = _nn_distances(talent_embs, icl_embs, KNN_K)
-    half     = len(icl_embs) // 2
-    nn_self  = _nn_distances(icl_embs[:half], icl_embs[half:], KNN_K)
-    return nn_dists, nn_self, ranks, rel_aucs, rel_best_aucs, tabicl_aucs, mean_aucs
+    half = len(i_col) // 2
+    nn_col      = _nn_distances(t_col,      i_col,      KNN_K)
+    nn_row      = _nn_distances(t_row,      i_row,      KNN_K)
+    nn_combined = _nn_distances(t_combined, i_combined, KNN_K)
+    self_col      = _nn_distances(i_col[:half],      i_col[half:],      KNN_K)
+    self_row      = _nn_distances(i_row[:half],      i_row[half:],      KNN_K)
+    self_combined = _nn_distances(i_combined[:half], i_combined[half:], KNN_K)
+
+    return (nn_col, nn_row, nn_combined,
+            self_col, self_row, self_combined,
+            ranks, rel_aucs, rel_best_aucs)
 
 
 # ------------------------------------------------------------------
@@ -468,24 +507,31 @@ def main() -> None:
     col_embedder, row_interactor = _load_encoder(args.device)
 
     print("\n=== Computing embeddings and distances ===")
-    nn_dists, nn_self, ranks, rel_aucs, rel_best_aucs, tabicl_aucs, mean_aucs = _load_panel(
+    (nn_col, nn_row, nn_combined,
+     self_col, self_row, self_combined,
+     ranks, rel_aucs, rel_best_aucs) = _load_panel(
         rank_map, rel_auc_map, rel_best_auc_map, tabicl_auc_map, mean_auc_map,
         datasets, rng, col_embedder, row_interactor, args.device, args.n_icl,
     )
 
     print("\n=== Generating figures ===")
-    panels = [
-        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=ranks,
-             title="Mean rank", metric_label="Mean rank",
-             y_label="TabICL mean rank", invert_y=True),
-        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=rel_aucs,
-             title="Rel. AUC (vs mean)", metric_label="Rel. AUC (vs mean)",
-             y_label="TabICL AUC / mean AUC", invert_y=False),
-        dict(nn_dists=nn_dists, nn_self=nn_self, ranks=rel_best_aucs,
-             title="Rel. AUC (vs best)", metric_label="Rel. AUC (vs best)",
-             y_label="TabICL AUC / best AUC", invert_y=False),
+    _REPR_PANELS = [
+        dict(nn_dists=nn_combined, nn_self=self_combined, title="Combined (col + row)"),
+        dict(nn_dists=nn_col,      nn_self=self_col,      title="Col embeddings only"),
+        dict(nn_dists=nn_row,      nn_self=self_row,      title="Row embeddings only"),
     ]
-    plot_combined(panels, args.output_dir / "rank_vs_coverage_tabicl_emb.png", args.n_bins)
+
+    for metric_ranks, metric_label, y_label, invert_y, fname in [
+        (ranks,         "Mean rank",          "TabICL mean rank",    True,  "rank_vs_coverage_tabicl_emb.png"),
+        (rel_aucs,      "Rel. AUC (vs mean)", "TabICL AUC / mean AUC", False, "rel_auc_vs_coverage_tabicl_emb.png"),
+        (rel_best_aucs, "Rel. AUC (vs best)", "TabICL AUC / best AUC", False, "rel_best_auc_vs_coverage_tabicl_emb.png"),
+    ]:
+        panels = [
+            dict(**p, ranks=metric_ranks, metric_label=metric_label,
+                 y_label=y_label, invert_y=invert_y)
+            for p in _REPR_PANELS
+        ]
+        plot_combined(panels, args.output_dir / fname, args.n_bins)
 
 
 if __name__ == "__main__":
