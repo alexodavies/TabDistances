@@ -33,6 +33,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from tabdistances.model.preprocessing import TransformToNumerical
+from TALENT.model.lib.tabicl.model.inference_config import MgrConfig
 
 # ------------------------------------------------------------------
 # CONFIG
@@ -120,12 +121,15 @@ def _df_to_embedding(
     X_np = ((X_np - col_mean) / col_std).clip(-5.0, 5.0)
 
     actual_device = next(col_embedder.parameters()).device
+    use_amp = actual_device.type != "cpu"
+    mgr_cfg = MgrConfig(device=actual_device, use_amp=use_amp, verbose=False)
+
     X = torch.tensor(X_np, dtype=torch.float32, device=actual_device).unsqueeze(0)  # (1, T, H)
 
     with torch.no_grad():
-        emb     = col_embedder(X)       # (1, T, H+C, E)
-        row_rep = row_interactor(emb)   # (1, T, EMB_DIM)
-        vec     = row_rep.mean(dim=1).squeeze(0)  # (EMB_DIM,)
+        emb     = col_embedder(X, mgr_config=mgr_cfg)    # (1, T, H+C, E)
+        row_rep = row_interactor(emb, mgr_config=mgr_cfg) # (1, T, EMB_DIM)
+        vec     = row_rep.mean(dim=1).squeeze(0)           # (EMB_DIM,)
 
     return vec.cpu().numpy()
 
