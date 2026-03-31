@@ -93,7 +93,7 @@ def _df_to_embedding(
     df: pd.DataFrame,
     col_embedder,
     row_interactor,
-    device: str,
+    device=None,  # ignored; actual device inferred from model
     max_rows: int = MAX_ROWS,
 ) -> np.ndarray:
     """Preprocess a DataFrame and return a (EMB_DIM,) numpy embedding.
@@ -119,7 +119,8 @@ def _df_to_embedding(
     col_std  = X_np.std(axis=0, keepdims=True).clip(min=1e-6)
     X_np = ((X_np - col_mean) / col_std).clip(-5.0, 5.0)
 
-    X = torch.tensor(X_np, dtype=torch.float32, device=device).unsqueeze(0)  # (1, T, H)
+    actual_device = next(col_embedder.parameters()).device
+    X = torch.tensor(X_np, dtype=torch.float32, device=actual_device).unsqueeze(0)  # (1, T, H)
 
     with torch.no_grad():
         emb     = col_embedder(X)       # (1, T, H+C, E)
@@ -224,9 +225,12 @@ def _compute_talent_embeddings(
     cached: dict[str, np.ndarray] = {}
     if TALENT_TABICL_EMB_CACHE.exists():
         data   = np.load(TALENT_TABICL_EMB_CACHE, allow_pickle=True)
-        cached = {n: data["feats"][i] for i, n in enumerate(data["names"].tolist())
-                  if n in set(datasets)}
-        print(f"  TALENT embs: cache hit {len(cached)}/{len(datasets)} datasets")
+        if len(data["feats"]) > 0:
+            cached = {n: data["feats"][i] for i, n in enumerate(data["names"].tolist())
+                      if n in set(datasets)}
+            print(f"  TALENT embs: cache hit {len(cached)}/{len(datasets)} datasets")
+        else:
+            print("  TALENT embs: cache exists but is empty, recomputing …")
 
     missing = [ds for ds in datasets if ds not in cached]
     if missing:
@@ -277,8 +281,10 @@ def _compute_icl_embeddings(
     """Compute or load cached ICL prior embeddings."""
     if ICL_TABICL_EMB_CACHE.exists():
         data = np.load(ICL_TABICL_EMB_CACHE)
-        print(f"  ICL embs: loaded {len(data['feats'])} vectors from cache")
-        return data["feats"]
+        if len(data["feats"]) > 0:
+            print(f"  ICL embs: loaded {len(data['feats'])} vectors from cache")
+            return data["feats"]
+        print("  ICL embs: cache exists but is empty, recomputing …")
 
     paths = sorted(ICL_DIR.glob("*.parquet"))
     if not paths:
