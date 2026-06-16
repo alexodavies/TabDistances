@@ -2,7 +2,9 @@
 
 Featurise tabular datasets and measure distances between collections of real and synthetic tables.
 
-Based on Davies et. al. (2026), *Mind the Gap? A Comparison of Pre-Training Datasets for Tabular Foundation Models*.
+Davies et. al. (2026), *Mind the Gap? A Comparison of Pre-Training Datasets for Tabular Foundation Models*. 
+
+https://arxiv.org/abs/2605.06343
 
 ## Idea
 
@@ -47,7 +49,17 @@ tabdistances/
   discriminator/
     features.py         # df_to_vec() — 70-D aggregate feature vector; featurize_tables()
     base.py             # BaseDiscriminator ABC
-    models/             # RFDiscriminator, AggregateDiscriminator
+    dataset.py          # DataFrame dataset loading/splitting for the discriminator
+    loss.py             # Combined quality score for synthetic data evaluation
+    models/             # RFDiscriminator, AggregateDiscriminator, SmallTabICLDiscriminator
+  model/
+    # Tabular transformer components adapted from TabICL/TabDPT, used by
+    # SmallTabICLDiscriminator (discriminator/models/tabicl_disc.py)
+    embedding.py         # ColEmbedding
+    interaction.py       # RowInteraction
+    preprocessing.py     # TransformToNumerical
+    attention.py, encoders.py, layers.py, rope.py, ssmax.py, kv_cache.py,
+    inference.py, inference_config.py, sklearn_utils.py
   analysis/
     distances.py        # compute_nn_distances(), knn_coverage()
     plotting.py         # PAPER_RC, stairs_filled(), grid plot helpers
@@ -126,13 +138,18 @@ df_sample  = df.iloc[: Defaults.MAX_ROWS]
 ## Repository layout
 
 ```
-analysis/        Research scripts: rank_vs_coverage*.py, characterise.py,
-                 coverage_analysis.py, correlation_coverage.py, …
-optimisation/    Hyperparameter search: genetic.py, bayesian.py,
-                 pareto-coverage.py, …
+analysis/        Research scripts: pairwise-tables.py, pairwise_col_corr.py,
+                 characterise.py, coverage_analysis.py, coverage_ablation.py,
+                 correlation_coverage.py, discriminate.py, example-coverage.py
+optimisation/    Hyperparameter search: bayesian.py, genetic.py,
+                 basic-bayesian.py, basic-genetic.py, pareto-coverage.py,
+                 pareto-best-analysis.py, analyse-pareto-coverage.py
 grid/            Large-scale grid search for Isambard HPC (Slurm array jobs)
 export/          Data export scripts (TabFM from Kaggle, exports to parquet)
-benchmark/       TabICL vs Tabula-8B benchmark
+benchmark/       TabICL vs Tabula-8B benchmark, plus rank-vs-coverage analysis:
+                 TALENT.py, rank_vs_coverage_*.py (tables/columns/correlations/
+                 tabicl_emb/combined_{talent,tabarena,pymfe}.py),
+                 coverage_correlation_summary.py, partial_correlation_analysis.py
 tests/           pytest unit tests
 notebooks/       Jupyter notebooks (quickstart.ipynb)
 ```
@@ -164,7 +181,7 @@ python fetch_data.py   # TabFM (Kaggle), T4 (HuggingFace), TabICL (generated loc
 Run the pairwise coverage/discriminator analysis across all three source pairs (ICL vs FM, ICL vs T4, T4 vs FM):
 
 ```bash
-python analysis/pairwise-tabes.py
+python analysis/pairwise-tables.py
 ```
 
 Key flags:
