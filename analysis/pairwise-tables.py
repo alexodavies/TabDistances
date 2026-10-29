@@ -24,11 +24,15 @@ feature mode.
 
 All combined figures are sized for US letter-paper inclusion (6.5 in wide).
 
+Also compares the TabForestPFN synthetic prior (tables-tabforestpfn-mix/ by
+default; see export/tabforestpfn-export.py) against fm and t4.
+
 Usage
 -----
     python coverage_analysis_pairwise.py [--tables-dir tables-tabfm/parquet]
+                                         [--tabforestpfn-dir tables-tabforestpfn-mix/parquet]
                                          [--mode full scalar_only hist_only]
-                                         [--match-icl-cols]
+                                         [--match-icl-cols] [--match-tabforestpfn-cols]
 
 Flags
 -----
@@ -38,6 +42,8 @@ Flags
     the reference dataset (B side) before running analyses.  Results are
     written to a separate output directory and wandb project so they can be
     compared directly with the unmatched run.
+--match-tabforestpfn-cols
+    Same as --match-icl-cols but for the TabForestPFN dataset.
 """
 
 import argparse
@@ -101,6 +107,12 @@ T4_DIR        = Path("tables-t4/parquet")
 T4_CACHE      = Path("cache/real_feats_t4_5000_512_v2.npz")
 ICL_CACHE     = Path("cache/real_feats_icl_25000_512_v2.npz")
 
+# TabForestPFN prior (mix component by default; rerun with --tabforestpfn-dir
+# pointed at tables-tabforestpfn-forest/parquet or -tabpfn/parquet to isolate
+# a component, deleting the cache file below first since it is not keyed by dir)
+TABFORESTPFN_DIR   = Path("tables-tabforestpfn-mix/parquet")
+TABFORESTPFN_CACHE = Path("cache/real_feats_tabforestpfn_25000_512_v2.npz")
+
 N_SAMPLE              = 25000     # samples drawn from each dataset for analysis
 MAX_ROWS              = 512
 WANDB_PROJECT         = "tabicl-coverage-pairwise"
@@ -113,21 +125,29 @@ PAIRS = [
     ("icl", "fm"),
     ("t4",  "fm"),
     ("icl", "t4"),
+    ("tabforestpfn", "fm"),
+    ("tabforestpfn", "t4"),
 ]
 
 _DATASET_LABELS = {
-    "fm":   "Curated",
-    "t4":   "Web-Scraped",
-    "icl":  "Synthetic",
-    "iclm": "Synthetic (col-matched)",
+    "fm":            "Curated",
+    "t4":            "Web-Scraped",
+    "icl":           "Synthetic (ICL)",
+    "iclm":          "Synthetic (ICL, col-matched)",
+    "tabforestpfn":  "Synthetic (TabForestPFN)",
+    "tabforestpfnm": "Synthetic (TabForestPFN, col-matched)",
 }
 
 _PAIR_COLORS = {
-    "icl_vs_fm":  "#2980b9",
-    "t4_vs_fm":   "#e67e22",
-    "icl_vs_t4":  "#27ae60",
-    "iclm_vs_fm": "#2980b9",   # col-matched ICL — same hue as icl_vs_fm
-    "iclm_vs_t4": "#27ae60",   # col-matched ICL — same hue as icl_vs_t4
+    "icl_vs_fm":           "#2980b9",
+    "t4_vs_fm":            "#e67e22",
+    "icl_vs_t4":           "#27ae60",
+    "iclm_vs_fm":          "#2980b9",   # col-matched ICL — same hue as icl_vs_fm
+    "iclm_vs_t4":          "#27ae60",   # col-matched ICL — same hue as icl_vs_t4
+    "tabforestpfn_vs_fm":  "#8e44ad",
+    "tabforestpfn_vs_t4":  "#c0392b",
+    "tabforestpfnm_vs_fm": "#8e44ad",
+    "tabforestpfnm_vs_t4": "#c0392b",
 }
 _MODE_COLORS = {
     "full":        "#2980b9",
@@ -140,10 +160,12 @@ _MODE_LABELS = {
     "hist_only":   "Col. Hists.",
 }
 _DATASET_COLORS = {
-    "fm":   "#e67e22",
-    "t4":   "#2980b9",
-    "icl":  "#27ae60",
-    "iclm": "#27ae60",   # same hue as icl
+    "fm":            "#e67e22",
+    "t4":            "#2980b9",
+    "icl":           "#27ae60",
+    "iclm":          "#27ae60",   # same hue as icl
+    "tabforestpfn":  "#8e44ad",
+    "tabforestpfnm": "#8e44ad",   # same hue as tabforestpfn
 }
 
 
@@ -234,42 +256,73 @@ def _load_icl(tabicl_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     return arr
 
 
+def _load_tabforestpfn(tabforestpfn_dir: Path, n: int, rng: np.random.Generator) -> np.ndarray:
+    if not TABFORESTPFN_CACHE.exists():
+        paths = sorted(tabforestpfn_dir.glob("*.parquet"))
+        if not paths:
+            print(f"ERROR: no .parquet files in {tabforestpfn_dir}")
+            sys.exit(1)
+        rng.shuffle(paths := np.array(paths))
+        feats, errors = [], 0
+        for p in tqdm(paths, desc="featurising tabforestpfn tables", unit="table"):
+            try:
+                df = pd.read_parquet(p).select_dtypes(include=[float, int, "number"])
+                if df.shape[0] == 0 or df.shape[1] == 0:
+                    errors += 1
+                    continue
+                feats.append(df_to_vec(df.iloc[:MAX_ROWS]))
+            except Exception:
+                errors += 1
+            if len(feats) >= n:
+                break
+        print(f"  Loaded {len(feats)} tabforestpfn tables ({errors} skipped)")
+        arr = np.array(feats)
+        TABFORESTPFN_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(TABFORESTPFN_CACHE, feats=arr)
+        print(f"  Cached -> {TABFORESTPFN_CACHE}")
+    else:
+        arr = np.load(TABFORESTPFN_CACHE)["feats"]
+        idx = rng.choice(len(arr), size=min(n, len(arr)), replace=False)
+        arr = arr[idx]
+    return arr
+
+
 # ------------------------------------------------------------------
 # Column-count distribution matching
 # ------------------------------------------------------------------
 
-def _resample_icl_to_match_col_dist(
-    icl_feats: np.ndarray,
+def _resample_to_match_col_dist(
+    feats: np.ndarray,
     ref_feats: np.ndarray,
     n: int,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Return n rows of icl_feats resampled so n_cols (column 0) follows ref's distribution.
+    """Return n rows of feats resampled so n_cols (column 0) follows ref's distribution.
 
     For each of n target column counts drawn i.i.d. from ref_feats[:,0], a random
-    ICL row with that exact column count is selected (with replacement).  If no ICL
+    row with that exact column count is selected (with replacement).  If no
     row has the exact count the nearest available count is used instead.
     """
-    icl_cols = icl_feats[:, 0].astype(int)
-    ref_cols = ref_feats[:, 0].astype(int)
+    cand_cols = feats[:, 0].astype(int)
+    ref_cols  = ref_feats[:, 0].astype(int)
 
-    # Group ICL row indices by column count
-    icl_by_cols: dict[int, list[int]] = {}
-    for i, c in enumerate(icl_cols):
-        icl_by_cols.setdefault(c, []).append(i)
-    available = np.array(sorted(icl_by_cols))
+    # Group candidate row indices by column count
+    cand_by_cols: dict[int, list[int]] = {}
+    for i, c in enumerate(cand_cols):
+        cand_by_cols.setdefault(c, []).append(i)
+    available = np.array(sorted(cand_by_cols))
 
     target_counts = rng.choice(ref_cols, size=n, replace=True)
     selected = []
     for tc in target_counts:
-        if tc in icl_by_cols:
-            pool = icl_by_cols[tc]
+        if tc in cand_by_cols:
+            pool = cand_by_cols[tc]
         else:
             nearest = int(available[np.argmin(np.abs(available - tc))])
-            pool = icl_by_cols[nearest]
+            pool = cand_by_cols[nearest]
         selected.append(int(rng.choice(pool)))
 
-    return icl_feats[np.array(selected)]
+    return feats[np.array(selected)]
 
 
 # ------------------------------------------------------------------
@@ -533,22 +586,28 @@ def _plot_hist_features(datasets: dict, run=None) -> None:
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
-def main(tables_dir: Path, icl_dir: Path, modes: list[str],
-         match_icl_cols: bool = False) -> None:
-    out_dir = OUTPUT_DIR_MATCHED if match_icl_cols else OUTPUT_DIR
+def main(tables_dir: Path, icl_dir: Path, tabforestpfn_dir: Path, modes: list[str],
+         match_icl_cols: bool = False, match_tabforestpfn_cols: bool = False,
+         pairs: list[tuple[str, str]] | None = None) -> None:
+    global PAIRS
+    if pairs is not None:
+        PAIRS = pairs
+    matched = match_icl_cols or match_tabforestpfn_cols
+    out_dir = OUTPUT_DIR_MATCHED if matched else OUTPUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     _ca.OUTPUT_DIR = out_dir
-    wandb_project = WANDB_PROJECT_MATCHED if match_icl_cols else WANDB_PROJECT
+    wandb_project = WANDB_PROJECT_MATCHED if matched else WANDB_PROJECT
 
     rng = np.random.default_rng(RANDOM_STATE)
 
-    # ── Load all three datasets ──────────────────────────────────────
+    # ── Load all datasets ──────────────────────────────────────
     print("\n=== Loading datasets ===")
-    fm_feats  = _load_fm(tables_dir, N_SAMPLE, rng)
-    t4_feats  = _load_t4(T4_CACHE, N_SAMPLE, rng)
-    icl_feats = _load_icl(icl_dir, N_SAMPLE, rng)
+    fm_feats           = _load_fm(tables_dir, N_SAMPLE, rng)
+    t4_feats           = _load_t4(T4_CACHE, N_SAMPLE, rng)
+    icl_feats          = _load_icl(icl_dir, N_SAMPLE, rng)
+    tabforestpfn_feats = _load_tabforestpfn(tabforestpfn_dir, N_SAMPLE, rng)
 
-    datasets = {"fm": fm_feats, "t4": t4_feats, "icl": icl_feats}
+    datasets = {"fm": fm_feats, "t4": t4_feats, "icl": icl_feats, "tabforestpfn": tabforestpfn_feats}
     for name, arr in datasets.items():
         print(f"  {name}: {arr.shape}")
 
@@ -572,16 +631,19 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str],
 
     eff_pairs: list[tuple[str, str]] = []   # actual (eff_a, b_name) used this run
     for a_name, b_name in PAIRS:
-        # When col-matching is active, ICL is resampled to match B's n_cols distribution
-        # and labelled "iclm" so outputs are clearly distinct from unmatched runs.
-        eff_a = "iclm" if (match_icl_cols and a_name == "icl") else a_name
+        # When col-matching is active, the synthetic source is resampled to match
+        # B's n_cols distribution and labelled "<name>m" so outputs are clearly
+        # distinct from unmatched runs.
+        do_match = (match_icl_cols and a_name == "icl") or \
+                   (match_tabforestpfn_cols and a_name == "tabforestpfn")
+        eff_a = f"{a_name}m" if do_match else a_name
         eff_pairs.append((eff_a, b_name))
 
         pair_key  = f"{eff_a}_vs_{b_name}"
         n_pair    = min(len(datasets[a_name]), len(datasets[b_name]))
 
-        if match_icl_cols and a_name == "icl":
-            a_full = _resample_icl_to_match_col_dist(datasets["icl"], datasets[b_name], n_pair, rng)
+        if do_match:
+            a_full = _resample_to_match_col_dist(datasets[a_name], datasets[b_name], n_pair, rng)
         else:
             a_full = datasets[a_name][rng.choice(len(datasets[a_name]), size=n_pair, replace=False)]
         b_full = datasets[b_name][rng.choice(len(datasets[b_name]), size=n_pair, replace=False)]
@@ -590,7 +652,7 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str],
 
         print(f"\n{'='*60}")
         print(f"  Pair: {pair_key}  (A={eff_a} vs B={b_name}, n={n_pair})"
-              + ("  [col-matched]" if eff_a == "iclm" else ""))
+              + ("  [col-matched]" if do_match else ""))
         print(f"{'='*60}")
 
         for mode in modes:
@@ -606,6 +668,7 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str],
                     name=f"{pair_key}_{mode}",
                     config={"pair": pair_key, "A": eff_a, "B": b_name,
                             "match_icl_cols": match_icl_cols,
+                            "match_tabforestpfn_cols": match_tabforestpfn_cols,
                             "feature_mode": mode, "n_features": a_m.shape[1],
                             "n_A": len(a_m), "n_B": len(b_m)},
                     reinit=True,
@@ -650,7 +713,8 @@ def main(tables_dir: Path, icl_dir: Path, modes: list[str],
                 project=wandb_project,
                 name="combined_all_pairs",
                 config={"summary": True, "pairs": [f"{a}_vs_{b}" for a, b in eff_pairs],
-                        "match_icl_cols": match_icl_cols},
+                        "match_icl_cols": match_icl_cols,
+                        "match_tabforestpfn_cols": match_tabforestpfn_cols},
                 reinit=True,
             )
         _plot_combined_across_pairs(all_pair_data, summary_run, pairs=eff_pairs)
@@ -666,6 +730,11 @@ if __name__ == "__main__":
                         help="Directory of tabfm .parquet files (default: %(default)s)")
     parser.add_argument("--icl-dir", type=Path, default=TABICL_DIR,
                         help="Directory of tabicl .parquet files (default: %(default)s)")
+    parser.add_argument("--tabforestpfn-dir", type=Path, default=TABFORESTPFN_DIR,
+                        help="Directory of TabForestPFN .parquet files (default: %(default)s). "
+                             "Point at tables-tabforestpfn-forest/parquet or -tabpfn/parquet to "
+                             "isolate a component instead of the mix prior; delete "
+                             f"{TABFORESTPFN_CACHE} first since the cache is not keyed by dir.")
     parser.add_argument("--mode", nargs="+", choices=list(FEATURE_MODES.keys()),
                         default=list(FEATURE_MODES.keys()),
                         help="Feature mode(s) to run (default: all)")
@@ -673,5 +742,16 @@ if __name__ == "__main__":
                         help="Resample ICL tables so their column-count distribution matches "
                              "the reference dataset before each ICL-vs-X comparison. "
                              "Results go to a separate output dir and wandb project.")
+    parser.add_argument("--match-tabforestpfn-cols", action="store_true", default=False,
+                        help="Resample TabForestPFN tables so their column-count distribution "
+                             "matches the reference dataset before each TabForestPFN-vs-X "
+                             "comparison. Results go to a separate output dir and wandb project.")
+    parser.add_argument("--tabforestpfn-only", action="store_true", default=False,
+                        help="Skip the icl/t4 baseline pairs and only run "
+                             "tabforestpfn_vs_fm / tabforestpfn_vs_t4.")
     args = parser.parse_args()
-    main(args.tables_dir, args.icl_dir, args.mode, match_icl_cols=args.match_icl_cols)
+    pairs = [("tabforestpfn", "fm"), ("tabforestpfn", "t4")] if args.tabforestpfn_only else None
+    main(args.tables_dir, args.icl_dir, args.tabforestpfn_dir, args.mode,
+         match_icl_cols=args.match_icl_cols,
+         match_tabforestpfn_cols=args.match_tabforestpfn_cols,
+         pairs=pairs)

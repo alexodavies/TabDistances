@@ -70,3 +70,7 @@ data/tabarena/
 cache/tabarena_*.npz
 cache/tabarena_results.csv
 cache/tabarena_task_map.json
+
+tables-tabforestpfn-forest/
+
+cache/pp_*

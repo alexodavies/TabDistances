@@ -1,13 +1,13 @@
 Representation,Covariates,N,partial_r,partial_p
-Table features,universal,164,0.0935,0.2339
-Table features,full,77,-0.1273,0.2698
-Col histograms,universal,164,-0.024,0.7607
-Col histograms,full,77,-0.0835,0.4703
-Corr histograms,universal,91,-0.0207,0.8454
-Corr histograms,full,46,-0.0023,0.988
-TabICL col emb,universal,164,0.0774,0.3247
-TabICL col emb,full,77,0.0574,0.6198
-TabICL row emb,universal,164,-0.0041,0.958
-TabICL row emb,full,77,-0.0267,0.8175
-TabICL combined emb,universal,164,0.0176,0.8226
-TabICL combined emb,full,77,-0.0124,0.9147
+Table features,universal,164,0.0901,0.2512
+Table features,full,77,-0.1479,0.1993
+Col histograms,universal,142,0.039,0.6451
+Col histograms,full,68,-0.1669,0.1738
+Corr histograms,universal,91,0.1787,0.0902
+Corr histograms,full,46,-0.0041,0.9785
+TabICL col emb,universal,164,0.0625,0.4268
+TabICL col emb,full,77,0.0305,0.792
+TabICL row emb,universal,164,-0.0142,0.8564
+TabICL row emb,full,77,-0.062,0.592
+TabICL combined emb,universal,164,-0.0025,0.9743
+TabICL combined emb,full,77,-0.0501,0.6652

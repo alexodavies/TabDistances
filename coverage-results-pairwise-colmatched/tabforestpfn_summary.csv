@@ -1,0 +1,7 @@
+pair,reference,n_pair,mode,n_features,auc_ci_low,auc_ci_high,recall_threshold,recall_covered_fraction,recall_median_dist,precision_threshold,precision_covered_fraction,precision_median_dist
+tabforestpfnm_vs_fm,Curated,318,full,69,0.9859,1.0000,0.3837,0.047,1.7260,1.1753,1.000,0.6596
+tabforestpfnm_vs_fm,Curated,318,scalar_only,9,0.9696,1.0000,0.2418,0.343,0.3078,0.5059,0.975,0.1745
+tabforestpfnm_vs_fm,Curated,318,hist_only,61,0.9734,1.0000,0.2082,0.069,1.5914,0.9465,1.000,0.4554
+tabforestpfnm_vs_t4,Web-Scraped,4616,full,69,0.9996,1.0000,0.1716,0.055,1.7755,0.7326,0.969,0.4848
+tabforestpfnm_vs_t4,Web-Scraped,4616,scalar_only,9,0.9982,1.0000,0.0564,0.034,0.3288,0.1766,0.946,0.0881
+tabforestpfnm_vs_t4,Web-Scraped,4616,hist_only,61,0.9966,0.9995,0.0953,0.074,1.6310,0.5838,1.000,0.2361
